@@ -1,42 +1,82 @@
 "use client";
 
-import { Bell, User, Search, Settings } from "lucide-react";
+import { useState } from "react";
+import { Bell, Settings, Sun, Moon, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function Header() {
+  const [darkMode, setDarkMode] = useState(false);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    // Thêm logic chuyển theme ở đây nếu cần
+    if (!darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-10 border-b bg-white px-6 py-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-1 items-center gap-4">
-          <div className="relative max-w-md flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <Input
-              placeholder="Tìm kiếm..."
-              className="pl-9"
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-white px-6 dark:bg-gray-900 dark:border-gray-800">
+      <div className="flex items-center gap-4">
+        {/* Search bar */}
+        <div className="relative w-64">
+          <Input
+            type="search"
+            placeholder="Tìm kiếm..."
+            className="pl-10"
+          />
+          <svg
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
-          </div>
+          </svg>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Bell className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Settings className="h-5 w-5" />
-          </Button>
-          <div className="ml-4 border-l pl-4">
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <h2 className="text-sm font-semibold">Xin chào, Admin</h2>
-                <p className="text-xs text-gray-500">Chúc bạn một ngày làm việc hiệu quả</p>
-              </div>
-              <Button variant="ghost" size="icon" className="rounded-full bg-gray-100">
-                <User className="h-5 w-5" />
-              </Button>
-            </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        {/* Dark mode toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleDarkMode}
+          className="rounded-full"
+          title={darkMode ? "Chuyển sang sáng" : "Chuyển sang tối"}
+        >
+          {darkMode ? (
+            <Sun className="h-5 w-5" />
+          ) : (
+            <Moon className="h-5 w-5" />
+          )}
+        </Button>
+
+
+
+        {/* Settings */}
+        <Button variant="ghost" size="icon" className="rounded-full">
+          <Settings className="h-5 w-5" />
+        </Button>
+
+        {/* User profile */}
+        <Button variant="ghost" className="gap-2 rounded-full">
+          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+            <User className="h-4 w-4 text-blue-600" />
           </div>
-        </div>
+          <div className="hidden md:block text-left">
+            <div className="text-sm font-medium">Admin</div>
+            <div className="text-xs text-gray-500">Quản trị viên</div>
+          </div>
+        </Button>
       </div>
     </header>
   );

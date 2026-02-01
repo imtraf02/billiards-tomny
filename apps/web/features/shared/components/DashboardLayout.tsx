@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 
@@ -8,10 +9,14 @@ export function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
-      <div className="ml-64 flex-1">
+      <Sidebar onCollapseChange={setSidebarCollapsed} />
+      <div className={`flex-1 transition-all duration-300 ${
+        sidebarCollapsed ? 'ml-16' : 'ml-64'
+      }`}>
         <Header />
         <main className="p-6">
           {children}
