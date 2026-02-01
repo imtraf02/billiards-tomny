@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@workspace/ui": "workspace:*",
+    "elysia": "^1.4.22",
     "lucide-react": "^0.475.0",
     "next": "16.1.5",
     "next-themes": "^0.4.6",
