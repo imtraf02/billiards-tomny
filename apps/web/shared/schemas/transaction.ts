@@ -5,7 +5,7 @@ export const createTransactionSchema = z.object({
 		["PURCHASE", "SALE", "REFUND", "ADJUSTMENT", "EXPENSE", "REVENUE"],
 		{ error: "Loại giao dịch không hợp lệ" },
 	),
-	amount: z.coerce.number().positive({ error: "Số tiền phải lớn hơn 0" }),
+	amount: z.coerce.number().int().positive({ error: "Số tiền phải lớn hơn 0" }),
 	paymentMethod: z
 		.enum(["CASH", "CARD", "TRANSFER", "MOMO", "ZALOPAY"])
 		.default("CASH"),

@@ -79,7 +79,7 @@ model Table {
   id         String      @id @default(uuid(7))
   name       String      @unique
   type       TableType
-  hourlyRate Decimal     @db.Decimal(10, 2)
+  hourlyRate Int
   status     TableStatus @default(AVAILABLE)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
@@ -100,8 +100,8 @@ model Product {
   id           String   @id @default(uuid(7))
   categoryId   String
   name         String
-  price        Decimal  @db.Decimal(10, 2)
-  cost         Decimal? @db.Decimal(10, 2) // Giá vốn để tính lãi
+  price        Int
+  cost         Int? // Giá vốn để tính lãi
   description  String?
   imageUrl     String?
   isAvailable  Boolean  @default(true)
@@ -123,7 +123,7 @@ model Booking {
   startTime   DateTime
   endTime     DateTime?
   status      BookingStatus @default(PENDING)
-  totalAmount Decimal       @default(0) @db.Decimal(10, 2)
+  totalAmount Int           @default(0)
   note        String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -140,7 +140,7 @@ model BookingTable {
   tableId       String
   startTime     DateTime
   endTime       DateTime?
-  priceSnapshot Decimal   @db.Decimal(10, 2)
+  priceSnapshot Int
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   table   Table   @relation(fields: [tableId], references: [id])
@@ -154,7 +154,7 @@ model Order {
   bookingId   String?
   userId      String?
   status      OrderStatus @default(PENDING)
-  totalAmount Decimal     @default(0) @db.Decimal(10, 2)
+  totalAmount Int         @default(0)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -169,8 +169,8 @@ model OrderItem {
   orderId       String
   productId     String
   quantity      Int      @default(1)
-  priceSnapshot Decimal  @db.Decimal(10, 2)
-  costSnapshot  Decimal? @db.Decimal(10, 2) // Giá vốn tại thời điểm bán
+  priceSnapshot Int
+  costSnapshot  Int? // Giá vốn tại thời điểm bán
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
@@ -186,7 +186,7 @@ model InventoryLog {
   userId      String // Người thực hiện
   type        String // "IN" (nhập) hoặc "OUT" (xuất)
   quantity    Int // Số lượng (dương = nhập, âm = xuất)
-  unitCost    Decimal? @db.Decimal(10, 2) // Giá nhập (nếu là nhập hàng)
+  unitCost    Int? // Giá nhập (nếu là nhập hàng)
   reason      String? // Lý do: "purchase", "sale", "adjustment", "damaged", etc.
   note        String?
   stockBefore Int // Tồn kho trước khi thay đổi
@@ -204,7 +204,7 @@ model InventoryLog {
 model Transaction {
   id            String          @id @default(uuid(7))
   type          TransactionType
-  amount        Decimal         @db.Decimal(10, 2)
+  amount        Int
   paymentMethod PaymentMethod   @default(CASH)
   description   String?
   // Reference đến booking hoặc order (tùy loại giao dịch)
@@ -230,15 +230,15 @@ model MonthlyReport {
   year            Int
   month           Int
   // Thu
-  totalRevenue    Decimal  @default(0) @db.Decimal(10, 2) // Tổng doanh thu
-  tableRevenue    Decimal  @default(0) @db.Decimal(10, 2) // Doanh thu từ bàn
-  productRevenue  Decimal  @default(0) @db.Decimal(10, 2) // Doanh thu từ sản phẩm
+  totalRevenue    Int      @default(0) // Tổng doanh thu
+  tableRevenue    Int      @default(0) // Doanh thu từ bàn
+  productRevenue  Int      @default(0) // Doanh thu từ sản phẩm
   // Chi
-  totalExpense    Decimal  @default(0) @db.Decimal(10, 2) // Tổng chi phí
-  purchaseExpense Decimal  @default(0) @db.Decimal(10, 2) // Chi phí nhập hàng
-  otherExpense    Decimal  @default(0) @db.Decimal(10, 2) // Chi phí khác
+  totalExpense    Int      @default(0) // Tổng chi phí
+  purchaseExpense Int      @default(0) // Chi phí nhập hàng
+  otherExpense    Int      @default(0) // Chi phí khác
   // Lãi/lỗ
-  netProfit       Decimal  @default(0) @db.Decimal(10, 2) // Lãi ròng
+  netProfit       Int      @default(0) // Lãi ròng
   // Thống kê sản phẩm
   productsSold    Int      @default(0) // Tổng số sản phẩm đã bán
   createdAt       DateTime @default(now())

@@ -10,6 +10,7 @@ export const createTableSchema = z.object({
 	}),
 	hourlyRate: z.coerce
 		.number()
+		.int()
 		.positive({ error: "Giá theo giờ phải lớn hơn 0" }),
 	status: z
 		.enum(["AVAILABLE", "OCCUPIED", "MAINTENANCE", "RESERVED"])
