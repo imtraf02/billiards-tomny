@@ -10,19 +10,16 @@ export const auth = new Elysia({ prefix: "/auth" })
 		"/login",
 		async ({ body, set, accessToken }) => {
 			const user = await AuthService.login({
-				email: body.email,
+				phone: body.phone,
 				password: body.password,
 			});
-
 			if (!user) {
 				set.status = 401;
-				return { message: "Email hoặc mật khẩu không đúng" };
+				return { message: "Số điện thoại hoặc mật khẩu không đúng" };
 			}
-
 			const token = await accessToken.sign({
 				uid: user.id,
 			});
-
 			return {
 				message: "Đăng nhập thành công",
 				user,

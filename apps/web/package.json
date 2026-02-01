@@ -44,8 +44,5 @@
 		"@workspace/typescript-config": "workspace:*",
 		"prisma": "^7.3.0",
 		"typescript": "^5.9.3"
-	},
-	"prisma": {
-		"seed": "bun prisma/seed.ts"
 	}
 }
