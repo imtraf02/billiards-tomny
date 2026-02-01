@@ -2,6 +2,10 @@ import { cors } from "@elysiajs/cors";
 import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { auth } from "./modules/auth";
+import { booking } from "./modules/booking";
+import { order } from "./modules/order";
+import { product } from "./modules/product";
+import { table } from "./modules/table";
 
 export const app = new Elysia({ prefix: "/api" })
 	.use(cors())
@@ -39,4 +43,8 @@ export const app = new Elysia({ prefix: "/api" })
 			},
 		}),
 	)
-	.use(auth);
+	.use(auth)
+	.use(table)
+	.use(product)
+	.use(booking)
+	.use(order);
