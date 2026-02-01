@@ -3,9 +3,9 @@ import { prisma } from "@/lib/db";
 import type { LoginInput } from "@/shared/schemas/auth";
 
 export abstract class AuthService {
-	static async login({ email, password }: LoginInput) {
+	static async login({ phone, password }: LoginInput) {
 		const user = await prisma.user.findFirst({
-			where: { email },
+			where: { phone },
 		});
 
 		if (!user) {
@@ -22,6 +22,7 @@ export abstract class AuthService {
 			id: user.id,
 			name: user.name,
 			email: user.email,
+			phone: user.phone,
 			role: user.role,
 		};
 	}

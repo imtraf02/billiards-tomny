@@ -41,25 +41,43 @@ enum OrderStatus {
   CANCELLED
 }
 
-// Models
+enum TransactionType {
+  PURCHASE // Nhập hàng
+  SALE // Bán hàng
+  REFUND // Hoàn trả
+  ADJUSTMENT // Điều chỉnh kho
+  EXPENSE // Chi phí khác (điện, nước, lương...)
+  REVENUE // Thu nhập khác
+}
 
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  MOMO
+  ZALOPAY
+}
+
+// Models
 model User {
   id        String   @id @default(uuid(7))
   name      String
   phone     String   @unique
   email     String?  @unique
-  password  String // Hashed
+  password  String
   role      Role     @default(CUSTOMER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  bookings Booking[]
-  orders   Order[] // Orders can be linked to user directly if not via booking, but usually via booking
+  bookings      Booking[]
+  orders        Order[]
+  transactions  Transaction[] // Người thực hiện giao dịch
+  inventoryLogs InventoryLog[] // Người thực hiện nhập/xuất kho
 }
 
 model Table {
   id         String      @id @default(uuid(7))
-  name       String      @unique // e.g. "Table 1", "VIP 2"
+  name       String      @unique
   type       TableType
   hourlyRate Decimal     @db.Decimal(10, 2)
   status     TableStatus @default(AVAILABLE)
@@ -70,33 +88,40 @@ model Table {
 }
 
 model Category {
-  id        String    @id @default(uuid(7))
-  name      String    @unique
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  products  Product[]
+  id        String   @id @default(uuid(7))
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
 }
 
 model Product {
-  id          String   @id @default(uuid(7))
-  categoryId  String
-  name        String
-  price       Decimal  @db.Decimal(10, 2)
-  description String?
-  imageUrl    String?
-  isAvailable Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(uuid(7))
+  categoryId   String
+  name         String
+  price        Decimal  @db.Decimal(10, 2)
+  cost         Decimal? @db.Decimal(10, 2) // Giá vốn để tính lãi
+  description  String?
+  imageUrl     String?
+  isAvailable  Boolean  @default(true)
+  // Thông tin kho
+  currentStock Int      @default(0) // Tồn kho hiện tại
+  minStock     Int      @default(0) // Mức tồn kho tối thiểu (cảnh báo)
+  unit         String   @default("cái") // Đơn vị tính
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  category   Category    @relation(fields: [categoryId], references: [id])
-  orderItems OrderItem[]
+  category      Category       @relation(fields: [categoryId], references: [id])
+  orderItems    OrderItem[]
+  inventoryLogs InventoryLog[] // Lịch sử nhập/xuất kho
 }
 
 model Booking {
   id          String        @id @default(uuid(7))
-  userId      String? // Optional: Guest bookings
+  userId      String?
   startTime   DateTime
-  endTime     DateTime? // Nullable if currently running
+  endTime     DateTime?
   status      BookingStatus @default(PENDING)
   totalAmount Decimal       @default(0) @db.Decimal(10, 2)
   note        String?
@@ -104,19 +129,18 @@ model Booking {
   updatedAt   DateTime      @updatedAt
 
   user          User?          @relation(fields: [userId], references: [id])
-  bookingTables BookingTable[] // Relation to support multiple tables per booking
+  bookingTables BookingTable[]
   orders        Order[]
+  transaction   Transaction? // Giao dịch thanh toán
 }
 
 model BookingTable {
   id            String    @id @default(uuid(7))
   bookingId     String
   tableId       String
-  startTime     DateTime // Actual start time for this specific table in the booking
+  startTime     DateTime
   endTime       DateTime?
-  priceSnapshot Decimal   @db.Decimal(10, 2) // Hourly rate at the time of booking
-  // Calculated cost for this specific table session can be stored or calculated on fly
-  // cost          Decimal?   @db.Decimal(10, 2)
+  priceSnapshot Decimal   @db.Decimal(10, 2)
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   table   Table   @relation(fields: [tableId], references: [id])
@@ -127,25 +151,99 @@ model BookingTable {
 
 model Order {
   id          String      @id @default(uuid(7))
-  bookingId   String? // Link to a booking session
-  userId      String? // Link to user if ordering without a table (e.g. takeaway or waiting)
+  bookingId   String?
+  userId      String?
   status      OrderStatus @default(PENDING)
   totalAmount Decimal     @default(0) @db.Decimal(10, 2)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  booking    Booking?    @relation(fields: [bookingId], references: [id])
-  user       User?       @relation(fields: [userId], references: [id])
-  orderItems OrderItem[]
+  booking     Booking?     @relation(fields: [bookingId], references: [id])
+  user        User?        @relation(fields: [userId], references: [id])
+  orderItems  OrderItem[]
+  transaction Transaction? // Giao dịch thanh toán
 }
 
 model OrderItem {
-  id            String  @id @default(uuid(7))
+  id            String   @id @default(uuid(7))
   orderId       String
   productId     String
-  quantity      Int     @default(1)
-  priceSnapshot Decimal @db.Decimal(10, 2) // Price at the time of order
+  quantity      Int      @default(1)
+  priceSnapshot Decimal  @db.Decimal(10, 2)
+  costSnapshot  Decimal? @db.Decimal(10, 2) // Giá vốn tại thời điểm bán
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// Quản lý kho - Lịch sử nhập/xuất
+model InventoryLog {
+  id          String   @id @default(uuid(7))
+  productId   String
+  userId      String // Người thực hiện
+  type        String // "IN" (nhập) hoặc "OUT" (xuất)
+  quantity    Int // Số lượng (dương = nhập, âm = xuất)
+  unitCost    Decimal? @db.Decimal(10, 2) // Giá nhập (nếu là nhập hàng)
+  reason      String? // Lý do: "purchase", "sale", "adjustment", "damaged", etc.
+  note        String?
+  stockBefore Int // Tồn kho trước khi thay đổi
+  stockAfter  Int // Tồn kho sau khi thay đổi
+  createdAt   DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([productId])
+  @@index([createdAt])
+}
+
+// Quản lý thu chi
+model Transaction {
+  id            String          @id @default(uuid(7))
+  type          TransactionType
+  amount        Decimal         @db.Decimal(10, 2)
+  paymentMethod PaymentMethod   @default(CASH)
+  description   String?
+  // Reference đến booking hoặc order (tùy loại giao dịch)
+  bookingId     String?         @unique
+  orderId       String?         @unique
+  userId        String // Người thực hiện giao dịch
+  createdBy     String? // Tên người tạo (nếu khác userId)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  booking Booking? @relation(fields: [bookingId], references: [id])
+  order   Order?   @relation(fields: [orderId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+// Báo cáo thống kê tháng (tùy chọn - có thể tính toán từ Transaction)
+model MonthlyReport {
+  id              String   @id @default(uuid(7))
+  year            Int
+  month           Int
+  // Thu
+  totalRevenue    Decimal  @default(0) @db.Decimal(10, 2) // Tổng doanh thu
+  tableRevenue    Decimal  @default(0) @db.Decimal(10, 2) // Doanh thu từ bàn
+  productRevenue  Decimal  @default(0) @db.Decimal(10, 2) // Doanh thu từ sản phẩm
+  // Chi
+  totalExpense    Decimal  @default(0) @db.Decimal(10, 2) // Tổng chi phí
+  purchaseExpense Decimal  @default(0) @db.Decimal(10, 2) // Chi phí nhập hàng
+  otherExpense    Decimal  @default(0) @db.Decimal(10, 2) // Chi phí khác
+  // Lãi/lỗ
+  netProfit       Decimal  @default(0) @db.Decimal(10, 2) // Lãi ròng
+  // Thống kê sản phẩm
+  productsSold    Int      @default(0) // Tổng số sản phẩm đã bán
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([year, month])
+  @@index([year, month])
 }
