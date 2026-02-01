@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -14,7 +15,8 @@ import {
   StopCircle,
   PlusCircle,
   Coffee,
-  Utensils
+  Utensils,
+  Eye
 } from "lucide-react";
 import type { Table } from "../types";
 
@@ -128,239 +130,153 @@ export default function TableCard({
   };
 
   return (
-    <Card 
-      className="overflow-hidden hover:shadow-xl transition-all duration-300 border hover:border-blue-300 group h-full flex flex-col cursor-pointer"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Header với gradient theo loại bàn */}
-      <div className={`h-2 ${typeConfig.gradient} relative`}>
-        {/* Timer badge nếu bàn đang sử dụng */}
-        {table.status === "occupied" && (
-          <div className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-            ⏱ 1:25:30
-          </div>
-        )}
-      </div>
-      
-      <div className="p-5 flex-1 flex flex-col">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-2xl">{typeConfig.icon}</span>
-              <h3 className="text-lg font-bold text-gray-900 truncate">{table.name}</h3>
-            </div>
-            <p className="text-sm text-gray-500 truncate">{typeConfig.description}</p>
+    <Link href={`/tables/${table.id}`}>
+      <Card 
+        className="overflow-hidden hover:shadow-xl transition-all duration-300 border hover:border-blue-300 group h-full flex flex-col cursor-pointer"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* Header với gradient theo loại bàn */}
+        <div className={`h-2 ${typeConfig.gradient} relative`}>
+          {/* View detail badge */}
+          <div className="absolute -top-2 left-4 bg-white text-blue-600 text-xs font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1">
+            <Eye className="h-3 w-3" />
+            Xem chi tiết
           </div>
           
-          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${statusConfig.badgeClass} flex-shrink-0 ml-2`}>
-            <span className={`w-2 h-2 rounded-full ${statusConfig.color}`}></span>
-            {statusConfig.text}
-          </span>
-        </div>
-
-        {/* Thông tin bàn */}
-        <div className="space-y-4 mb-5 flex-1">
-          {/* Row 1: Price và Seats */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-1">
-                <DollarSign className="h-4 w-4 text-blue-600" />
-                <span className="text-xs font-medium text-blue-600">Giá/giờ</span>
-              </div>
-              <p className="font-bold text-lg text-gray-900">
-                {table.pricePerHour.toLocaleString('vi-VN')}₫
-              </p>
-            </div>
-            
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-1">
-                <Users className="h-4 w-4 text-green-600" />
-                <span className="text-xs font-medium text-green-600">Số ghế</span>
-              </div>
-              <p className="font-bold text-lg text-gray-900">{table.seats || 4}</p>
-            </div>
-          </div>
-
-          {/* Order info nếu bàn đang sử dụng */}
+          {/* Timer badge nếu bàn đang sử dụng */}
           {table.status === "occupied" && (
-            <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-lg p-3 border border-amber-200">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Coffee className="h-4 w-4 text-amber-600" />
-                  <span className="text-sm font-medium text-amber-700">Đơn hàng</span>
-                </div>
-                <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">3 món</span>
-              </div>
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Coca Cola</span>
-                  <span className="font-medium">x2</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Bim bim</span>
-                  <span className="font-medium">x1</span>
-                </div>
-              </div>
-              <div className="mt-2 pt-2 border-t border-amber-200 text-right">
-                <span className="text-sm font-bold text-amber-800">150,000₫</span>
-              </div>
+            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+              ⏱ 1:25:30
             </div>
           )}
-
-          {/* Description */}
-          <div className={`bg-gray-50 rounded-lg p-3 min-h-[60px] flex items-center ${!table.description ? 'border border-dashed border-gray-200' : ''}`}>
-            {table.description ? (
-              <div className="flex gap-2">
-                <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-gray-600 line-clamp-2">{table.description}</p>
+        </div>
+        
+        <div className="p-5 flex-1 flex flex-col">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">{typeConfig.icon}</span>
+                <h3 className="text-lg font-bold text-gray-900 truncate">{table.name}</h3>
               </div>
-            ) : (
-              <p className="text-sm text-gray-400 italic text-center w-full">Chưa có mô tả</p>
-            )}
-          </div>
-        </div>
-
-        {/* Action buttons - Thay đổi theo trạng thái */}
-        {table.status === "available" ? (
-          <div className="flex gap-2 border-t pt-4 mt-auto">
-            <Button 
-              onClick={handleStart}
-              className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <PlayCircle className="mr-2 h-4 w-4" />
-              Bắt đầu
-            </Button>
-            
-            <div className="flex gap-1">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleEdit}
-                className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-300"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleDelete}
-                className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 hover:border-red-300"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        ) : table.status === "occupied" ? (
-          <div className="space-y-3 border-t pt-4 mt-auto">
-            {/* Row 1: Add Order + End */}
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleAddOrder}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
-              >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Thêm đơn
-              </Button>
-              <Button 
-                onClick={handleEnd}
-                className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
-              >
-                <StopCircle className="mr-2 h-4 w-4" />
-                Kết thúc
-              </Button>
+              <p className="text-sm text-gray-500 truncate">{typeConfig.description}</p>
             </div>
             
-            {/* Row 2: Edit + Delete */}
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={handleEdit}
-                className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-300"
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Sửa thông tin
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleDelete}
-                className="flex-1 border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 hover:border-red-300"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Xóa bàn
-              </Button>
-            </div>
-          </div>
-        ) : table.status === "reserved" ? (
-          <div className="flex gap-2 border-t pt-4 mt-auto">
-            <Button 
-              variant="outline"
-              className="flex-1 border-yellow-200 text-yellow-700 hover:bg-yellow-50 hover:text-yellow-800 hover:border-yellow-300"
-            >
-              <Clock className="mr-2 h-4 w-4" />
-              Đã đặt trước
-            </Button>
-            <div className="flex gap-1">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleEdit}
-                className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-300"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleDelete}
-                className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 hover:border-red-300"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex gap-2 border-t pt-4 mt-auto">
-            <Button 
-              variant="outline"
-              className="flex-1 border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-800 hover:border-gray-300 cursor-not-allowed"
-              disabled
-            >
-              ⚠️ Đang bảo trì
-            </Button>
-          </div>
-        )}
-
-        {/* Footer với thời gian */}
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <span className="flex items-center gap-1 truncate">
-              <Clock className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">Cập nhật: {new Date(table.updatedAt).toLocaleDateString('vi-VN')}</span>
+            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${statusConfig.badgeClass} flex-shrink-0 ml-2`}>
+              <span className={`w-2 h-2 rounded-full ${statusConfig.color}`}></span>
+              {statusConfig.text}
             </span>
+          </div>
+
+          {/* Thông tin bàn */}
+          <div className="space-y-4 mb-5 flex-1">
+            {/* Row 1: Price và Seats */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-2 mb-1">
+                  <DollarSign className="h-4 w-4 text-blue-600" />
+                  <span className="text-xs font-medium text-blue-600">Giá/giờ</span>
+                </div>
+                <p className="font-bold text-lg text-gray-900">
+                  {table.pricePerHour.toLocaleString('vi-VN')}₫
+                </p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-2 mb-1">
+                  <Users className="h-4 w-4 text-green-600" />
+                  <span className="text-xs font-medium text-green-600">Số ghế</span>
+                </div>
+                <p className="font-bold text-lg text-gray-900">{table.seats || 4}</p>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className={`bg-gray-50 rounded-lg p-3 min-h-[60px] flex items-center ${!table.description ? 'border border-dashed border-gray-200' : ''}`}>
+              {table.description ? (
+                <div className="flex gap-2">
+                  <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-gray-600 line-clamp-2">{table.description}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 italic text-center w-full">Chưa có mô tả</p>
+              )}
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-2 border-t pt-4 mt-auto" onClick={(e) => e.preventDefault()}>
+            <div className="flex-1">
+              {table.status === "available" ? (
+                <Button 
+                  onClick={handleStart}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  <PlayCircle className="mr-2 h-4 w-4" />
+                  Bắt đầu
+                </Button>
+              ) : table.status === "occupied" ? (
+                <div className="space-y-2">
+                  <Button 
+                    onClick={handleAddOrder}
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Thêm đơn
+                  </Button>
+                  <Button 
+                    onClick={handleEnd}
+                    className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
+                  >
+                    <StopCircle className="mr-2 h-4 w-4" />
+                    Kết thúc
+                  </Button>
+                </div>
+              ) : table.status === "reserved" ? (
+                <Button 
+                  variant="outline"
+                  className="w-full border-yellow-200 text-yellow-700 hover:bg-yellow-50 hover:text-yellow-800 hover:border-yellow-300"
+                >
+                  <Clock className="mr-2 h-4 w-4" />
+                  Đã đặt trước
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline"
+                  className="w-full border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-800 hover:border-gray-300 cursor-not-allowed"
+                  disabled
+                >
+                  ⚠️ Đang bảo trì
+                </Button>
+              )}
+            </div>
             
-            {/* Hiển thị thời gian sử dụng nếu bàn đang occupied */}
-            {table.status === "occupied" && (
-              <span className="flex items-center gap-1 text-red-600 font-medium text-xs flex-shrink-0">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
-                Đang sử dụng
-              </span>
-            )}
-            
-            {table.status === "available" && (
-              <span className="flex items-center gap-1 text-green-600 font-medium text-xs flex-shrink-0">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                Sẵn sàng
-              </span>
-            )}
+            <div className="flex flex-col gap-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleEdit}
+                className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-300"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleDelete}
+                className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 hover:border-red-300"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Hover effect overlay */}
-      {isHovered && (
-        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none transition-opacity duration-300" />
-      )}
-    </Card>
+        {/* Hover effect overlay */}
+        {isHovered && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none transition-opacity duration-300" />
+        )}
+      </Card>
+    </Link>
   );
 }
