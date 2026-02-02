@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 
 export default function LoginForm() {
   const router = useRouter();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    username: "",
+    phone: "",
     password: "",
   });
   const [error, setError] = useState("");
@@ -21,15 +23,22 @@ export default function LoginForm() {
     setLoading(true);
     setError("");
 
-    // TODO: Gọi API đăng nhập
-    console.log("Login data:", formData);
-    
-    // Giả lập API call
-    setTimeout(() => {
+    try {
+      const result = await login(formData);
+      
+      if (result.success) {
+        // Đăng nhập thành công
+        router.push("/dashboard");
+        router.refresh();
+      } else {
+        setError(result.message || "Đăng nhập thất bại");
+      }
+    } catch (err) {
+      setError("Đã xảy ra lỗi. Vui lòng thử lại sau.");
+      console.error("Login error:", err);
+    } finally {
       setLoading(false);
-      // Giả lập đăng nhập thành công
-      router.push("/dashboard");
-    }, 1500);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,21 +49,23 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        <div>
-          <Label htmlFor="username">Tên đăng nhập *</Label>
+        <div className="space-y-2">
+          <Label htmlFor="phone" className="text-foreground">Số điện thoại *</Label>
           <Input
-            id="username"
-            name="username"
-            value={formData.username}
+            id="phone"
+            name="phone"
+            value={formData.phone}
             onChange={handleChange}
-            placeholder="Nhập tên đăng nhập"
+            placeholder="Nhập số điện thoại"
             required
             disabled={loading}
+            type="tel"
+            className="bg-background border-input"
           />
         </div>
 
-        <div>
-          <Label htmlFor="password">Mật khẩu *</Label>
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-foreground">Mật khẩu *</Label>
           <Input
             id="password"
             name="password"
@@ -64,17 +75,22 @@ export default function LoginForm() {
             placeholder="Nhập mật khẩu"
             required
             disabled={loading}
+            className="bg-background border-input"
           />
         </div>
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+          <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
 
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button 
+        type="submit" 
+        className="w-full bg-gradient-accent hover:opacity-90 transition-opacity" 
+        disabled={loading}
+      >
         {loading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

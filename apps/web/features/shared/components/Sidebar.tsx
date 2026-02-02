@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Table as TableIcon,
@@ -14,6 +14,19 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/features/auth/hooks/use-auth"; // Import hook auth
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 const menuItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -31,8 +44,30 @@ type SidebarProps = {
 
 export function Sidebar({ collapsed, onCollapseChange }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout, user } = useAuth(); // Sử dụng hook auth
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const sidebarWidth = collapsed ? "w-16" : "w-64";
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      setLogoutDialogOpen(false);
+      // Chuyển hướng về trang login sau khi logout thành công
+      router.push("/login");
+      router.refresh(); // Refresh để cập nhật trạng thái auth
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  // Hiển thị tên user nếu sidebar không collapsed
+  const displayUserInfo = !collapsed && user;
 
   return (
     <aside
@@ -46,10 +81,8 @@ export function Sidebar({ collapsed, onCollapseChange }: SidebarProps) {
               Billiard Pro
             </h1>
           ) : (
-            <div className="w-8 h-8 rounded-lg  flex items-center justify-center">
-              <span className=" font-bold text-lg">
-                🎱
-              </span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+              <span className="font-bold text-lg">🎱</span>
             </div>
           )}
 
@@ -67,12 +100,30 @@ export function Sidebar({ collapsed, onCollapseChange }: SidebarProps) {
           </Button>
         </div>
 
+        {/* Thông tin user (chỉ hiển thị khi không collapsed) */}
+        {displayUserInfo && (
+          <div className="border-b border-border p-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-lg font-semibold">
+                  {user.name?.charAt(0).toUpperCase() || "U"}
+                </span>
+              </div>
+              <div className="overflow-hidden">
+                <p className="font-medium truncate">{user.name}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user.role === "ADMIN" ? "Quản trị viên" : "Nhân viên"}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Menu */}
         <nav className="flex-1 space-y-1 p-4">
           {menuItems.map((item) => {
             const isActive =
-              pathname === item.href ||
-              pathname?.startsWith(`${item.href}/`);
+              pathname === item.href || pathname?.startsWith(`${item.href}/`);
 
             return (
               <Link key={item.href} href={item.href}>
@@ -93,9 +144,7 @@ export function Sidebar({ collapsed, onCollapseChange }: SidebarProps) {
                     } ${isActive ? "text-primary" : ""}`}
                   />
                   {!collapsed && (
-                    <span className="whitespace-nowrap">
-                      {item.label}
-                    </span>
+                    <span className="whitespace-nowrap">{item.label}</span>
                   )}
                 </Button>
               </Link>
@@ -104,22 +153,48 @@ export function Sidebar({ collapsed, onCollapseChange }: SidebarProps) {
         </nav>
 
         {/* Logout */}
-        <div className="border-t border-border p-4 ">
-          <Button
-            variant="ghost"
-            className={`w-full justify-start text-destructive cursor-pointer hover:text-destructive hover:bg-destructive/10 transition-theme ${
-              collapsed ? "px-2" : ""
-            }`}
-            title={collapsed ? "Đăng xuất" : undefined}
-          >
-            <LogOut className={`h-5 w-5 ${collapsed ? "" : "mr-3"}`} />
-            {!collapsed && (
-              <span className="whitespace-nowrap">Đăng xuất</span>
-            )}
-          </Button>
+        <div className="border-t border-border p-4">
+          <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                className={`w-full justify-start text-destructive cursor-pointer hover:text-destructive hover:bg-destructive/10 transition-theme ${
+                  collapsed ? "px-2" : ""
+                }`}
+                title={collapsed ? "Đăng xuất" : undefined}
+                disabled={isLoggingOut}
+              >
+                <LogOut className={`h-5 w-5 ${collapsed ? "" : "mr-3"}`} />
+                {!collapsed && (
+                  <span className="whitespace-nowrap">
+                    {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
+                  </span>
+                )}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Xác nhận đăng xuất</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isLoggingOut}>
+                  Hủy
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </aside>
   );
 }
-
