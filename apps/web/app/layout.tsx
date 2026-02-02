@@ -1,4 +1,5 @@
 "use client";
+
 import { Geist, Geist_Mono } from "next/font/google";
 import "@workspace/ui/globals.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
