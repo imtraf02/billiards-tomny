@@ -114,8 +114,13 @@ export default function CreateTablePage() {
               Quay lại
             </Link>
           </Button>
+          <Button variant="outline">
+            <Clock className="mr-2 h-4 w-4" />
+            Xem trước
+          </Button>
         </div>
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Form Card */}
         <Card className="lg:col-span-2">
@@ -354,6 +359,88 @@ export default function CreateTablePage() {
                     <div className="text-sm bg-secondary/30 p-3 rounded-lg">{formData.description}</div>
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tips Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Info className="h-5 w-5" />
+                Lời khuyên
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>Đặt tên bàn dễ nhớ để dễ quản lý</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>Chọn loại bàn phù hợp với không gian</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>Thiết lập giá hợp lý theo từng khung giờ</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>Thêm mô tả để ghi chú đặc điểm riêng</span>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Quick Stats Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Thống kê nhanh
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="rounded-full bg-blue-100 p-2 mr-3">
+                      <Calendar className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium">Bàn hoạt động</div>
+                      <div className="text-sm text-gray-500">12/20 bàn</div>
+                    </div>
+                  </div>
+                  <div className="text-green-600 font-medium">60%</div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="rounded-full bg-yellow-100 p-2 mr-3">
+                      <Clock className="h-4 w-4 text-yellow-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium">Tỷ lệ sử dụng</div>
+                      <div className="text-sm text-gray-500">Hôm nay</div>
+                    </div>
+                  </div>
+                  <div className="text-blue-600 font-medium">75%</div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="rounded-full bg-green-100 p-2 mr-3">
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium">Doanh thu TB/bàn</div>
+                      <div className="text-sm text-gray-500">450.000đ/ngày</div>
+                    </div>
+                  </div>
+                  <div className="text-green-600 font-medium">+8%</div>
+                </div>
               </div>
             </CardContent>
           </Card>

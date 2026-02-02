@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { useTables } from "../hooks";
-import TableCard from "./TableCard";
+import TableCard from "./table-card";
 import type { Table } from "../types";
 
 interface TableListProps {

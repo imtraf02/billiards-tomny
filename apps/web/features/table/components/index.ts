@@ -1,3 +1,3 @@
-export { default as CreateTableForm } from './CreateTableForm';
-export { default as TableList } from './TableList';
-export { default as TableCard } from './TableCard';
+export { default as CreateTableForm } from './create-table-form';
+export { default as TableList } from './table-list';
+export { default as TableCard } from './table-card';
