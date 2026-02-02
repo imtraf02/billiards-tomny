@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
+import { Input } from "@workspace/ui/components/input";
 import { 
   Search, 
   Filter, 

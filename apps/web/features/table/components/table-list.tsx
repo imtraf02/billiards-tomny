@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@workspace/ui/components/card";
 import { useTables } from "../hooks";
 import TableCard from "./table-card";
 import type { Table } from "../types";

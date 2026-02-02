@@ -1,8 +1,8 @@
 "use client";
 
 import { Bell, Settings, User, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@workspace/ui/components/button";
+import { Input } from "@workspace/ui/components/input";
 import { ThemeToggle } from "@/features/shared/components/theme-toggle";
 import { useState } from "react";
 
