@@ -1,160 +1,298 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useForm } from "@tanstack/react-form";
 import { Button } from "@workspace/ui/components/button";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
-import { Textarea } from "@workspace/ui/components/textarea";
-
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@workspace/ui/components/dialog";
+import {
+    Field,
+    FieldContent,
+    FieldError,
+    FieldLabel,
+} from "@workspace/ui/components/field";
+import { Input } from "@workspace/ui/components/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@workspace/ui/components/select";
-import { X } from "lucide-react";
+import { Textarea } from "@workspace/ui/components/textarea";
+import type { Product } from "@/generated/prisma/client";
+import {
+    type CreateProductInput,
+    createProductSchema,
+} from "@/shared/schemas/product";
+import {
+    useCreateProduct,
+    useGetCategories,
+} from "../hooks/use-product";
 
 interface CreateProductFormProps {
-  onClose: () => void;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
 }
 
-export default function CreateProductForm({ onClose }: CreateProductFormProps) {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    category: "drink",
-    price: "",
-    cost: "",
-    stock: "",
-    description: "",
-  });
+export function CreateProductForm({
+    open,
+    onOpenChange,
+}: CreateProductFormProps) {
+    const { data: categories } = useGetCategories();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    // TODO: Gọi API để tạo sản phẩm
-    console.log("Form data:", formData);
-    
-    // Giả lập API call
-    setTimeout(() => {
-      setLoading(false);
-      onClose();
-      router.refresh();
-    }, 1000);
-  };
+    const { mutate: createProduct, isPending: isCreating } = useCreateProduct(
+        () => {
+            onOpenChange(false);
+            form.reset();
+        },
+    );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+    const form = useForm({
+        defaultValues: {
+            name: "",
+            categoryId: "",
+            price: 0,
+            cost: 0,
+            currentStock: 0,
+            minStock: 0,
+            unit: "cái",
+            description: "",
+            imageUrl: "",
+            isAvailable: true,
+        },
+        validators: {
+            onChange: createProductSchema,
+        },
+        onSubmit: async ({ value }) => {
+            createProduct(value);
+        },
+    });
 
-  return (
-    <div className="bg-white rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
-      <div className="sticky top-0 bg-white flex items-center justify-between p-6 border-b z-10">
-        <h2 className="text-xl font-semibold">Thêm sản phẩm mới</h2>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+    const isLoading = isCreating;
 
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="name">Tên sản phẩm *</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="VD: Coca Cola, Bim bim"
-              required
-            />
-          </div>
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-160 max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>Thêm sản phẩm mới</DialogTitle>
+                    <DialogDescription>
+                        Điền thông tin để tạo sản phẩm mới.
+                    </DialogDescription>
+                </DialogHeader>
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        form.handleSubmit();
+                    }}
+                    className="grid gap-4 py-4"
+                >
+                    <div className="grid grid-cols-2 gap-4">
+                        <form.Field
+                            name="name"
+                            children={(field) => (
+                                <Field data-invalid={field.state.meta.errors.length > 0}>
+                                    <FieldLabel>Tên sản phẩm</FieldLabel>
+                                    <FieldContent>
+                                        <Input
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                            placeholder="Nhập tên sản phẩm"
+                                        />
+                                    </FieldContent>
+                                    <FieldError errors={field.state.meta.errors} />
+                                </Field>
+                            )}
+                        />
 
-          <div>
-            <Label htmlFor="category">Danh mục *</Label>
-            <Select
-              value={formData.category}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn danh mục" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="drink">Nước uống</SelectItem>
-                <SelectItem value="snack">Đồ ăn vặt</SelectItem>
-                <SelectItem value="food">Đồ ăn</SelectItem>
-                <SelectItem value="other">Khác</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                        <form.Field
+                            name="categoryId"
+                            children={(field) => (
+                                <Field data-invalid={field.state.meta.errors.length > 0}>
+                                    <FieldLabel>Danh mục</FieldLabel>
+                                    <FieldContent>
+                                        <Select
+                                            value={field.state.value}
+                                            onValueChange={(val) => field.handleChange(val)}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Chọn danh mục" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {categories?.map((category) => (
+                                                    <SelectItem key={category.id} value={category.id}>
+                                                        {category.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FieldContent>
+                                    <FieldError errors={field.state.meta.errors} />
+                                </Field>
+                            )}
+                        />
+                    </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="price">Giá bán (VNĐ) *</Label>
-              <Input
-                id="price"
-                name="price"
-                type="number"
-                value={formData.price}
-                onChange={handleChange}
-                placeholder="20000"
-                required
-              />
-            </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <form.Field
+                            name="price"
+                            children={(field) => (
+                                <Field data-invalid={field.state.meta.errors.length > 0}>
+                                    <FieldLabel>Giá bán</FieldLabel>
+                                    <FieldContent>
+                                        <Input
+                                            type="number"
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={(e) =>
+                                                field.handleChange(Number(e.target.value))
+                                            }
+                                        />
+                                    </FieldContent>
+                                    <FieldError errors={field.state.meta.errors} />
+                                </Field>
+                            )}
+                        />
 
-            <div>
-              <Label htmlFor="cost">Giá vốn (VNĐ)</Label>
-              <Input
-                id="cost"
-                name="cost"
-                type="number"
-                value={formData.cost}
-                onChange={handleChange}
-                placeholder="15000"
-              />
-            </div>
-          </div>
+                        <form.Field
+                            name="cost"
+                            children={(field) => (
+                                <Field data-invalid={field.state.meta.errors.length > 0}>
+                                    <FieldLabel>Giá vốn</FieldLabel>
+                                    <FieldContent>
+                                        <Input
+                                            type="number"
+                                            value={field.state.value ?? 0}
+                                            onBlur={field.handleBlur}
+                                            onChange={(e) =>
+                                                field.handleChange(Number(e.target.value))
+                                            }
+                                        />
+                                    </FieldContent>
+                                    <FieldError errors={field.state.meta.errors} />
+                                </Field>
+                            )}
+                        />
+                    </div>
 
-          <div>
-            <Label htmlFor="stock">Số lượng tồn kho *</Label>
-            <Input
-              id="stock"
-              name="stock"
-              type="number"
-              value={formData.stock}
-              onChange={handleChange}
-              placeholder="50"
-              required
-            />
-          </div>
+                    <div className="grid grid-cols-3 gap-4">
+                        <form.Field
+                            name="currentStock"
+                            children={(field) => (
+                                <Field data-invalid={field.state.meta.errors.length > 0}>
+                                    <FieldLabel>Tồn kho</FieldLabel>
+                                    <FieldContent>
+                                        <Input
+                                            type="number"
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={(e) =>
+                                                field.handleChange(Number(e.target.value))
+                                            }
+                                        />
+                                    </FieldContent>
+                                    <FieldError errors={field.state.meta.errors} />
+                                </Field>
+                            )}
+                        />
 
-          <div>
-            <Label htmlFor="description">Mô tả</Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Mô tả sản phẩm..."
-              rows={3}
-            />
-          </div>
-        </div>
+                        <form.Field
+                            name="minStock"
+                            children={(field) => (
+                                <Field data-invalid={field.state.meta.errors.length > 0}>
+                                    <FieldLabel>Tối thiểu</FieldLabel>
+                                    <FieldContent>
+                                        <Input
+                                            type="number"
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={(e) =>
+                                                field.handleChange(Number(e.target.value))
+                                            }
+                                        />
+                                    </FieldContent>
+                                    <FieldError errors={field.state.meta.errors} />
+                                </Field>
+                            )}
+                        />
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Hủy
-          </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? "Đang tạo..." : "Tạo sản phẩm"}
-          </Button>
-        </div>
-      </form>
-    </div>
-  );
+                        <form.Field
+                            name="unit"
+                            children={(field) => (
+                                <Field data-invalid={field.state.meta.errors.length > 0}>
+                                    <FieldLabel>Đơn vị</FieldLabel>
+                                    <FieldContent>
+                                        <Input
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={(e) => field.handleChange(e.target.value)}
+                                        />
+                                    </FieldContent>
+                                    <FieldError errors={field.state.meta.errors} />
+                                </Field>
+                            )}
+                        />
+                    </div>
+
+                    <form.Field
+                        name="description"
+                        children={(field) => (
+                            <Field data-invalid={field.state.meta.errors.length > 0}>
+                                <FieldLabel>Mô tả</FieldLabel>
+                                <FieldContent>
+                                    <Textarea
+                                        value={field.state.value ?? ""}
+                                        onBlur={field.handleBlur}
+                                        onChange={(e) => field.handleChange(e.target.value)}
+                                        placeholder="Mô tả sản phẩm"
+                                    />
+                                </FieldContent>
+                                <FieldError errors={field.state.meta.errors} />
+                            </Field>
+                        )}
+                    />
+
+                    <form.Field
+                        name="imageUrl"
+                        children={(field) => (
+                            <Field data-invalid={field.state.meta.errors.length > 0}>
+                                <FieldLabel>Hình ảnh (URL)</FieldLabel>
+                                <FieldContent>
+                                    <Input
+                                        value={field.state.value ?? ""}
+                                        onBlur={field.handleBlur}
+                                        onChange={(e) => field.handleChange(e.target.value)}
+                                        placeholder="https://..."
+                                    />
+                                </FieldContent>
+                                <FieldError errors={field.state.meta.errors} />
+                            </Field>
+                        )}
+                    />
+
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => onOpenChange(false)}
+                        >
+                            Hủy
+                        </Button>
+                        <Button type="submit" disabled={isLoading}>
+                            {isLoading ? "Đang xử lý..." : "Tạo mới"}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
 }

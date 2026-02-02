@@ -1,105 +1,151 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useForm } from "@tanstack/react-form";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@workspace/ui/components/card";
+import {
+	Field,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+} from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
-import { Loader2 } from "lucide-react";
-import { useAuth } from "@/features/auth/hooks/use-auth";
+import { cn } from "@workspace/ui/lib/utils";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type * as React from "react";
+import { api } from "@/lib/eden";
+import { type LoginInput, loginSchema } from "@/shared/schemas/auth";
+import { useAuthStore } from "../auth-store";
 
-export default function LoginForm() {
-  const router = useRouter();
-  const { login } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    phone: "",
-    password: "",
-  });
-  const [error, setError] = useState("");
+export function LoginForm({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
+	const router = useRouter();
+	const { setToken } = useAuthStore();
+	const { mutate, isPending } = useMutation({
+		mutationFn: async (data: LoginInput) => {
+			return await api.auth.login.post({
+				email: data.email,
+				password: data.password,
+			});
+		},
+		onSuccess: ({ data }) => {
+			if (data?.token) {
+				setToken(data.token);
+				router.push("/app/dashboard");
+			}
+		},
+		onError: (error) => {},
+	});
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+	const form = useForm({
+		defaultValues: {
+			email: "",
+			password: "",
+		},
+		validators: {
+			onSubmit: loginSchema,
+		},
+		onSubmit: async ({ value }) => {
+			mutate(value);
+		},
+	});
 
-    try {
-      const result = await login(formData);
-      
-      if (result.success) {
-        // Đăng nhập thành công
-        router.push("/dashboard");
-        router.refresh();
-      } else {
-        setError(result.message || "Đăng nhập thất bại");
-      }
-    } catch (err) {
-      setError("Đã xảy ra lỗi. Vui lòng thử lại sau.");
-      console.error("Login error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="phone" className="text-foreground">Số điện thoại *</Label>
-          <Input
-            id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            placeholder="Nhập số điện thoại"
-            required
-            disabled={loading}
-            type="tel"
-            className="bg-background border-input"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="password" className="text-foreground">Mật khẩu *</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Nhập mật khẩu"
-            required
-            disabled={loading}
-            className="bg-background border-input"
-          />
-        </div>
-      </div>
-
-      {error && (
-        <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-          <p className="text-sm text-destructive">{error}</p>
-        </div>
-      )}
-
-      <Button 
-        type="submit" 
-        className="w-full bg-gradient-accent hover:opacity-90 transition-opacity" 
-        disabled={loading}
-      >
-        {loading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Đang đăng nhập...
-          </>
-        ) : (
-          "Đăng nhập"
-        )}
-      </Button>
-    </form>
-  );
+	return (
+		<div className={cn("flex flex-col gap-6", className)} {...props}>
+			<Card>
+				<CardHeader>
+					<CardTitle>Đăng nhập</CardTitle>
+					<CardDescription>
+						Nhập email và mật khẩu của bạn để đăng nhập
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							form.handleSubmit();
+						}}
+					>
+						<FieldGroup>
+							<form.Field
+								name="email"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched &&
+										field.state.meta.errors.length > 0;
+									return (
+										<Field data-invalid={isInvalid}>
+											<FieldLabel htmlFor={field.name}>Email</FieldLabel>
+											<Input
+												id={field.name}
+												name={field.name}
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(e) => field.handleChange(e.target.value)}
+												type="email"
+												placeholder="m@example.com"
+												aria-invalid={isInvalid}
+												disabled={isPending}
+											/>
+											{isInvalid && (
+												<FieldError errors={field.state.meta.errors} />
+											)}
+										</Field>
+									);
+								}}
+							/>
+							<form.Field
+								name="password"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched &&
+										field.state.meta.errors.length > 0;
+									return (
+										<Field data-invalid={isInvalid}>
+											<div className="flex items-center">
+												<FieldLabel htmlFor={field.name}>Mật khẩu</FieldLabel>
+												<Link
+													href="/forgot-password"
+													className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+												>
+													Quên mật khẩu?
+												</Link>
+											</div>
+											<Input
+												id={field.name}
+												name={field.name}
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(e) => field.handleChange(e.target.value)}
+												type="password"
+												aria-invalid={isInvalid}
+												disabled={isPending}
+											/>
+											{isInvalid && (
+												<FieldError errors={field.state.meta.errors} />
+											)}
+										</Field>
+									);
+								}}
+							/>
+							<Button type="submit" className="w-full" disabled={isPending}>
+								{isPending ? "Đang đăng nhập..." : "Đăng nhập"}
+							</Button>
+						</FieldGroup>
+					</form>
+				</CardContent>
+			</Card>
+		</div>
+	);
 }

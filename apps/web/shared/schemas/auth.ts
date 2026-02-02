@@ -1,14 +1,6 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-	phone: z
-		.string()
-		.min(10, { error: "Số điện thoại phải có ít nhất 10 số" })
-		.max(11, { error: "Số điện thoại không hợp lệ" }),
-	password: z.string().min(6, { error: "Mật khẩu phải có ít nhất 6 ký tự" }),
-});
-
-export const loginWithEmailSchema = z.object({
 	email: z.email({ error: "Email không hợp lệ" }),
 	password: z.string().min(6, { error: "Mật khẩu phải có ít nhất 6 ký tự" }),
 });
@@ -19,13 +11,7 @@ export const registerSchema = z
 			.string()
 			.min(2, { error: "Tên phải có ít nhất 2 ký tự" })
 			.max(100, { error: "Tên quá dài" }),
-		phone: z
-			.string()
-			.regex(/^[0-9]{10,11}$/, { error: "Số điện thoại không hợp lệ" }),
-		email: z
-			.email({ error: "Email không hợp lệ" })
-			.optional()
-			.or(z.literal("")),
+		email: z.email({ error: "Email không hợp lệ" }),
 		password: z.string().min(6, { error: "Mật khẩu phải có ít nhất 6 ký tự" }),
 		confirmPassword: z.string(),
 	})
@@ -50,9 +36,7 @@ export const changePasswordSchema = z
 	});
 
 export const forgotPasswordSchema = z.object({
-	phone: z
-		.string()
-		.regex(/^[0-9]{10,11}$/, { error: "Số điện thoại không hợp lệ" }),
+	email: z.email({ error: "Email không hợp lệ" }),
 });
 
 export const resetPasswordSchema = z
@@ -67,7 +51,6 @@ export const resetPasswordSchema = z
 	});
 
 export type LoginInput = z.infer<typeof loginSchema>;
-export type LoginWithEmailInput = z.infer<typeof loginWithEmailSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
