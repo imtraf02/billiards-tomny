@@ -72,7 +72,7 @@ export function CommandMenu() {
 						</CommandGroup>
 					))}
 					<CommandSeparator />
-					<CommandGroup heading="Theme">
+					<CommandGroup heading="Chủ đề">
 						<CommandItem onSelect={() => runCommand(() => setTheme("light"))}>
 							<Sun /> <span>Sáng</span>
 						</CommandItem>

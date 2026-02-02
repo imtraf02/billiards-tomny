@@ -1,184 +1,110 @@
 import {
-	AudioWaveform,
-	Bell,
-	Bug,
+	BarChart,
+	CalendarClock,
+	ClipboardList,
 	Command,
-	Construction,
-	FileX,
-	GalleryVerticalEnd,
-	HelpCircle,
+	Grid3x3,
+	Layers,
 	LayoutDashboard,
-	ListTodo,
-	Lock,
-	MessagesSquare,
-	Monitor,
 	Package,
-	Palette,
-	ServerOff,
+	Receipt,
 	Settings,
-	ShieldCheck,
-	UserCog,
+	ShoppingCart,
 	Users,
-	UserX,
-	Wrench,
 } from "lucide-react";
 import type { SidebarData } from "../types";
 
 export const sidebarData: SidebarData = {
 	user: {
-		name: "satnaing",
-		email: "satnaingdev@gmail.com",
+		name: "Admin",
+		email: "admin@tomny.com",
 		avatar: "/avatars/shadcn.jpg",
 	},
 	teams: [
 		{
-			name: "Shadcn Admin",
+			name: "Tomny Billiards",
 			logo: Command,
-			plan: "Vite + ShadcnUI",
-		},
-		{
-			name: "Acme Inc",
-			logo: GalleryVerticalEnd,
-			plan: "Enterprise",
-		},
-		{
-			name: "Acme Corp.",
-			logo: AudioWaveform,
-			plan: "Startup",
+			plan: "Pro",
 		},
 	],
 	navGroups: [
 		{
-			title: "General",
+			title: "Tổng quan",
 			items: [
 				{
-					title: "Dashboard",
+					title: "Bảng điều khiển",
 					url: "/",
 					icon: LayoutDashboard,
 				},
+			],
+		},
+		{
+			title: "Quản lý",
+			items: [
 				{
-					title: "Tasks",
-					url: "/tasks",
-					icon: ListTodo,
+					title: "Danh sách bàn",
+					url: "/tables",
+					icon: Grid3x3,
 				},
 				{
-					title: "Apps",
-					url: "/apps",
+					title: "Lịch đặt bàn",
+					url: "/bookings",
+					icon: CalendarClock,
+				},
+				{
+					title: "Đơn hàng",
+					url: "/orders",
+					icon: ShoppingCart,
+				},
+			],
+		},
+		{
+			title: "Kho hàng",
+			items: [
+				{
+					title: "Sản phẩm",
+					url: "/app/products",
 					icon: Package,
 				},
 				{
-					title: "Chats",
-					url: "/chats",
-					badge: "3",
-					icon: MessagesSquare,
+					title: "Danh mục",
+					url: "/categories",
+					icon: Layers,
 				},
 				{
-					title: "Users",
+					title: "Lịch sử kho",
+					url: "/inventory-logs",
+					icon: ClipboardList,
+				},
+			],
+		},
+		{
+			title: "Tài chính",
+			items: [
+				{
+					title: "Giao dịch",
+					url: "/transactions",
+					icon: Receipt,
+				},
+				{
+					title: "Báo cáo",
+					url: "/reports",
+					icon: BarChart,
+				},
+			],
+		},
+		{
+			title: "Hệ thống",
+			items: [
+				{
+					title: "Người dùng",
 					url: "/users",
 					icon: Users,
 				},
-			],
-		},
-		{
-			title: "Pages",
-			items: [
 				{
-					title: "Auth",
-					icon: ShieldCheck,
-					items: [
-						{
-							title: "Sign In",
-							url: "/sign-in",
-						},
-						{
-							title: "Sign In (2 Col)",
-							url: "/sign-in-2",
-						},
-						{
-							title: "Sign Up",
-							url: "/sign-up",
-						},
-						{
-							title: "Forgot Password",
-							url: "/forgot-password",
-						},
-						{
-							title: "OTP",
-							url: "/otp",
-						},
-					],
-				},
-				{
-					title: "Errors",
-					icon: Bug,
-					items: [
-						{
-							title: "Unauthorized",
-							url: "/errors/unauthorized",
-							icon: Lock,
-						},
-						{
-							title: "Forbidden",
-							url: "/errors/forbidden",
-							icon: UserX,
-						},
-						{
-							title: "Not Found",
-							url: "/errors/not-found",
-							icon: FileX,
-						},
-						{
-							title: "Internal Server Error",
-							url: "/errors/internal-server-error",
-							icon: ServerOff,
-						},
-						{
-							title: "Maintenance Error",
-							url: "/errors/maintenance-error",
-							icon: Construction,
-						},
-					],
-				},
-			],
-		},
-		{
-			title: "Other",
-			items: [
-				{
-					title: "Settings",
+					title: "Cài đặt",
+					url: "/settings",
 					icon: Settings,
-					items: [
-						{
-							title: "Profile",
-							url: "/settings",
-							icon: UserCog,
-						},
-						{
-							title: "Account",
-							url: "/settings/account",
-							icon: Wrench,
-						},
-						{
-							title: "Appearance",
-							url: "/settings/appearance",
-							icon: Palette,
-						},
-						{
-							title: "Notifications",
-							url: "/settings/notifications",
-							icon: Bell,
-						},
-						{
-							title: "Display",
-							url: "/settings/display",
-							icon: Monitor,
-						},
-					],
-				},
-				{
-					title: "Help Center",
-					url: "/help-center",
-					icon: HelpCircle,
 				},
 			],
 		},

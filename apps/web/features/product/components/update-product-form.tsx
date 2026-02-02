@@ -25,64 +25,83 @@ import {
     SelectValue,
 } from "@workspace/ui/components/select";
 import { Textarea } from "@workspace/ui/components/textarea";
+import { useEffect } from "react";
 import type { Product } from "@/generated/prisma/client";
 import {
     type CreateProductInput,
     createProductSchema,
 } from "@/shared/schemas/product";
 import {
-    useCreateProduct,
     useGetCategories,
+    useUpdateProduct,
 } from "../hooks/use-product";
 
-interface CreateProductFormProps {
+interface UpdateProductFormProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    initialData: Product;
 }
 
-export function CreateProductForm({
+export function UpdateProductForm({
     open,
     onOpenChange,
-}: CreateProductFormProps) {
+    initialData,
+}: UpdateProductFormProps) {
     const { data: categories } = useGetCategories();
 
-    const { mutate: createProduct, isPending: isCreating } = useCreateProduct(
+    const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct(
         () => {
             onOpenChange(false);
-            form.reset();
         },
     );
 
     const form = useForm({
         defaultValues: {
-            name: "",
-            categoryId: "",
-            price: 0,
-            cost: 0,
-            currentStock: 0,
-            minStock: 0,
-            unit: "cái",
-            description: "",
-            imageUrl: "",
-            isAvailable: true,
+            name: initialData.name,
+            categoryId: initialData.categoryId,
+            price: initialData.price,
+            cost: initialData.cost ?? 0,
+            currentStock: initialData.currentStock,
+            minStock: initialData.minStock,
+            unit: initialData.unit,
+            description: initialData.description ?? "",
+            imageUrl: initialData.imageUrl ?? "",
+            isAvailable: initialData.isAvailable,
         },
         validators: {
             onChange: createProductSchema,
         },
         onSubmit: async ({ value }) => {
-            createProduct(value);
+            updateProduct({ id: initialData.id, data: value });
         },
     });
 
-    const isLoading = isCreating;
+    useEffect(() => {
+        if (open && initialData) {
+            form.reset({
+                name: initialData.name,
+                categoryId: initialData.categoryId,
+                price: initialData.price,
+                cost: initialData.cost ?? 0,
+                currentStock: initialData.currentStock,
+                minStock: initialData.minStock,
+                unit: initialData.unit,
+                description: initialData.description ?? "",
+                imageUrl: initialData.imageUrl ?? "",
+                isAvailable: initialData.isAvailable,
+            });
+        }
+    }, [initialData, open, form]);
+
+    const isLoading = isUpdating;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-160 max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Thêm sản phẩm mới</DialogTitle>
+                    <DialogTitle>Cập nhật sản phẩm</DialogTitle>
                     <DialogDescription>
-                        Điền thông tin để tạo sản phẩm mới.
+                        Chỉnh sửa thông tin sản phẩm.
                     </DialogDescription>
                 </DialogHeader>
                 <form
@@ -288,7 +307,7 @@ export function CreateProductForm({
                             Hủy
                         </Button>
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading ? "Đang xử lý..." : "Tạo mới"}
+                            {isLoading ? "Đang xử lý..." : "Lưu thay đổi"}
                         </Button>
                     </DialogFooter>
                 </form>
