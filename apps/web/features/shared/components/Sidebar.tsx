@@ -14,7 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
-import { useAuth } from "@/features/auth/hooks/use-auth"; // Import hook auth
+import { useAuth } from "@/features/auth/hooks/use-auth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 const menuItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -45,26 +45,35 @@ type SidebarProps = {
 export function Sidebar({ collapsed, onCollapseChange }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout, user } = useAuth(); // Sử dụng hook auth
+  const { logout, user } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const sidebarWidth = collapsed ? "w-16" : "w-64";
 
-  const handleLogout = async () => {
+  // Sử dụng useCallback để tránh re-render không cần thiết
+  const handleLogout = useCallback(async () => {
+    console.log('Bắt đầu logout...');
     setIsLoggingOut(true);
+    
     try {
+      console.log('Gọi hàm logout từ auth context...');
       await logout();
-      setLogoutDialogOpen(false);
-      // Chuyển hướng về trang login sau khi logout thành công
-      router.push("/login");
-      router.refresh(); // Refresh để cập nhật trạng thái auth
+      console.log('Logout thành công');
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
       setIsLoggingOut(false);
+      setLogoutDialogOpen(false); // Đảm bảo đóng dialog
+      
+      // Sử dụng setTimeout để tránh blocking UI
+      setTimeout(() => {
+        console.log('Chuyển hướng về /login...');
+        router.push("/login");
+        router.refresh();
+      }, 100);
     }
-  };
+  }, [logout, router]);
 
   // Hiển thị tên user nếu sidebar không collapsed
   const displayUserInfo = !collapsed && user;
@@ -180,11 +189,20 @@ export function Sidebar({ collapsed, onCollapseChange }: SidebarProps) {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel disabled={isLoggingOut}>
+                <AlertDialogCancel 
+                  disabled={isLoggingOut}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setLogoutDialogOpen(false);
+                  }}
+                >
                   Hủy
                 </AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={handleLogout}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleLogout();
+                  }}
                   disabled={isLoggingOut}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >

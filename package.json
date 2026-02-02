@@ -24,6 +24,7 @@
 	"dependencies": {
 		"@radix-ui/react-alert-dialog": "^1.1.15",
 		"@radix-ui/react-select": "^2.2.6",
+		"@radix-ui/react-tabs": "^1.1.13",
 		"react-day-picker": "^9.13.0"
 	}
 }
