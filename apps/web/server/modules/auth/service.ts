@@ -1,11 +1,11 @@
 import * as argon2 from "argon2";
-import { prisma } from "@/lib/db";
+import prisma from "@/lib/db";
 import type { LoginInput } from "@/shared/schemas/auth";
 
 export abstract class AuthService {
-	static async login({ phone, password }: LoginInput) {
-		const user = await prisma.user.findFirst({
-			where: { phone },
+	static async login({ email, password }: LoginInput) {
+		const user = await prisma.user.findUnique({
+			where: { email },
 		});
 
 		if (!user) {
