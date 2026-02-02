@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { 
   Search, 
@@ -35,9 +36,11 @@ export default function TablesPage() {
             <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Đang làm mới..." : "Làm mới"}
           </Button>
-          <Button onClick={() => setShowCreateForm(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Thêm bàn mới
+          <Button asChild>
+            <Link href="/tables/create">
+              <Plus className="mr-2 h-4 w-4" />
+              Thêm bàn mới
+            </Link>
           </Button>
         </div>
       </div>

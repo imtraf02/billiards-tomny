@@ -46,9 +46,9 @@ export function Sidebar({ collapsed, onCollapseChange }: SidebarProps) {
               Billiard Pro
             </h1>
           ) : (
-            <div className="w-8 h-8 rounded-lg bg-gradient-accent flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">
-                BP
+            <div className="w-8 h-8 rounded-lg  flex items-center justify-center">
+              <span className=" font-bold text-lg">
+                🎱
               </span>
             </div>
           )}
