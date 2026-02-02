@@ -18,10 +18,14 @@ export function Header() {
         {/* Theme Toggle */}
         <ThemeToggle />
 
-
         {/* Settings */}
-        <Button variant="ghost" size="icon" className="rounded-lg hover:bg-secondary transition-theme">
-          <Settings className="h-5 w-5" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 rounded-lg cursor-pointer"
+          title="Cài đặt"
+        >
+          <Settings className="h-4 w-4" />
         </Button>
 
         {/* User profile */}

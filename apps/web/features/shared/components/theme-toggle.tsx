@@ -32,7 +32,7 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="h-9 w-9 rounded-lg"
+      className="h-9 w-9 rounded-lg cursor-pointer"
       title={theme === "light" ? "Chuyển sang tối" : "Chuyển sang sáng"}
     >
       {theme === "light" ? (

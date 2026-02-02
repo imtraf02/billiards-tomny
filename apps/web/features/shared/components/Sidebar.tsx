@@ -78,7 +78,7 @@ export function Sidebar({ collapsed, onCollapseChange }: SidebarProps) {
               <Link key={item.href} href={item.href}>
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
-                  className={`w-full justify-start transition-theme ${
+                  className={`w-full justify-start cursor-pointer transition-theme ${
                     collapsed ? "px-2" : ""
                   } ${
                     isActive
@@ -104,10 +104,10 @@ export function Sidebar({ collapsed, onCollapseChange }: SidebarProps) {
         </nav>
 
         {/* Logout */}
-        <div className="border-t border-border p-4">
+        <div className="border-t border-border p-4 ">
           <Button
             variant="ghost"
-            className={`w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 transition-theme ${
+            className={`w-full justify-start text-destructive cursor-pointer hover:text-destructive hover:bg-destructive/10 transition-theme ${
               collapsed ? "px-2" : ""
             }`}
             title={collapsed ? "Đăng xuất" : undefined}

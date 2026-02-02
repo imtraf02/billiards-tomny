@@ -131,21 +131,7 @@ export default function TableCard({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Header với gradient theo loại bàn */}
-        <div className={`h-2 ${typeConfig.gradient} relative transition-theme`}>
-          {/* View detail badge */}
-          <div className="absolute -top-2 left-4 bg-card text-primary text-xs font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1 border border-border transition-theme">
-            <Eye className="h-3 w-3" />
-            Xem chi tiết
-          </div>
-          
-          {/* Timer badge nếu bàn đang sử dụng */}
-          {table.status === "occupied" && (
-            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-destructive/90 to-destructive text-destructive-foreground text-xs font-bold px-3 py-1 rounded-full shadow-lg transition-theme">
-              ⏱ 1:25:30
-            </div>
-          )}
-        </div>
+
         
         <div className="p-5 flex-1 flex flex-col transition-theme">
           <div className="flex items-start justify-between mb-4">
