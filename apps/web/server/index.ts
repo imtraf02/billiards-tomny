@@ -48,3 +48,5 @@ export const app = new Elysia({ prefix: "/api" })
 	.use(product)
 	.use(booking)
 	.use(order);
+
+export type App = typeof app;
