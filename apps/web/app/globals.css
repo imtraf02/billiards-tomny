@@ -1,113 +1,126 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  :root {
-    --background: 217 33% 97%;
-    --foreground: 217 33% 12%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 217 33% 12%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 217 33% 12%;
-
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 217 33% 95%;
-    --secondary-foreground: 217 33% 12%;
-
-    --muted: 217 33% 95%;
-    --muted-foreground: 217 20% 50%;
-
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 217 33% 88%;
-    --input: 217 33% 88%;
-    --ring: 217 91% 60%;
-
-    --radius: 0.5rem;
-    
-    /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(217, 60%, 8%) 0%, hsl(217, 33%, 12%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(217, 33%, 97%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(217, 91%, 70%) 100%);
-    
-    /* Transitions */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .dark {
-    --background: 217 60% 8%;
-    --foreground: 0 0% 98%;
-
-    --card: 217 33% 12%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 217 33% 12%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 217 33% 15%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 217 33% 15%;
-    --muted-foreground: 217 20% 65%;
-
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 217 91% 60%;
-  }
+@theme {
+  /* Định nghĩa màu sắc từ các biến CSS */
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  
+  /* Border radius */
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-    transition: var(--transition-smooth);
-  }
+/* Biến CSS (giữ nguyên) */
+:root {
+  --background: 217 33% 97%;
+  --foreground: 217 33% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 217 33% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 217 33% 12%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 217 33% 95%;
+  --secondary-foreground: 217 33% 12%;
+  --muted: 217 33% 95%;
+  --muted-foreground: 217 20% 50%;
+  --accent: 217 91% 60%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 217 33% 88%;
+  --input: 217 33% 88%;
+  --ring: 217 91% 60%;
+  --radius: 0.5rem;
   
-  /* Smooth transitions for theme switching */
-  .transition-theme {
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-  }
+  /* Gradients */
+  --gradient-hero: linear-gradient(135deg, hsl(217, 60%, 8%) 0%, hsl(217, 33%, 12%) 100%);
+  --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(217, 33%, 97%) 100%);
+  --gradient-accent: linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(217, 91%, 70%) 100%);
+  
+  /* Transitions */
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@layer utilities {
-  /* Custom gradient utilities */
-  .bg-gradient-hero {
-    background: var(--gradient-hero);
-  }
-  
-  .bg-gradient-card {
-    background: var(--gradient-card);
-  }
-  
-  .bg-gradient-accent {
-    background: var(--gradient-accent);
-  }
-  
-  .text-gradient-primary {
-    background: var(--gradient-accent);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+.dark {
+  --background: 217 60% 8%;
+  --foreground: 0 0% 98%;
+  --card: 217 33% 12%;
+  --card-foreground: 0 0% 98%;
+  --popover: 217 33% 12%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 217 33% 15%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 217 33% 15%;
+  --muted-foreground: 217 20% 65%;
+  --accent: 217 91% 60%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 217 33% 20%;
+  --input: 217 33% 20%;
+  --ring: 217 91% 60%;
+}
+
+/* Áp dụng styles */
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  transition: var(--transition-smooth);
+}
+
+/* Smooth transitions for theme switching */
+.transition-theme {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Custom gradient utilities */
+.bg-gradient-hero {
+  background: var(--gradient-hero);
+}
+
+.bg-gradient-card {
+  background: var(--gradient-card);
+}
+
+.bg-gradient-accent {
+  background: var(--gradient-accent);
+}
+
+.text-gradient-primary {
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

@@ -28,21 +28,17 @@ const menuItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
 
   const sidebarWidth = isCollapsed ? "w-16" : "w-64";
-  const isExpanded = !isCollapsed || isHovered;
 
   return (
     <div 
-      className={`fixed left-0 top-0 z-50 h-screen bg-card border-r border-border shadow-lg transition-all duration-300 ${sidebarWidth}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={`fixed left-0 top-0 z-50 h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 border-r border-border shadow-lg transition-all duration-300 ${sidebarWidth}`}
     >
       <div className="flex h-full flex-col">
         {/* Logo và nút toggle */}
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
-          {isExpanded ? (
+          {!isCollapsed ? (
             <h1 className="text-xl font-bold text-gradient-primary whitespace-nowrap">
               Billiard Pro
             </h1>
@@ -55,7 +51,7 @@ export function Sidebar() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 hover:bg-secondary transition-theme"
+            className="h-8 w-8 hover:bg-secondary/50 transition-theme"
             onClick={() => setIsCollapsed(!isCollapsed)}
           >
             {isCollapsed ? (
@@ -75,18 +71,18 @@ export function Sidebar() {
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
                   className={`w-full justify-start transition-theme ${
-                    isExpanded ? '' : 'px-2'
+                    isCollapsed ? 'px-2' : ''
                   } ${
                     isActive 
                       ? "bg-secondary text-secondary-foreground" 
                       : "text-foreground/80 hover:text-foreground hover:bg-secondary/50"
                   }`}
-                  title={!isExpanded ? item.label : ""}
+                  title={isCollapsed ? item.label : ""}
                 >
-                  <item.icon className={`h-5 w-5 ${isExpanded ? 'mr-3' : ''} ${
+                  <item.icon className={`h-5 w-5 ${isCollapsed ? '' : 'mr-3'} ${
                     isActive ? 'text-primary' : ''
                   }`} />
-                  {isExpanded && (
+                  {!isCollapsed && (
                     <span className="whitespace-nowrap">{item.label}</span>
                   )}
                 </Button>
@@ -100,12 +96,12 @@ export function Sidebar() {
           <Button 
             variant="ghost" 
             className={`w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 transition-theme ${
-              isExpanded ? '' : 'px-2'
+              isCollapsed ? 'px-2' : ''
             }`}
-            title={!isExpanded ? "Đăng xuất" : ""}
+            title={isCollapsed ? "Đăng xuất" : ""}
           >
-            <LogOut className={`h-5 w-5 ${isExpanded ? 'mr-3' : ''}`} />
-            {isExpanded && <span className="whitespace-nowrap">Đăng xuất</span>}
+            <LogOut className={`h-5 w-5 ${isCollapsed ? '' : 'mr-3'}`} />
+            {!isCollapsed && <span className="whitespace-nowrap">Đăng xuất</span>}
           </Button>
         </div>
       </div>

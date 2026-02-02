@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
+import { useState } from "react";
 
 export function DashboardLayout({
   children,
@@ -12,14 +12,16 @@ export function DashboardLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-background">
       <Sidebar onCollapseChange={setSidebarCollapsed} />
-      <div className={`flex-1 transition-all duration-300 ${
-        sidebarCollapsed ? 'ml-16' : 'ml-64'
-      }`}>
+      <div className="flex-1 flex flex-col">
         <Header />
-        <main className="p-6">
-          {children}
+        <main className={`flex-1 p-6 transition-all duration-300 ${
+          sidebarCollapsed ? 'pl-[4.5rem]' : 'pl-[17rem]'
+        }`}>
+          <div className="max-w-full min-w-0">
+            {children}
+          </div>
         </main>
       </div>
     </div>
