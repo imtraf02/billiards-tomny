@@ -15,17 +15,6 @@ import {
 } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { useAuth } from "@/features/auth/hooks/use-auth";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@workspace/ui/components/alert-dialog";
 import { useState, useCallback } from "react";
 
 const menuItems = [
@@ -47,7 +36,6 @@ export function Sidebar({ collapsed, onCollapseChange }: SidebarProps) {
   const router = useRouter();
   const { logout, user } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const sidebarWidth = collapsed ? "w-16" : "w-64";
 
@@ -64,16 +52,12 @@ export function Sidebar({ collapsed, onCollapseChange }: SidebarProps) {
       console.error("Logout error:", error);
     } finally {
       setIsLoggingOut(false);
-      setLogoutDialogOpen(false); // Đảm bảo đóng dialog
       
-      // Sử dụng setTimeout để tránh blocking UI
-      setTimeout(() => {
-        console.log('Chuyển hướng về /login...');
-        router.push("/login");
-        router.refresh();
-      }, 100);
+      // Chuyển hướng
+      console.log('Chuyển hướng về /login...');
+      window.location.href = "/login";
     }
-  }, [logout, router]);
+  }, [logout]);
 
   // Hiển thị tên user nếu sidebar không collapsed
   const displayUserInfo = !collapsed && user;
@@ -163,54 +147,22 @@ export function Sidebar({ collapsed, onCollapseChange }: SidebarProps) {
 
         {/* Logout */}
         <div className="border-t border-border p-4">
-          <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                className={`w-full justify-start text-destructive cursor-pointer hover:text-destructive hover:bg-destructive/10 transition-theme ${
-                  collapsed ? "px-2" : ""
-                }`}
-                title={collapsed ? "Đăng xuất" : undefined}
-                disabled={isLoggingOut}
-              >
-                <LogOut className={`h-5 w-5 ${collapsed ? "" : "mr-3"}`} />
-                {!collapsed && (
-                  <span className="whitespace-nowrap">
-                    {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
-                  </span>
-                )}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Xác nhận đăng xuất</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel 
-                  disabled={isLoggingOut}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setLogoutDialogOpen(false);
-                  }}
-                >
-                  Hủy
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleLogout();
-                  }}
-                  disabled={isLoggingOut}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button
+            variant="ghost"
+            className={`w-full justify-start text-destructive cursor-pointer hover:text-destructive hover:bg-destructive/10 transition-theme ${
+              collapsed ? "px-2" : ""
+            }`}
+            title={collapsed ? "Đăng xuất" : undefined}
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
+            <LogOut className={`h-5 w-5 ${collapsed ? "" : "mr-3"}`} />
+            {!collapsed && (
+              <span className="whitespace-nowrap">
+                {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
+              </span>
+            )}
+          </Button>
         </div>
       </div>
     </aside>
