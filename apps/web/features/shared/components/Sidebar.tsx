@@ -12,8 +12,7 @@ import {
   LogOut,
   Grid3X3,
   ChevronLeft,
-  ChevronRight,
-  Menu
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -36,25 +35,27 @@ export function Sidebar() {
 
   return (
     <div 
-      className={`fixed left-0 top-0 z-50 h-screen bg-white shadow-lg transition-all duration-300 ${sidebarWidth}`}
+      className={`fixed left-0 top-0 z-50 h-screen bg-card border-r border-border shadow-lg transition-all duration-300 ${sidebarWidth}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex h-full flex-col">
         {/* Logo và nút toggle */}
-        <div className="flex h-16 items-center justify-between border-b px-4">
+        <div className="flex h-16 items-center justify-between border-b border-border px-4">
           {isExpanded ? (
-            <h1 className="text-xl font-bold text-blue-700 whitespace-nowrap">Billiard Pro</h1>
+            <h1 className="text-xl font-bold text-gradient-primary whitespace-nowrap">
+              Billiard Pro
+            </h1>
           ) : (
-            <div className="w-8 h-8 rounded-lg bg-blue-700 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">BP</span>
+            <div className="w-8 h-8 rounded-lg bg-gradient-accent flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-sm">BP</span>
             </div>
           )}
           
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 hover:bg-secondary transition-theme"
             onClick={() => setIsCollapsed(!isCollapsed)}
           >
             {isCollapsed ? (
@@ -73,12 +74,18 @@ export function Sidebar() {
               <Link key={item.href} href={item.href}>
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
-                  className={`w-full justify-start ${isExpanded ? '' : 'px-2'} ${
-                    isActive ? "bg-blue-50 text-blue-700 hover:bg-blue-100" : ""
+                  className={`w-full justify-start transition-theme ${
+                    isExpanded ? '' : 'px-2'
+                  } ${
+                    isActive 
+                      ? "bg-secondary text-secondary-foreground" 
+                      : "text-foreground/80 hover:text-foreground hover:bg-secondary/50"
                   }`}
                   title={!isExpanded ? item.label : ""}
                 >
-                  <item.icon className={`h-5 w-5 ${isExpanded ? 'mr-3' : ''}`} />
+                  <item.icon className={`h-5 w-5 ${isExpanded ? 'mr-3' : ''} ${
+                    isActive ? 'text-primary' : ''
+                  }`} />
                   {isExpanded && (
                     <span className="whitespace-nowrap">{item.label}</span>
                   )}
@@ -89,10 +96,10 @@ export function Sidebar() {
         </nav>
 
         {/* Logout button */}
-        <div className="border-t p-4">
+        <div className="border-t border-border p-4">
           <Button 
             variant="ghost" 
-            className={`w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 ${
+            className={`w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 transition-theme ${
               isExpanded ? '' : 'px-2'
             }`}
             title={!isExpanded ? "Đăng xuất" : ""}

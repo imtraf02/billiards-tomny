@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "next-themes";
 import { Providers } from "@/components/providers";
-import { DashboardLayout } from "@/features/shared/components";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Billiard Management System",
-  description: "Hệ thống quản lý quán billiards",
+  title: "Billiard Pro",
+  description: "Quản lý quán bida chuyên nghiệp",
 };
 
 export default function RootLayout({
@@ -18,10 +18,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body className={`${inter.className} bg-gray-50`}>
-        <Providers>
+      <body className={inter.className}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
           {children}
-        </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

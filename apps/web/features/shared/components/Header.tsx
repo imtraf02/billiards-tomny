@@ -1,82 +1,59 @@
 "use client";
 
-import { useState } from "react";
-import { Bell, Settings, Sun, Moon, User } from "lucide-react";
+import { Bell, Settings, User, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/features/shared/components/theme-toggle";
+import { useState } from "react";
 
 export function Header() {
-  const [darkMode, setDarkMode] = useState(false);
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    // Thêm logic chuyển theme ở đây nếu cần
-    if (!darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  };
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-white px-6 dark:bg-gray-900 dark:border-gray-800">
-      <div className="flex items-center gap-4">
-        {/* Search bar */}
-        <div className="relative w-64">
-          <Input
-            type="search"
-            placeholder="Tìm kiếm..."
-            className="pl-10"
-          />
-          <svg
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-card px-6 transition-theme">
+      <div className="flex items-center gap-4 flex-1">
+
+
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Dark mode toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleDarkMode}
-          className="rounded-full"
-          title={darkMode ? "Chuyển sang sáng" : "Chuyển sang tối"}
-        >
-          {darkMode ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-        </Button>
-
+        {/* Theme Toggle */}
+        <ThemeToggle />
 
 
         {/* Settings */}
-        <Button variant="ghost" size="icon" className="rounded-full">
+        <Button variant="ghost" size="icon" className="rounded-lg hover:bg-secondary transition-theme">
           <Settings className="h-5 w-5" />
         </Button>
 
         {/* User profile */}
-        <Button variant="ghost" className="gap-2 rounded-full">
-          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-            <User className="h-4 w-4 text-blue-600" />
+        <div className="relative group">
+          <Button variant="ghost" className="gap-2 rounded-lg hover:bg-secondary transition-theme">
+            <div className="h-8 w-8 rounded-full bg-gradient-accent flex items-center justify-center">
+              <User className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <div className="hidden md:block text-left">
+              <div className="text-sm font-medium">Admin</div>
+              <div className="text-xs text-muted-foreground">Quản trị viên</div>
+            </div>
+          </Button>
+          
+          {/* Dropdown menu */}
+          <div className="absolute right-0 top-full mt-2 w-48 bg-popover text-popover-foreground rounded-lg shadow-lg border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+            <div className="py-2">
+              <button className="w-full px-4 py-2 text-left text-sm hover:bg-secondary transition-theme">
+                👤 Hồ sơ
+              </button>
+              <button className="w-full px-4 py-2 text-left text-sm hover:bg-secondary transition-theme">
+                ⚙️ Cài đặt
+              </button>
+              <hr className="my-1 border-border" />
+              <button className="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-destructive/10 transition-theme">
+                🚪 Đăng xuất
+              </button>
+            </div>
           </div>
-          <div className="hidden md:block text-left">
-            <div className="text-sm font-medium">Admin</div>
-            <div className="text-xs text-gray-500">Quản trị viên</div>
-          </div>
-        </Button>
+        </div>
       </div>
     </header>
   );
