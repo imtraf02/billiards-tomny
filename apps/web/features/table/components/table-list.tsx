@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@workspace/ui/components/card";
-import { useTables } from "../hooks";
+import { useTables, useDeleteTable } from "../hooks";
 import TableCard from "./table-card";
 import type { Table } from "../types";
 
@@ -10,18 +10,44 @@ interface TableListProps {
 }
 
 export default function TableList({ search = "" }: TableListProps) {
-  const { data: tables, isLoading, error } = useTables();
+  const { 
+    data: tables, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useTables();
+  const deleteMutation = useDeleteTable();
 
   const handleEdit = (table: Table) => {
     console.log("Edit table:", table);
     // TODO: Open edit modal
   };
 
-  const handleDelete = (table: Table) => {
+  const handleDelete = async (table: Table) => {
     if (confirm(`Bạn có chắc muốn xóa bàn "${table.name}"?`)) {
-      console.log("Delete table:", table);
-      // TODO: Delete table
+      try {
+        await deleteMutation.mutateAsync(table.id);
+        refetch(); // Refresh data after delete
+      } catch (error) {
+        console.error("Error deleting table:", error);
+        alert("Có lỗi xảy ra khi xóa bàn");
+      }
     }
+  };
+
+  const handleStart = (table: Table) => {
+    console.log("Start using table:", table);
+    // TODO: Implement start using table logic
+  };
+
+  const handleEnd = (table: Table) => {
+    console.log("End using table:", table);
+    // TODO: Implement end using table logic
+  };
+
+  const handleAddOrder = (table: Table) => {
+    console.log("Add order to table:", table);
+    // TODO: Implement add order logic
   };
 
   if (isLoading) {
@@ -49,9 +75,9 @@ export default function TableList({ search = "" }: TableListProps) {
               ⚠️
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-1">Đã xảy ra lỗi</h3>
-            <p className="text-gray-500 mb-4">{error}</p>
+            <p className="text-gray-500 mb-4">Không thể tải danh sách bàn</p>
             <button 
-              onClick={() => window.location.reload()}
+              onClick={() => refetch()}
               className="text-sm text-blue-600 hover:text-blue-800"
             >
               Thử lại
@@ -120,6 +146,9 @@ export default function TableList({ search = "" }: TableListProps) {
               table={table}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onStart={handleStart}
+              onEnd={handleEnd}
+              onAddOrder={handleAddOrder}
             />
           </div>
         ))}

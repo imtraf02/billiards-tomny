@@ -20,43 +20,43 @@ import {
   Users, 
   Hash, 
   MessageSquare,
-  Info,
-  Calendar,
-  Clock,
-  Package
+  Info
 } from "lucide-react";
 import Link from "next/link";
+import { useCreateTable } from "../hooks";
 
 export default function CreateTablePage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    type: "pool",
-    status: "available",
+    type: "pool" as const,
+    status: "available" as const,
     pricePerHour: "",
     seats: "4",
     description: "",
   });
 
+  const createMutation = useCreateTable();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     
-    // TODO: Gọi API để tạo bàn
     const tableData = {
-      ...formData,
+      name: formData.name,
+      type: formData.type,
+      status: formData.status,
       pricePerHour: parseInt(formData.pricePerHour),
       seats: parseInt(formData.seats),
+      description: formData.description || undefined,
     };
     
-    console.log("Form data:", tableData);
-    
-    // Giả lập API call
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await createMutation.mutateAsync(tableData);
       router.push("/tables");
-    }, 1000);
+    } catch (error) {
+      console.error("Error creating table:", error);
+      alert("Có lỗi xảy ra khi tạo bàn");
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -98,6 +98,7 @@ export default function CreateTablePage() {
   };
 
   const typeInfo = getTableTypeInfo(formData.type);
+  const loading = createMutation.isPending;
 
   return (
     <div className="space-y-6">
@@ -114,13 +115,8 @@ export default function CreateTablePage() {
               Quay lại
             </Link>
           </Button>
-          <Button variant="outline">
-            <Clock className="mr-2 h-4 w-4" />
-            Xem trước
-          </Button>
         </div>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Form Card */}
         <Card className="lg:col-span-2">
@@ -144,6 +140,7 @@ export default function CreateTablePage() {
                     placeholder="VD: Bàn 1, Bàn VIP A1"
                     className="h-11"
                     required
+                    disabled={loading}
                   />
                   <p className="text-xs text-muted-foreground">Tên duy nhất để dễ nhận biết bàn</p>
                 </div>
@@ -155,7 +152,10 @@ export default function CreateTablePage() {
                     <Label htmlFor="type" className="font-medium">Loại bàn *</Label>
                     <Select
                       value={formData.type}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+                      onValueChange={(value: "pool" | "carom" | "snooker") => 
+                        setFormData(prev => ({ ...prev, type: value }))
+                      }
+                      disabled={loading}
                     >
                       <SelectTrigger className="h-11">
                         <SelectValue placeholder="Chọn loại bàn" />
@@ -197,7 +197,10 @@ export default function CreateTablePage() {
                     <Label htmlFor="status" className="font-medium">Trạng thái</Label>
                     <Select
                       value={formData.status}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+                      onValueChange={(value: "available" | "occupied" | "reserved" | "maintenance") => 
+                        setFormData(prev => ({ ...prev, status: value }))
+                      }
+                      disabled={loading}
                     >
                       <SelectTrigger className="h-11">
                         <SelectValue placeholder="Chọn trạng thái" />
@@ -213,6 +216,18 @@ export default function CreateTablePage() {
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-gray-500"></div>
                             <span>Bảo trì</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="occupied">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                            <span>Đang sử dụng</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="reserved">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                            <span>Đã đặt</span>
                           </div>
                         </SelectItem>
                       </SelectContent>
@@ -236,6 +251,8 @@ export default function CreateTablePage() {
                       placeholder="80000"
                       className="h-11"
                       required
+                      min="0"
+                      disabled={loading}
                     />
                   </div>
 
@@ -254,6 +271,7 @@ export default function CreateTablePage() {
                       min="2"
                       max="10"
                       className="h-11"
+                      disabled={loading}
                     />
                   </div>
                 </div>
@@ -271,6 +289,7 @@ export default function CreateTablePage() {
                     onChange={handleChange}
                     placeholder="Mô tả về bàn (vị trí, đặc điểm, ghi chú)..."
                     rows={3}
+                    disabled={loading}
                   />
                   <p className="text-xs text-muted-foreground">Thêm thông tin chi tiết về bàn để dễ quản lý</p>
                 </div>
@@ -347,9 +366,15 @@ export default function CreateTablePage() {
                   <div className={`px-3 py-1 rounded-full text-sm font-medium inline-block ${
                     formData.status === "available" 
                       ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" 
+                      : formData.status === "occupied"
+                      ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                      : formData.status === "reserved"
+                      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
                       : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
                   }`}>
-                    {formData.status === "available" ? "🟢 Trống" : "⚫ Bảo trì"}
+                    {formData.status === "available" ? "🟢 Trống" : 
+                     formData.status === "occupied" ? "🔴 Đang sử dụng" :
+                     formData.status === "reserved" ? "🟡 Đã đặt" : "⚫ Bảo trì"}
                   </div>
                 </div>
 
@@ -359,88 +384,6 @@ export default function CreateTablePage() {
                     <div className="text-sm bg-secondary/30 p-3 rounded-lg">{formData.description}</div>
                   </div>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Tips Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5" />
-                Lời khuyên
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Đặt tên bàn dễ nhớ để dễ quản lý</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Chọn loại bàn phù hợp với không gian</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Thiết lập giá hợp lý theo từng khung giờ</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>Thêm mô tả để ghi chú đặc điểm riêng</span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          {/* Quick Stats Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Thống kê nhanh
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="rounded-full bg-blue-100 p-2 mr-3">
-                      <Calendar className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="font-medium">Bàn hoạt động</div>
-                      <div className="text-sm text-gray-500">12/20 bàn</div>
-                    </div>
-                  </div>
-                  <div className="text-green-600 font-medium">60%</div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="rounded-full bg-yellow-100 p-2 mr-3">
-                      <Clock className="h-4 w-4 text-yellow-600" />
-                    </div>
-                    <div>
-                      <div className="font-medium">Tỷ lệ sử dụng</div>
-                      <div className="text-sm text-gray-500">Hôm nay</div>
-                    </div>
-                  </div>
-                  <div className="text-blue-600 font-medium">75%</div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="rounded-full bg-green-100 p-2 mr-3">
-                      <DollarSign className="h-4 w-4 text-green-600" />
-                    </div>
-                    <div>
-                      <div className="font-medium">Doanh thu TB/bàn</div>
-                      <div className="text-sm text-gray-500">450.000đ/ngày</div>
-                    </div>
-                  </div>
-                  <div className="text-green-600 font-medium">+8%</div>
-                </div>
               </div>
             </CardContent>
           </Card>

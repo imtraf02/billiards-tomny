@@ -13,8 +13,7 @@ import {
   MapPin,
   PlayCircle,
   StopCircle,
-  PlusCircle,
-  Eye
+  PlusCircle
 } from "lucide-react";
 import type { Table } from "../types";
 
@@ -67,11 +66,18 @@ export default function TableCard({
           text: "Bảo trì",
           badgeClass: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
         };
+      default:
+        return {
+          color: "bg-gray-500",
+          icon: "⚫",
+          text: "Không xác định",
+          badgeClass: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
+        };
     }
   };
 
-  const getTableTypeConfig = (type: Table["type"]) => {
-    switch (type) {
+  const getTableTypeConfig = (type: string) => {
+    switch (type?.toLowerCase()) {
       case "pool":
         return {
           gradient: "bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700",
@@ -93,11 +99,18 @@ export default function TableCard({
           icon: "🎮",
           description: "Bàn Snooker VIP"
         };
+      default:
+        return {
+          gradient: "bg-gradient-to-r from-gray-500 to-gray-600 dark:from-gray-600 dark:to-gray-700",
+          text: "Khác",
+          icon: "🎱",
+          description: "Bàn không xác định"
+        };
     }
   };
 
   const statusConfig = getStatusConfig(table.status);
-  const typeConfig = getTableTypeConfig(table.type);
+  const typeConfig = getTableTypeConfig(table.type || "pool"); // Thêm fallback
 
   const handleStart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -131,8 +144,6 @@ export default function TableCard({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-
-        
         <div className="p-5 flex-1 flex flex-col transition-theme">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1 min-w-0">
@@ -165,7 +176,7 @@ export default function TableCard({
                   </span>
                 </div>
                 <p className="font-bold text-lg text-card-foreground transition-theme">
-                  {table.pricePerHour.toLocaleString('vi-VN')}₫
+                  {(table.pricePerHour || 0).toLocaleString('vi-VN')}₫
                 </p>
               </div>
               

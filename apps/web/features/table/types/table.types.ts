@@ -1,29 +1,38 @@
+export type TableType = "pool" | "carom" | "snooker";
+export type TableStatus = "available" | "occupied" | "reserved" | "maintenance";
+
 export interface Table {
   id: string;
   name: string;
-  type: 'pool' | 'carom' | 'snooker';
-  status: 'available' | 'occupied' | 'reserved' | 'maintenance';
+  type: TableType;
+  status: TableStatus;
   pricePerHour: number;
   seats?: number;
   description?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface CreateTableDto {
+export interface CreateTableInput {
   name: string;
-  type: 'pool' | 'carom' | 'snooker';
-  status?: 'available' | 'maintenance';
+  type: TableType;
+  status: TableStatus;
   pricePerHour: number;
   seats?: number;
   description?: string;
 }
 
-export interface UpdateTableDto {
+export interface UpdateTableInput {
   name?: string;
-  type?: 'pool' | 'carom' | 'snooker';
-  status?: 'available' | 'occupied' | 'reserved' | 'maintenance';
+  type?: TableType;
+  status?: TableStatus;
   pricePerHour?: number;
   seats?: number;
   description?: string;
+}
+
+export interface GetTablesQuery {
+  search?: string;
+  type?: TableType;
+  status?: TableStatus;
 }
