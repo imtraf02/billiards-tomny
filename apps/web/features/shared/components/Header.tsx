@@ -8,29 +8,16 @@ import { useState } from "react";
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 px-6 transition-theme">
-      {/* Left side - Empty or could add page title */}
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-gradient-sidebar px-6 transition-theme">
+      {/* Left side - Search bar */}
       <div className="flex items-center gap-4 flex-1">
-        <h2 className="text-lg font-semibold text-card-foreground hidden md:block">
-          Quản lý quán bida
-        </h2>
+
       </div>
 
       <div className="flex items-center gap-2">
         {/* Theme Toggle */}
         <ThemeToggle />
 
-        {/* Notifications */}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="relative rounded-lg hover:bg-secondary transition-theme"
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-xs text-destructive-foreground flex items-center justify-center">
-            3
-          </span>
-        </Button>
 
         {/* Settings */}
         <Button variant="ghost" size="icon" className="rounded-lg hover:bg-secondary transition-theme">

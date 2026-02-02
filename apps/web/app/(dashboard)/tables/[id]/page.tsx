@@ -188,9 +188,9 @@ export default function TableDetailPage() {
   const totalCost = tableCost + itemsCost;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6">
+      <div className="bg-gradient-header text-white p-6">
         <div className="max-w-7xl mx-auto">
           <Button
             variant="ghost"
@@ -204,7 +204,7 @@ export default function TableDetailPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">{table.name}</h1>
-              <p className="text-blue-100">
+              <p className="text-white/80">
                 {table.type === "pool" ? "🎱 Bàn Pool" : table.type === "carom" ? "🎯 Bàn Carom" : "🎮 Bàn Snooker"} • {table.seats} ghế
               </p>
             </div>
@@ -213,12 +213,12 @@ export default function TableDetailPage() {
               <div className="text-2xl font-bold">{table.pricePerHour.toLocaleString('vi-VN')}₫/giờ</div>
               <div className={`px-3 py-1 rounded-full text-sm font-semibold inline-block ${
                 table.status === "available" 
-                  ? "bg-green-100 text-green-800" 
+                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" 
                   : table.status === "occupied" 
-                  ? "bg-red-100 text-red-800" 
+                  ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" 
                   : table.status === "reserved" 
-                  ? "bg-yellow-100 text-yellow-800" 
-                  : "bg-gray-100 text-gray-800"
+                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" 
+                  : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
               }`}>
                 {table.status === "available" ? "🟢 Trống" : 
                  table.status === "occupied" ? "🔴 Đang sử dụng" : 
@@ -241,40 +241,40 @@ export default function TableDetailPage() {
             <CardContent>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-lg p-4 border border-border">
                     <div className="flex items-center gap-2 mb-2">
-                      <Clock className="h-5 w-5 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-600">Thời gian sử dụng</span>
+                      <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Thời gian sử dụng</span>
                     </div>
                     {table.status === "occupied" ? (
-                      <div className="text-3xl font-bold text-gray-900">
+                      <div className="text-3xl font-bold text-foreground">
                         {timeElapsed.hours.toString().padStart(2, '0')}:
                         {timeElapsed.minutes.toString().padStart(2, '0')}:
                         {timeElapsed.seconds.toString().padStart(2, '0')}
                       </div>
                     ) : (
-                      <div className="text-2xl font-bold text-gray-500">--:--:--</div>
+                      <div className="text-2xl font-bold text-muted-foreground">--:--:--</div>
                     )}
                   </div>
                   
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-lg p-4 border border-border">
                     <div className="flex items-center gap-2 mb-2">
-                      <DollarSign className="h-5 w-5 text-green-600" />
-                      <span className="text-sm font-medium text-green-600">Tiền bàn</span>
+                      <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      <span className="text-sm font-medium text-green-600 dark:text-green-400">Tiền bàn</span>
                     </div>
-                    <div className="text-3xl font-bold text-gray-900">
+                    <div className="text-3xl font-bold text-foreground">
                       {tableCost.toLocaleString('vi-VN')}₫
                     </div>
                   </div>
                 </div>
                 
                 {table.description && (
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="bg-secondary/50 rounded-lg p-4 border border-border">
                     <div className="flex items-center gap-2 mb-2">
-                      <MapPin className="h-5 w-5 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">Mô tả</span>
+                      <MapPin className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm font-medium text-muted-foreground">Mô tả</span>
                     </div>
-                    <p className="text-gray-600">{table.description}</p>
+                    <p className="text-foreground/80">{table.description}</p>
                   </div>
                 )}
               </div>
@@ -292,8 +292,8 @@ export default function TableDetailPage() {
                 <Button
                   onClick={handleStart}
                   className={`h-16 ${table.status === "available" 
-                    ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700" 
-                    : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}
+                    ? "bg-gradient-accent hover:opacity-90" 
+                    : "bg-muted text-muted-foreground cursor-not-allowed"}`}
                   disabled={table.status !== "available"}
                 >
                   <div className="flex flex-col items-center">
@@ -306,8 +306,8 @@ export default function TableDetailPage() {
                 <Button
                   onClick={() => setShowReservationModal(true)}
                   className={`h-16 ${table.status === "available" 
-                    ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800" 
-                    : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}
+                    ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600" 
+                    : "bg-muted text-muted-foreground cursor-not-allowed"}`}
                   disabled={table.status !== "available"}
                 >
                   <div className="flex flex-col items-center">
@@ -320,8 +320,8 @@ export default function TableDetailPage() {
                 <Button
                   onClick={handlePause}
                   className={`h-16 ${table.status === "occupied" 
-                    ? "bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-700 hover:to-amber-700" 
-                    : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}
+                    ? "bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-600" 
+                    : "bg-muted text-muted-foreground cursor-not-allowed"}`}
                   disabled={table.status !== "occupied"}
                 >
                   <div className="flex flex-col items-center">
@@ -334,8 +334,8 @@ export default function TableDetailPage() {
                 <Button
                   onClick={handleEnd}
                   className={`h-16 ${table.status === "occupied" 
-                    ? "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800" 
-                    : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}
+                    ? "bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600" 
+                    : "bg-muted text-muted-foreground cursor-not-allowed"}`}
                   disabled={table.status !== "occupied"}
                 >
                   <div className="flex flex-col items-center">
@@ -359,12 +359,12 @@ export default function TableDetailPage() {
               <CardContent>
                 <div className="space-y-3">
                   {cart.map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg border border-border">
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{item.image}</span>
                         <div>
                           <div className="font-medium">{item.name}</div>
-                          <div className="text-sm text-gray-500">{item.price.toLocaleString('vi-VN')}₫</div>
+                          <div className="text-sm text-muted-foreground">{item.price.toLocaleString('vi-VN')}₫</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -391,7 +391,7 @@ export default function TableDetailPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="text-red-600"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={() => removeFromCart(item.id)}
                         >
                           <XCircle className="h-4 w-4" />
@@ -400,16 +400,16 @@ export default function TableDetailPage() {
                     </div>
                   ))}
                   
-                  <div className="pt-4 border-t">
+                  <div className="pt-4 border-t border-border">
                     <div className="flex justify-between items-center">
                       <div>
-                        <div className="text-sm text-gray-500">Tổng đơn hàng</div>
-                        <div className="text-2xl font-bold text-green-600">
+                        <div className="text-sm text-muted-foreground">Tổng đơn hàng</div>
+                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                           {itemsCost.toLocaleString('vi-VN')}₫
                         </div>
                       </div>
                       <Button
-                        className="bg-gradient-to-r from-green-600 to-emerald-600"
+                        className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
                         onClick={handleCheckout}
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
@@ -449,14 +449,14 @@ export default function TableDetailPage() {
                   {drinkProducts.map(product => (
                     <div
                       key={product.id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-all hover:shadow-md"
+                      className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-secondary/50 cursor-pointer transition-all"
                       onClick={() => addToCart(product)}
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{product.image}</span>
                         <div>
                           <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-gray-500">{product.price.toLocaleString('vi-VN')}₫</div>
+                          <div className="text-sm text-muted-foreground">{product.price.toLocaleString('vi-VN')}₫</div>
                         </div>
                       </div>
                       <Button size="sm" variant="outline">
@@ -470,14 +470,14 @@ export default function TableDetailPage() {
                   {foodProducts.map(product => (
                     <div
                       key={product.id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-all hover:shadow-md"
+                      className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-secondary/50 cursor-pointer transition-all"
                       onClick={() => addToCart(product)}
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{product.image}</span>
                         <div>
                           <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-gray-500">{product.price.toLocaleString('vi-VN')}₫</div>
+                          <div className="text-sm text-muted-foreground">{product.price.toLocaleString('vi-VN')}₫</div>
                         </div>
                       </div>
                       <Button size="sm" variant="outline">
@@ -490,20 +490,20 @@ export default function TableDetailPage() {
 
               {/* Cart Summary */}
               {cart.length > 0 && (
-                <div className="mt-6 pt-6 border-t">
+                <div className="mt-6 pt-6 border-t border-border">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <div className="text-sm text-gray-500">Giỏ hàng</div>
+                      <div className="text-sm text-muted-foreground">Giỏ hàng</div>
                       <div className="text-lg font-bold">{cart.length} món</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-gray-500">Tổng tiền</div>
-                      <div className="text-xl font-bold text-green-600">
+                      <div className="text-sm text-muted-foreground">Tổng tiền</div>
+                      <div className="text-xl font-bold text-green-600 dark:text-green-400">
                         {itemsCost.toLocaleString('vi-VN')}₫
                       </div>
                     </div>
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-muted-foreground">
                     Nhấn vào món để thêm vào giỏ, nhấn vào giỏ hàng để xem chi tiết
                   </div>
                 </div>
@@ -519,17 +519,17 @@ export default function TableDetailPage() {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Tiền bàn:</span>
+                  <span className="text-muted-foreground">Tiền bàn:</span>
                   <span className="font-medium">{tableCost.toLocaleString('vi-VN')}₫</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Đồ ăn/uống:</span>
+                  <span className="text-muted-foreground">Đồ ăn/uống:</span>
                   <span className="font-medium">{itemsCost.toLocaleString('vi-VN')}₫</span>
                 </div>
-                <div className="pt-3 border-t">
+                <div className="pt-3 border-t border-border">
                   <div className="flex justify-between text-lg font-bold">
                     <span>Tổng cộng:</span>
-                    <span className="text-green-600">{totalCost.toLocaleString('vi-VN')}₫</span>
+                    <span className="text-green-600 dark:text-green-400">{totalCost.toLocaleString('vi-VN')}₫</span>
                   </div>
                 </div>
               </div>
@@ -541,8 +541,8 @@ export default function TableDetailPage() {
       {/* Reservation Modal */}
       {showReservationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
-            <div className="p-6 border-b">
+          <div className="bg-card text-card-foreground rounded-xl shadow-2xl w-full max-w-md mx-4 border border-border">
+            <div className="p-6 border-b border-border">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">Đặt bàn trước</h2>
                 <Button
@@ -590,7 +590,7 @@ export default function TableDetailPage() {
                 />
               </div>
             </div>
-            <div className="p-6 border-t">
+            <div className="p-6 border-t border-border">
               <div className="flex gap-3">
                 <Button
                   variant="outline"
@@ -600,7 +600,7 @@ export default function TableDetailPage() {
                   Hủy
                 </Button>
                 <Button
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700"
+                  className="flex-1 bg-gradient-accent"
                   onClick={handleReserve}
                 >
                   <Calendar className="mr-2 h-4 w-4" />
