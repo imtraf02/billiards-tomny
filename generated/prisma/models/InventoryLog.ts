@@ -28,14 +28,16 @@ export type AggregateInventoryLog = {
 
 export type InventoryLogAvgAggregateOutputType = {
   quantity: number | null
-  unitCost: number | null
+  costSnapshot: number | null
+  priceSnapshot: number | null
   stockBefore: number | null
   stockAfter: number | null
 }
 
 export type InventoryLogSumAggregateOutputType = {
   quantity: number | null
-  unitCost: number | null
+  costSnapshot: number | null
+  priceSnapshot: number | null
   stockBefore: number | null
   stockAfter: number | null
 }
@@ -46,7 +48,8 @@ export type InventoryLogMinAggregateOutputType = {
   userId: string | null
   type: string | null
   quantity: number | null
-  unitCost: number | null
+  costSnapshot: number | null
+  priceSnapshot: number | null
   reason: string | null
   note: string | null
   stockBefore: number | null
@@ -60,7 +63,8 @@ export type InventoryLogMaxAggregateOutputType = {
   userId: string | null
   type: string | null
   quantity: number | null
-  unitCost: number | null
+  costSnapshot: number | null
+  priceSnapshot: number | null
   reason: string | null
   note: string | null
   stockBefore: number | null
@@ -74,7 +78,8 @@ export type InventoryLogCountAggregateOutputType = {
   userId: number
   type: number
   quantity: number
-  unitCost: number
+  costSnapshot: number
+  priceSnapshot: number
   reason: number
   note: number
   stockBefore: number
@@ -86,14 +91,16 @@ export type InventoryLogCountAggregateOutputType = {
 
 export type InventoryLogAvgAggregateInputType = {
   quantity?: true
-  unitCost?: true
+  costSnapshot?: true
+  priceSnapshot?: true
   stockBefore?: true
   stockAfter?: true
 }
 
 export type InventoryLogSumAggregateInputType = {
   quantity?: true
-  unitCost?: true
+  costSnapshot?: true
+  priceSnapshot?: true
   stockBefore?: true
   stockAfter?: true
 }
@@ -104,7 +111,8 @@ export type InventoryLogMinAggregateInputType = {
   userId?: true
   type?: true
   quantity?: true
-  unitCost?: true
+  costSnapshot?: true
+  priceSnapshot?: true
   reason?: true
   note?: true
   stockBefore?: true
@@ -118,7 +126,8 @@ export type InventoryLogMaxAggregateInputType = {
   userId?: true
   type?: true
   quantity?: true
-  unitCost?: true
+  costSnapshot?: true
+  priceSnapshot?: true
   reason?: true
   note?: true
   stockBefore?: true
@@ -132,7 +141,8 @@ export type InventoryLogCountAggregateInputType = {
   userId?: true
   type?: true
   quantity?: true
-  unitCost?: true
+  costSnapshot?: true
+  priceSnapshot?: true
   reason?: true
   note?: true
   stockBefore?: true
@@ -233,7 +243,8 @@ export type InventoryLogGroupByOutputType = {
   userId: string
   type: string
   quantity: number
-  unitCost: number | null
+  costSnapshot: number | null
+  priceSnapshot: number | null
   reason: string | null
   note: string | null
   stockBefore: number
@@ -270,7 +281,8 @@ export type InventoryLogWhereInput = {
   userId?: Prisma.StringFilter<"InventoryLog"> | string
   type?: Prisma.StringFilter<"InventoryLog"> | string
   quantity?: Prisma.IntFilter<"InventoryLog"> | number
-  unitCost?: Prisma.IntNullableFilter<"InventoryLog"> | number | null
+  costSnapshot?: Prisma.IntNullableFilter<"InventoryLog"> | number | null
+  priceSnapshot?: Prisma.IntNullableFilter<"InventoryLog"> | number | null
   reason?: Prisma.StringNullableFilter<"InventoryLog"> | string | null
   note?: Prisma.StringNullableFilter<"InventoryLog"> | string | null
   stockBefore?: Prisma.IntFilter<"InventoryLog"> | number
@@ -286,7 +298,8 @@ export type InventoryLogOrderByWithRelationInput = {
   userId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
-  unitCost?: Prisma.SortOrderInput | Prisma.SortOrder
+  costSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
+  priceSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
   reason?: Prisma.SortOrderInput | Prisma.SortOrder
   note?: Prisma.SortOrderInput | Prisma.SortOrder
   stockBefore?: Prisma.SortOrder
@@ -305,7 +318,8 @@ export type InventoryLogWhereUniqueInput = Prisma.AtLeast<{
   userId?: Prisma.StringFilter<"InventoryLog"> | string
   type?: Prisma.StringFilter<"InventoryLog"> | string
   quantity?: Prisma.IntFilter<"InventoryLog"> | number
-  unitCost?: Prisma.IntNullableFilter<"InventoryLog"> | number | null
+  costSnapshot?: Prisma.IntNullableFilter<"InventoryLog"> | number | null
+  priceSnapshot?: Prisma.IntNullableFilter<"InventoryLog"> | number | null
   reason?: Prisma.StringNullableFilter<"InventoryLog"> | string | null
   note?: Prisma.StringNullableFilter<"InventoryLog"> | string | null
   stockBefore?: Prisma.IntFilter<"InventoryLog"> | number
@@ -321,7 +335,8 @@ export type InventoryLogOrderByWithAggregationInput = {
   userId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
-  unitCost?: Prisma.SortOrderInput | Prisma.SortOrder
+  costSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
+  priceSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
   reason?: Prisma.SortOrderInput | Prisma.SortOrder
   note?: Prisma.SortOrderInput | Prisma.SortOrder
   stockBefore?: Prisma.SortOrder
@@ -343,7 +358,8 @@ export type InventoryLogScalarWhereWithAggregatesInput = {
   userId?: Prisma.StringWithAggregatesFilter<"InventoryLog"> | string
   type?: Prisma.StringWithAggregatesFilter<"InventoryLog"> | string
   quantity?: Prisma.IntWithAggregatesFilter<"InventoryLog"> | number
-  unitCost?: Prisma.IntNullableWithAggregatesFilter<"InventoryLog"> | number | null
+  costSnapshot?: Prisma.IntNullableWithAggregatesFilter<"InventoryLog"> | number | null
+  priceSnapshot?: Prisma.IntNullableWithAggregatesFilter<"InventoryLog"> | number | null
   reason?: Prisma.StringNullableWithAggregatesFilter<"InventoryLog"> | string | null
   note?: Prisma.StringNullableWithAggregatesFilter<"InventoryLog"> | string | null
   stockBefore?: Prisma.IntWithAggregatesFilter<"InventoryLog"> | number
@@ -355,7 +371,8 @@ export type InventoryLogCreateInput = {
   id?: string
   type: string
   quantity: number
-  unitCost?: number | null
+  costSnapshot?: number | null
+  priceSnapshot?: number | null
   reason?: string | null
   note?: string | null
   stockBefore: number
@@ -371,7 +388,8 @@ export type InventoryLogUncheckedCreateInput = {
   userId: string
   type: string
   quantity: number
-  unitCost?: number | null
+  costSnapshot?: number | null
+  priceSnapshot?: number | null
   reason?: string | null
   note?: string | null
   stockBefore: number
@@ -383,7 +401,8 @@ export type InventoryLogUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  costSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  priceSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   stockBefore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -399,7 +418,8 @@ export type InventoryLogUncheckedUpdateInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  costSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  priceSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   stockBefore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -413,7 +433,8 @@ export type InventoryLogCreateManyInput = {
   userId: string
   type: string
   quantity: number
-  unitCost?: number | null
+  costSnapshot?: number | null
+  priceSnapshot?: number | null
   reason?: string | null
   note?: string | null
   stockBefore: number
@@ -425,7 +446,8 @@ export type InventoryLogUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  costSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  priceSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   stockBefore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -439,7 +461,8 @@ export type InventoryLogUncheckedUpdateManyInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  costSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  priceSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   stockBefore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -463,7 +486,8 @@ export type InventoryLogCountOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
-  unitCost?: Prisma.SortOrder
+  costSnapshot?: Prisma.SortOrder
+  priceSnapshot?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   note?: Prisma.SortOrder
   stockBefore?: Prisma.SortOrder
@@ -473,7 +497,8 @@ export type InventoryLogCountOrderByAggregateInput = {
 
 export type InventoryLogAvgOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
-  unitCost?: Prisma.SortOrder
+  costSnapshot?: Prisma.SortOrder
+  priceSnapshot?: Prisma.SortOrder
   stockBefore?: Prisma.SortOrder
   stockAfter?: Prisma.SortOrder
 }
@@ -484,7 +509,8 @@ export type InventoryLogMaxOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
-  unitCost?: Prisma.SortOrder
+  costSnapshot?: Prisma.SortOrder
+  priceSnapshot?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   note?: Prisma.SortOrder
   stockBefore?: Prisma.SortOrder
@@ -498,7 +524,8 @@ export type InventoryLogMinOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
-  unitCost?: Prisma.SortOrder
+  costSnapshot?: Prisma.SortOrder
+  priceSnapshot?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   note?: Prisma.SortOrder
   stockBefore?: Prisma.SortOrder
@@ -508,7 +535,8 @@ export type InventoryLogMinOrderByAggregateInput = {
 
 export type InventoryLogSumOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
-  unitCost?: Prisma.SortOrder
+  costSnapshot?: Prisma.SortOrder
+  priceSnapshot?: Prisma.SortOrder
   stockBefore?: Prisma.SortOrder
   stockAfter?: Prisma.SortOrder
 }
@@ -601,7 +629,8 @@ export type InventoryLogCreateWithoutUserInput = {
   id?: string
   type: string
   quantity: number
-  unitCost?: number | null
+  costSnapshot?: number | null
+  priceSnapshot?: number | null
   reason?: string | null
   note?: string | null
   stockBefore: number
@@ -615,7 +644,8 @@ export type InventoryLogUncheckedCreateWithoutUserInput = {
   productId: string
   type: string
   quantity: number
-  unitCost?: number | null
+  costSnapshot?: number | null
+  priceSnapshot?: number | null
   reason?: string | null
   note?: string | null
   stockBefore: number
@@ -658,7 +688,8 @@ export type InventoryLogScalarWhereInput = {
   userId?: Prisma.StringFilter<"InventoryLog"> | string
   type?: Prisma.StringFilter<"InventoryLog"> | string
   quantity?: Prisma.IntFilter<"InventoryLog"> | number
-  unitCost?: Prisma.IntNullableFilter<"InventoryLog"> | number | null
+  costSnapshot?: Prisma.IntNullableFilter<"InventoryLog"> | number | null
+  priceSnapshot?: Prisma.IntNullableFilter<"InventoryLog"> | number | null
   reason?: Prisma.StringNullableFilter<"InventoryLog"> | string | null
   note?: Prisma.StringNullableFilter<"InventoryLog"> | string | null
   stockBefore?: Prisma.IntFilter<"InventoryLog"> | number
@@ -670,7 +701,8 @@ export type InventoryLogCreateWithoutProductInput = {
   id?: string
   type: string
   quantity: number
-  unitCost?: number | null
+  costSnapshot?: number | null
+  priceSnapshot?: number | null
   reason?: string | null
   note?: string | null
   stockBefore: number
@@ -684,7 +716,8 @@ export type InventoryLogUncheckedCreateWithoutProductInput = {
   userId: string
   type: string
   quantity: number
-  unitCost?: number | null
+  costSnapshot?: number | null
+  priceSnapshot?: number | null
   reason?: string | null
   note?: string | null
   stockBefore: number
@@ -723,7 +756,8 @@ export type InventoryLogCreateManyUserInput = {
   productId: string
   type: string
   quantity: number
-  unitCost?: number | null
+  costSnapshot?: number | null
+  priceSnapshot?: number | null
   reason?: string | null
   note?: string | null
   stockBefore: number
@@ -735,7 +769,8 @@ export type InventoryLogUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  costSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  priceSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   stockBefore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -749,7 +784,8 @@ export type InventoryLogUncheckedUpdateWithoutUserInput = {
   productId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  costSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  priceSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   stockBefore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -762,7 +798,8 @@ export type InventoryLogUncheckedUpdateManyWithoutUserInput = {
   productId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  costSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  priceSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   stockBefore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -775,7 +812,8 @@ export type InventoryLogCreateManyProductInput = {
   userId: string
   type: string
   quantity: number
-  unitCost?: number | null
+  costSnapshot?: number | null
+  priceSnapshot?: number | null
   reason?: string | null
   note?: string | null
   stockBefore: number
@@ -787,7 +825,8 @@ export type InventoryLogUpdateWithoutProductInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  costSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  priceSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   stockBefore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -801,7 +840,8 @@ export type InventoryLogUncheckedUpdateWithoutProductInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  costSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  priceSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   stockBefore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -814,7 +854,8 @@ export type InventoryLogUncheckedUpdateManyWithoutProductInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitCost?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  costSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  priceSnapshot?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   stockBefore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -830,7 +871,8 @@ export type InventoryLogSelect<ExtArgs extends runtime.Types.Extensions.Internal
   userId?: boolean
   type?: boolean
   quantity?: boolean
-  unitCost?: boolean
+  costSnapshot?: boolean
+  priceSnapshot?: boolean
   reason?: boolean
   note?: boolean
   stockBefore?: boolean
@@ -846,7 +888,8 @@ export type InventoryLogSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   userId?: boolean
   type?: boolean
   quantity?: boolean
-  unitCost?: boolean
+  costSnapshot?: boolean
+  priceSnapshot?: boolean
   reason?: boolean
   note?: boolean
   stockBefore?: boolean
@@ -862,7 +905,8 @@ export type InventoryLogSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   userId?: boolean
   type?: boolean
   quantity?: boolean
-  unitCost?: boolean
+  costSnapshot?: boolean
+  priceSnapshot?: boolean
   reason?: boolean
   note?: boolean
   stockBefore?: boolean
@@ -878,7 +922,8 @@ export type InventoryLogSelectScalar = {
   userId?: boolean
   type?: boolean
   quantity?: boolean
-  unitCost?: boolean
+  costSnapshot?: boolean
+  priceSnapshot?: boolean
   reason?: boolean
   note?: boolean
   stockBefore?: boolean
@@ -886,7 +931,7 @@ export type InventoryLogSelectScalar = {
   createdAt?: boolean
 }
 
-export type InventoryLogOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "productId" | "userId" | "type" | "quantity" | "unitCost" | "reason" | "note" | "stockBefore" | "stockAfter" | "createdAt", ExtArgs["result"]["inventoryLog"]>
+export type InventoryLogOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "productId" | "userId" | "type" | "quantity" | "costSnapshot" | "priceSnapshot" | "reason" | "note" | "stockBefore" | "stockAfter" | "createdAt", ExtArgs["result"]["inventoryLog"]>
 export type InventoryLogInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -912,7 +957,8 @@ export type $InventoryLogPayload<ExtArgs extends runtime.Types.Extensions.Intern
     userId: string
     type: string
     quantity: number
-    unitCost: number | null
+    costSnapshot: number | null
+    priceSnapshot: number | null
     reason: string | null
     note: string | null
     stockBefore: number
@@ -1348,7 +1394,8 @@ export interface InventoryLogFieldRefs {
   readonly userId: Prisma.FieldRef<"InventoryLog", 'String'>
   readonly type: Prisma.FieldRef<"InventoryLog", 'String'>
   readonly quantity: Prisma.FieldRef<"InventoryLog", 'Int'>
-  readonly unitCost: Prisma.FieldRef<"InventoryLog", 'Int'>
+  readonly costSnapshot: Prisma.FieldRef<"InventoryLog", 'Int'>
+  readonly priceSnapshot: Prisma.FieldRef<"InventoryLog", 'Int'>
   readonly reason: Prisma.FieldRef<"InventoryLog", 'String'>
   readonly note: Prisma.FieldRef<"InventoryLog", 'String'>
   readonly stockBefore: Prisma.FieldRef<"InventoryLog", 'Int'>

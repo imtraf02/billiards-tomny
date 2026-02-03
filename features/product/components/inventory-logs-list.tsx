@@ -114,36 +114,87 @@ export function InventoryLogsList({ logs }: InventoryLogsListProps) {
 													: log.reason}
 									</p>
 								</div>
-								<div className="text-right">
-									<p className="text-[10px] uppercase text-slate-400 font-bold flex items-center gap-1 justify-end mb-0.5">
-										Giá bán
-									</p>
-									<p className="font-bold text-slate-700">
-										{log.product?.price
-											? `${new Intl.NumberFormat("vi-VN").format(log.product.price)} đ`
-											: "-"}
-									</p>
-								</div>
-								<div>
-									<p className="text-[10px] uppercase text-slate-400 font-bold flex items-center gap-1 mb-0.5">
-										Giá nhập
-									</p>
-									<p className="font-semibold text-slate-700">
-										{log.unitCost
-											? `${new Intl.NumberFormat("vi-VN").format(log.unitCost)} đ`
-											: "-"}
-									</p>
-								</div>
-								<div className="text-right">
-									<p className="text-[10px] uppercase text-primary/60 font-bold flex items-center gap-1 justify-end mb-0.5">
-										Tổng giá
-									</p>
-									<p className="font-extrabold text-primary text-base">
-										{log.unitCost
-											? `${new Intl.NumberFormat("vi-VN").format(log.unitCost * log.quantity)} đ`
-											: "-"}
-									</p>
-								</div>
+								{/* Sale Specific Metrics */}
+								{log.type === "OUT" && log.priceSnapshot ? (
+									<>
+										<div>
+											<p className="text-[10px] uppercase text-slate-400 font-bold flex items-center gap-1 mb-0.5">
+												Giá bán
+											</p>
+											<p className="font-semibold text-slate-700">
+												{new Intl.NumberFormat("vi-VN").format(
+													log.priceSnapshot,
+												)}{" "}
+												đ
+											</p>
+										</div>
+										<div className="text-right">
+											<p className="text-[10px] uppercase text-slate-400 font-bold flex items-center gap-1 justify-end mb-0.5">
+												Doanh thu
+											</p>
+											<p className="font-bold text-blue-600">
+												{new Intl.NumberFormat("vi-VN").format(
+													log.priceSnapshot * log.quantity,
+												)}{" "}
+												đ
+											</p>
+										</div>
+										<div>
+											<p className="text-[10px] uppercase text-slate-400 font-bold flex items-center gap-1 mb-0.5">
+												Giá vốn
+											</p>
+											<p className="font-semibold text-slate-700">
+												{log.costSnapshot
+													? `${new Intl.NumberFormat("vi-VN").format(log.costSnapshot)} đ`
+													: "-"}
+											</p>
+										</div>
+										<div className="text-right">
+											<p className="text-[10px] uppercase text-slate-400 font-bold flex items-center gap-1 justify-end mb-0.5">
+												Lãi gộp
+											</p>
+											<p
+												className={`font-extrabold ${
+													(log.priceSnapshot - (log.costSnapshot || 0)) *
+														log.quantity >
+													0
+														? "text-green-600"
+														: "text-slate-600"
+												}`}
+											>
+												{new Intl.NumberFormat("vi-VN").format(
+													(log.priceSnapshot - (log.costSnapshot || 0)) *
+														log.quantity,
+												)}{" "}
+												đ
+											</p>
+										</div>
+									</>
+								) : (
+									/* Import / Adjustment Metrics */
+									<>
+										<div>
+											<p className="text-[10px] uppercase text-slate-400 font-bold flex items-center gap-1 mb-0.5">
+												Giá vốn
+											</p>
+											<p className="font-semibold text-slate-700">
+												{log.costSnapshot
+													? `${new Intl.NumberFormat("vi-VN").format(log.costSnapshot)} đ`
+													: "-"}
+											</p>
+										</div>
+										<div className="text-right">
+											<p className="text-[10px] uppercase text-primary/60 font-bold flex items-center gap-1 justify-end mb-0.5">
+												Tổng giá trị
+											</p>
+											<p className="font-extrabold text-primary text-base">
+												{log.costSnapshot
+													? `${new Intl.NumberFormat("vi-VN").format(log.costSnapshot * log.quantity)} đ`
+													: "-"}
+											</p>
+										</div>
+									</>
+								)}
 							</div>
 
 							{log.note && (

@@ -59,7 +59,8 @@ export abstract class ProductService {
 						userId,
 						type: "IN",
 						quantity: data.currentStock,
-						unitCost: data.cost,
+						costSnapshot: data.cost,
+						priceSnapshot: 0,
 						reason: "initial",
 						note: "Khởi tạo tồn kho ban đầu",
 						stockBefore: 0,
@@ -136,7 +137,7 @@ export abstract class ProductService {
 			// Get current state to compare stock change
 			const currentProduct = await tx.product.findUnique({
 				where: { id },
-				select: { currentStock: true },
+				select: { currentStock: true, cost: true },
 			});
 
 			if (!currentProduct) {
@@ -164,7 +165,8 @@ export abstract class ProductService {
 						userId,
 						type,
 						quantity,
-						unitCost: data.cost, // use updated cost if available
+						costSnapshot: data.cost ?? currentProduct.cost, // use updated cost if available, else current cost
+						priceSnapshot: 0,
 						reason: "adjustment",
 						note: "Điều chỉnh tồn kho khi cập nhật sản phẩm",
 						stockBefore,
@@ -199,6 +201,7 @@ export abstract class ProductService {
 			}
 
 			const stockBefore = product.currentStock;
+			const currentCost = product.cost || 0;
 			const quantityChange =
 				data.type === "IN" ? data.quantity : -data.quantity;
 			const stockAfter = stockBefore + quantityChange;
@@ -207,15 +210,32 @@ export abstract class ProductService {
 				throw new Error("Số lượng xuất vượt quá tồn kho hiện tại");
 			}
 
-			// Update product stock
+			// Calculate new cost using Weighted Average for IN transactions
+			let newCost = currentCost;
+			if (
+				data.type === "IN" &&
+				data.costSnapshot !== undefined &&
+				data.costSnapshot >= 0
+			) {
+				if (stockBefore > 0) {
+					const totalValue =
+						stockBefore * currentCost + data.quantity * data.costSnapshot;
+					newCost = Math.round(totalValue / stockAfter);
+				} else {
+					// If stock was 0 or negative, reset cost to new import price
+					newCost = data.costSnapshot;
+				}
+			}
+
+			// Update product stock and cost
 			await tx.product.update({
 				where: { id: data.productId },
 				data: {
 					currentStock: stockAfter,
 					// Update cost if importing with unit cost
-					...(data.type === "IN" && data.unitCost !== undefined
-						? { cost: data.unitCost }
-						: {}),
+					...(data.type === "IN" && data.costSnapshot !== undefined
+						? { cost: data.costSnapshot }
+						: { cost: newCost }),
 				},
 			});
 
@@ -226,7 +246,11 @@ export abstract class ProductService {
 					userId,
 					type: data.type,
 					quantity: data.quantity,
-					unitCost: data.unitCost,
+					// For IN: use input costSnapshot (Transaction Price)
+					// For OUT: use currentCost (Cost Basis / COGS)
+					costSnapshot:
+						data.type === "IN" ? (data.costSnapshot ?? 0) : currentCost,
+					priceSnapshot: data.priceSnapshot ?? 0,
 					reason: data.reason,
 					note: data.note,
 					stockBefore,

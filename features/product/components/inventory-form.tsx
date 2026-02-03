@@ -55,7 +55,8 @@ export function InventoryForm({
 			productId: product.id,
 			type: "IN",
 			quantity: 1,
-			unitCost: product.cost ?? 0,
+      costSnapshot: product.cost ?? 0,
+			priceSnapshot: product.price,
 			reason: "",
 			note: "",
 		},
@@ -140,10 +141,32 @@ export function InventoryForm({
 
 						{type === "IN" && (
 							<form.Field
-								name="unitCost"
+								name="costSnapshot"
 								children={(field) => (
 									<Field data-invalid={field.state.meta.errors.length > 0}>
-										<FieldLabel>Giá nhập</FieldLabel>
+										<FieldLabel>Giá nhập (Đơn giá)</FieldLabel>
+										<FieldContent>
+											<Input
+												type="number"
+												min={0}
+												value={field.state.value ?? 0}
+												onBlur={field.handleBlur}
+												onChange={(e) =>
+													field.handleChange(Number(e.target.value))
+												}
+											/>
+										</FieldContent>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								)}
+							/>
+						)}
+						{type === "OUT" && (
+							<form.Field
+								name="priceSnapshot"
+								children={(field) => (
+									<Field data-invalid={field.state.meta.errors.length > 0}>
+										<FieldLabel>Giá bán (Đơn giá)</FieldLabel>
 										<FieldContent>
 											<Input
 												type="number"

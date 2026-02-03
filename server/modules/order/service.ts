@@ -80,6 +80,8 @@ export abstract class OrderService {
 								stockAfter,
 								note: `Bán hàng cho booking ${data.bookingId} (cập nhật đơn hàng)`,
 								userId: executorId,
+								costSnapshot: newItem.costSnapshot ?? product.cost,
+								priceSnapshot: newItem.priceSnapshot,
 							},
 						});
 
@@ -157,6 +159,8 @@ export abstract class OrderService {
 						stockAfter,
 						note: `Bán hàng cho booking ${data.bookingId}`,
 						userId: executorId,
+						costSnapshot: product.cost,
+						priceSnapshot: item.priceSnapshot,
 					},
 				});
 			}
@@ -301,6 +305,8 @@ export abstract class OrderService {
 							stockAfter,
 							note: `Hoàn kho do hủy đơn hàng ${id}`,
 							userId: executorId,
+							costSnapshot: product.cost,
+							priceSnapshot: item.priceSnapshot,
 						},
 					});
 				}

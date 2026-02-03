@@ -98,13 +98,13 @@ export function InventoryLogsDialog({ product }: InventoryLogsDialogProps) {
 										</div>
 										<div className="text-sm text-muted-foreground">
 											{log.stockBefore} → {log.stockAfter} {product.unit}
-											{log.unitCost && log.type === "IN" && (
+											{log.costSnapshot && log.type === "IN" && (
 												<span className="ml-2">
 													(
 													{new Intl.NumberFormat("vi-VN", {
 														style: "currency",
 														currency: "VND",
-													}).format(log.unitCost)}
+													}).format(log.costSnapshot)}
 													/{product.unit})
 												</span>
 											)}

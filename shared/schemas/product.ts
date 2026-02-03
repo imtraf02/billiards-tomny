@@ -68,7 +68,8 @@ export const createInventoryLogSchema = z.object({
 	productId: z.string().min(1, { message: "Sản phẩm là bắt buộc" }),
 	type: z.enum(["IN", "OUT"]),
 	quantity: z.int().min(1, { message: "Số lượng phải lớn hơn 0" }),
-	unitCost: z.int().min(0),
+	costSnapshot: z.int().min(0),
+	priceSnapshot: z.int().min(0),
 	reason: z.string(),
 	note: z.string(),
 });
