@@ -1,12 +1,12 @@
 import type { Prisma } from "@/generated/prisma/client";
 import prisma from "@/lib/db";
+import { BadRequestError } from "@/server/utils/errors";
 import type {
 	CreateOrderInput,
 	GetOrdersQuery,
 	UpdateOrderInput,
 	UpdateOrderItemInput,
 } from "@/shared/schemas/order";
-import { BadRequestError } from "@/server/utils/errors";
 
 export abstract class OrderService {
 	static async create(data: CreateOrderInput, executorId: string) {
@@ -28,7 +28,10 @@ export abstract class OrderService {
 		);
 
 		// 2. Calculate grand total safely
-		const totalAmount = itemsWithPrice.reduce((sum, item) => sum + item.lineTotal, 0);
+		const totalAmount = itemsWithPrice.reduce(
+			(sum, item) => sum + item.lineTotal,
+			0,
+		);
 
 		// 3. Find existing PENDING order if bookingId is provided
 		if (data.bookingId) {
@@ -52,7 +55,9 @@ export abstract class OrderService {
 						});
 
 						if (product.currentStock < newItem.quantity) {
-							throw new BadRequestError(`Sản phẩm "${product.name}" không đủ tồn kho (còn ${product.currentStock})`);
+							throw new BadRequestError(
+								`Sản phẩm "${product.name}" không đủ tồn kho (còn ${product.currentStock})`,
+							);
 						}
 
 						// 2. Deduct stock
@@ -129,7 +134,9 @@ export abstract class OrderService {
 				});
 
 				if (product.currentStock < item.quantity) {
-					throw new BadRequestError(`Sản phẩm "${product.name}" không đủ tồn kho (còn ${product.currentStock})`);
+					throw new BadRequestError(
+						`Sản phẩm "${product.name}" không đủ tồn kho (còn ${product.currentStock})`,
+					);
 				}
 
 				const stockBefore = product.currentStock;

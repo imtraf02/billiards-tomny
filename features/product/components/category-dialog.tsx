@@ -2,6 +2,7 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useEffect } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -20,7 +21,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { createCategorySchema } from "@/shared/schemas/product";
 import { useCreateCategory, useUpdateCategory } from "../hooks/use-product";
-import { toast } from "sonner";
 
 interface CategoryDialogProps {
 	open: boolean;
@@ -87,9 +87,9 @@ export function CategoryDialog({
 						{isEditing ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}
 					</DialogTitle>
 					<DialogDescription>
-						{isEditing 
-                            ? "Thay đổi tên danh mục sản phẩm của bạn." 
-                            : "Nhập tên danh mục mới để phân loại sản phẩm."}
+						{isEditing
+							? "Thay đổi tên danh mục sản phẩm của bạn."
+							: "Nhập tên danh mục mới để phân loại sản phẩm."}
 					</DialogDescription>
 				</DialogHeader>
 				<form
@@ -131,7 +131,11 @@ export function CategoryDialog({
 							Hủy
 						</Button>
 						<Button type="submit" disabled={isLoading}>
-							{isLoading ? "Đang xử lý..." : isEditing ? "Lưu thay đổi" : "Thêm mới"}
+							{isLoading
+								? "Đang xử lý..."
+								: isEditing
+									? "Lưu thay đổi"
+									: "Thêm mới"}
 						</Button>
 					</DialogFooter>
 				</form>

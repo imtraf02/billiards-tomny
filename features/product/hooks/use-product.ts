@@ -1,59 +1,59 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/eden";
-import type { 
-	CreateProductInput, 
-	CreateCategoryInput, 
-	UpdateCategoryInput,
-	GetProductsQuery,
+import type {
+	CreateCategoryInput,
+	CreateInventoryLogInput,
+	CreateProductInput,
 	GetInventoryLogsQuery,
-	CreateInventoryLogInput
+	GetProductsQuery,
+	UpdateCategoryInput,
 } from "@/shared/schemas/product";
 
 interface GetProductsParams {
-  search?: string;
-  category?: string;
-  status?: string;
-  page?: number;
-  limit?: number;
+	search?: string;
+	category?: string;
+	status?: string;
+	page?: number;
+	limit?: number;
 }
 
 export function useGetProducts(params?: GetProductsParams) {
-  return useQuery({
-    queryKey: ["products", params],
-    queryFn: async () => {
-      const res = await api.products.get({
-        query: {
-          search: params?.search,
-          category: params?.category,
-          status: params?.status,
-          page: params?.page || 1,
-          limit: params?.limit || 12,
-        },
-      });
-      
-      if (res.status === 200) {
-        return res.data;
-      }
-      
-      return {
-        data: [],
-        meta: { total: 0, page: 1, limit: 12, totalPages: 1 },
-      };
-    },
-  });
+	return useQuery({
+		queryKey: ["products", params],
+		queryFn: async () => {
+			const res = await api.products.get({
+				query: {
+					search: params?.search,
+					category: params?.category,
+					status: params?.status,
+					page: params?.page || 1,
+					limit: params?.limit || 12,
+				},
+			});
+
+			if (res.status === 200) {
+				return res.data;
+			}
+
+			return {
+				data: [],
+				meta: { total: 0, page: 1, limit: 12, totalPages: 1 },
+			};
+		},
+	});
 }
 
 export function useGetCategories() {
-  return useQuery({
-    queryKey: ["categories"],
-    queryFn: async () => {
-      const res = await api.products.categories.get();
-      if (res.status === 200) {
-        return res.data;
-      }
-      return [];
-    },
-  });
+	return useQuery({
+		queryKey: ["categories"],
+		queryFn: async () => {
+			const res = await api.products.categories.get();
+			if (res.status === 200) {
+				return res.data;
+			}
+			return [];
+		},
+	});
 }
 
 export function useCreateCategory(onSuccess?: () => void) {
@@ -74,7 +74,13 @@ export function useCreateCategory(onSuccess?: () => void) {
 export function useUpdateCategory(onSuccess?: () => void) {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: async ({ id, data }: { id: string; data: UpdateCategoryInput }) => {
+		mutationFn: async ({
+			id,
+			data,
+		}: {
+			id: string;
+			data: UpdateCategoryInput;
+		}) => {
 			const res = await api.products.categories({ id }).put(data);
 			if (res.error) throw res.error;
 			return res.data;
@@ -103,73 +109,77 @@ export function useDeleteCategory(onSuccess?: () => void) {
 }
 
 export function useCreateProduct(onSuccess?: () => void) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: CreateProductInput) => {
-      const res = await api.products.post(data);
-      if (res.error) throw res.error;
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      onSuccess?.();
-    },
-  });
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (data: CreateProductInput) => {
+			const res = await api.products.post(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["products"] });
+			onSuccess?.();
+		},
+	});
 }
 
 export function useUpdateProduct(onSuccess?: () => void) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: CreateProductInput;
-    }) => {
-      const res = await api.products({ id }).patch(data);
-      if (res.error) throw res.error;
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      onSuccess?.();
-    },
-  });
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async ({
+			id,
+			data,
+		}: {
+			id: string;
+			data: CreateProductInput;
+		}) => {
+			const res = await api.products({ id }).patch(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["products"] });
+			onSuccess?.();
+		},
+	});
 }
 
 export function useDeleteProduct(onSuccess?: () => void) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const res = await api.products({ id }).delete();
-      if (res.error) throw res.error;
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      onSuccess?.();
-    },
-  });
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (id: string) => {
+			const res = await api.products({ id }).delete();
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["products"] });
+			onSuccess?.();
+		},
+	});
 }
 
 export function useGetAllProducts(query: Partial<GetProductsQuery> = {}) {
-  return useQuery({
-    queryKey: ["products", "all", query],
-    queryFn: async () => {
-      const res = await api.products.get({ query });
-      if (res.status === 200) {
-        return res.data;
-      }
-      return { data: [], meta: { total: 0, page: 1, limit: 10, totalPages: 0 } };
-    },
-  });
+	return useQuery({
+		queryKey: ["products", "all", query],
+		queryFn: async () => {
+			const res = await api.products.get({ query });
+			if (res.status === 200) {
+				return res.data;
+			}
+			return {
+				data: [],
+				meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+			};
+		},
+	});
 }
 
 // Consolidated Inventory Logs hook below
 
-
-export function useGetInventoryLogs(query: Partial<GetInventoryLogsQuery> = {}) {
+export function useGetInventoryLogs(
+	query: Partial<GetInventoryLogsQuery> = {},
+) {
 	return useQuery({
 		queryKey: ["inventory-logs", query],
 		queryFn: async () => {
@@ -177,7 +187,10 @@ export function useGetInventoryLogs(query: Partial<GetInventoryLogsQuery> = {}) 
 			if (res.status === 200) {
 				return res.data;
 			}
-			return { data: [], meta: { total: 0, page: 1, limit: 10, totalPages: 0 } };
+			return {
+				data: [],
+				meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
+			};
 		},
 	});
 }

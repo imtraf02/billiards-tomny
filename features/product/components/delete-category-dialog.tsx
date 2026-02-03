@@ -1,5 +1,8 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -9,9 +12,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { useDeleteCategory } from "../hooks/use-product";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface DeleteCategoryDialogProps {
 	open: boolean;
@@ -43,10 +43,12 @@ export function DeleteCategoryDialog({
 				<DialogHeader>
 					<DialogTitle>Bạn có chắc chắn muốn xóa?</DialogTitle>
 					<DialogDescription>
-						Hành động này không thể hoàn tác. Danh mục <strong>{categoryName}</strong> sẽ bị xóa vĩnh viễn khỏi hệ thống.
+						Hành động này không thể hoàn tác. Danh mục{" "}
+						<strong>{categoryName}</strong> sẽ bị xóa vĩnh viễn khỏi hệ thống.
 						<br />
 						<span className="text-destructive font-medium text-xs mt-2 block">
-							Lưu ý: Không thể xóa danh mục nếu vẫn còn sản phẩm thuộc danh mục này.
+							Lưu ý: Không thể xóa danh mục nếu vẫn còn sản phẩm thuộc danh mục
+							này.
 						</span>
 					</DialogDescription>
 				</DialogHeader>

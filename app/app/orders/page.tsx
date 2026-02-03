@@ -21,8 +21,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { OrdersList } from "@/features/order/components/orders-list";
 import { OrderDetailDialog } from "@/features/order/components/order-detail-dialog";
+import { OrdersList } from "@/features/order/components/orders-list";
 import { useGetOrders } from "@/features/order/hooks/use-order";
 
 export default function OrdersPage() {
@@ -87,7 +87,8 @@ export default function OrdersPage() {
 							Quản lý Đơn hàng
 						</h1>
 						<p className="text-muted-foreground">
-							Theo dõi, cập nhật trạng thái và chi tiết các đơn hàng dịch vụ & sản phẩm.
+							Theo dõi, cập nhật trạng thái và chi tiết các đơn hàng dịch vụ &
+							sản phẩm.
 						</p>
 					</div>
 					<div className="flex items-center gap-2">
@@ -143,7 +144,8 @@ export default function OrdersPage() {
 						</div>
 
 						<div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
-							Hiển thị {ordersData?.data?.length || 0} / {ordersData?.meta?.total || 0} đơn hàng
+							Hiển thị {ordersData?.data?.length || 0} /{" "}
+							{ordersData?.meta?.total || 0} đơn hàng
 						</div>
 					</div>
 

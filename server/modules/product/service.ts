@@ -149,7 +149,10 @@ export abstract class ProductService {
 			});
 
 			// Only log if currentStock has changed or was explicitly provided in data
-			if (data.currentStock !== undefined && data.currentStock !== currentProduct.currentStock) {
+			if (
+				data.currentStock !== undefined &&
+				data.currentStock !== currentProduct.currentStock
+			) {
 				const stockBefore = currentProduct.currentStock;
 				const stockAfter = data.currentStock;
 				const quantity = Math.abs(stockAfter - stockBefore);
@@ -196,7 +199,8 @@ export abstract class ProductService {
 			}
 
 			const stockBefore = product.currentStock;
-			const quantityChange = data.type === "IN" ? data.quantity : -data.quantity;
+			const quantityChange =
+				data.type === "IN" ? data.quantity : -data.quantity;
 			const stockAfter = stockBefore + quantityChange;
 
 			if (stockAfter < 0) {

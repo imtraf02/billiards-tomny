@@ -23,13 +23,41 @@ export function OrdersList({ orders, onViewDetail }: OrdersListProps) {
 	const getStatusBadge = (status: string) => {
 		switch (status) {
 			case "PENDING":
-				return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200">Chờ xử lý</Badge>;
+				return (
+					<Badge
+						variant="secondary"
+						className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200"
+					>
+						Chờ xử lý
+					</Badge>
+				);
 			case "PREPARING":
-				return <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">Đang chuẩn bị</Badge>;
+				return (
+					<Badge
+						variant="secondary"
+						className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200"
+					>
+						Đang chuẩn bị
+					</Badge>
+				);
 			case "DELIVERED":
-				return <Badge variant="secondary" className="bg-purple-100 text-purple-800 hover:bg-purple-100 border-purple-200">Đã giao</Badge>;
+				return (
+					<Badge
+						variant="secondary"
+						className="bg-purple-100 text-purple-800 hover:bg-purple-100 border-purple-200"
+					>
+						Đã giao
+					</Badge>
+				);
 			case "COMPLETED":
-				return <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">Hoàn thành</Badge>;
+				return (
+					<Badge
+						variant="secondary"
+						className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200"
+					>
+						Hoàn thành
+					</Badge>
+				);
 			case "CANCELLED":
 				return <Badge variant="destructive">Đã hủy</Badge>;
 			default:
@@ -41,7 +69,9 @@ export function OrdersList({ orders, onViewDetail }: OrdersListProps) {
 		return (
 			<div className="flex flex-col items-center justify-center py-12 border rounded-lg bg-muted/10">
 				<ReceiptText className="h-12 w-12 text-muted-foreground opacity-20 mb-4" />
-				<p className="text-muted-foreground font-medium">Không tìm thấy đơn hàng nào</p>
+				<p className="text-muted-foreground font-medium">
+					Không tìm thấy đơn hàng nào
+				</p>
 			</div>
 		);
 	}
@@ -61,14 +91,20 @@ export function OrdersList({ orders, onViewDetail }: OrdersListProps) {
 				</TableHeader>
 				<TableBody>
 					{orders.map((order) => (
-						<TableRow key={order.id} className="cursor-pointer hover:bg-muted/50" onClick={() => onViewDetail(order.id)}>
+						<TableRow
+							key={order.id}
+							className="cursor-pointer hover:bg-muted/50"
+							onClick={() => onViewDetail(order.id)}
+						>
 							<TableCell className="font-medium font-mono text-xs uppercase">
 								#{order.id.slice(-6)}
 							</TableCell>
 							<TableCell>
 								<div className="flex flex-col">
 									<span className="font-medium">
-										{order.booking?.bookingTables?.map((bt: any) => bt.table?.name).join(", ") || "Khách lẻ"}
+										{order.booking?.bookingTables
+											?.map((bt: any) => bt.table?.name)
+											.join(", ") || "Khách lẻ"}
 									</span>
 									<span className="text-xs text-muted-foreground">
 										{order.user?.name || "Nhân viên"}
@@ -82,13 +118,19 @@ export function OrdersList({ orders, onViewDetail }: OrdersListProps) {
 								{getStatusBadge(order.status)}
 							</TableCell>
 							<TableCell className="text-muted-foreground text-sm">
-								{format(new Date(order.createdAt), "HH:mm - dd/MM/yyyy", { locale: vi })}
+								{format(new Date(order.createdAt), "HH:mm - dd/MM/yyyy", {
+									locale: vi,
+								})}
 							</TableCell>
 							<TableCell className="text-right">
-								<Button size="icon" variant="ghost" onClick={(e) => {
-                                    e.stopPropagation();
-                                    onViewDetail(order.id);
-                                }}>
+								<Button
+									size="icon"
+									variant="ghost"
+									onClick={(e) => {
+										e.stopPropagation();
+										onViewDetail(order.id);
+									}}
+								>
 									<Eye className="h-4 w-4" />
 								</Button>
 							</TableCell>

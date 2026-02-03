@@ -7,8 +7,8 @@ import { Main } from "@/components/layout/main";
 import { ModeSwitcher } from "@/components/mode-switcher";
 import { Search } from "@/components/search";
 import { Button } from "@/components/ui/button";
-import { CategoryList } from "@/features/product/components/category-list";
 import { CategoryDialog } from "@/features/product/components/category-dialog";
+import { CategoryList } from "@/features/product/components/category-list";
 import { DeleteCategoryDialog } from "@/features/product/components/delete-category-dialog";
 import { useGetCategories } from "@/features/product/hooks/use-product";
 

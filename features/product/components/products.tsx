@@ -5,187 +5,189 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 } from "@/components/ui/select";
 import type { Product } from "@/generated/prisma/client";
 import { useDeleteProduct, useGetProducts } from "../hooks/use-product";
+import { CreateProductForm } from "./create-product-form";
+import { InventoryForm } from "./inventory-form";
 import { ProductCard } from "./product-card";
 import { ProductCardSkeleton } from "./product-card-skeleton";
-import { CreateProductForm } from "./create-product-form";
 import { UpdateProductForm } from "./update-product-form";
-import { InventoryForm } from "./inventory-form";
 
 export function Products() {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
-    const [statusFilter, setStatusFilter] = useState<string>("ALL");
-    const [page, setPage] = useState(1);
-    const [limit, setLimit] = useState(12);
-    const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [isUpdateOpen, setIsUpdateOpen] = useState(false);
-    const [isInventoryOpen, setIsInventoryOpen] = useState(false);
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-    const [inventoryProduct, setInventoryProduct] = useState<Product | null>(null);
+	const [searchTerm, setSearchTerm] = useState("");
+	const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+	const [statusFilter, setStatusFilter] = useState<string>("ALL");
+	const [page, setPage] = useState(1);
+	const [limit, setLimit] = useState(12);
+	const [isCreateOpen, setIsCreateOpen] = useState(false);
+	const [isUpdateOpen, setIsUpdateOpen] = useState(false);
+	const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+	const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+	const [inventoryProduct, setInventoryProduct] = useState<Product | null>(
+		null,
+	);
 
-    const { data: productsData, isLoading } = useGetProducts({
-        search: searchTerm || undefined,
-        category: categoryFilter !== "ALL" ? categoryFilter : undefined,
-        status: statusFilter !== "ALL" ? statusFilter : undefined,
-        page,
-        limit,
-    });
+	const { data: productsData, isLoading } = useGetProducts({
+		search: searchTerm || undefined,
+		category: categoryFilter !== "ALL" ? categoryFilter : undefined,
+		status: statusFilter !== "ALL" ? statusFilter : undefined,
+		page,
+		limit,
+	});
 
-    const { mutate: deleteProduct } = useDeleteProduct();
+	const { mutate: deleteProduct } = useDeleteProduct();
 
-    const handleEdit = (product: Product) => {
-        setSelectedProduct(product);
-        setIsUpdateOpen(true);
-    };
+	const handleEdit = (product: Product) => {
+		setSelectedProduct(product);
+		setIsUpdateOpen(true);
+	};
 
-    const handleDelete = (id: string) => {
-        if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
-            deleteProduct(id);
-        }
-    };
+	const handleDelete = (id: string) => {
+		if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
+			deleteProduct(id);
+		}
+	};
 
-    const handleCreate = () => {
-        setIsCreateOpen(true);
-    };
+	const handleCreate = () => {
+		setIsCreateOpen(true);
+	};
 
-    const handleInventory = (product: Product) => {
-        setInventoryProduct(product);
-        setIsInventoryOpen(true);
-    };
+	const handleInventory = (product: Product) => {
+		setInventoryProduct(product);
+		setIsInventoryOpen(true);
+	};
 
-    const totalPages = productsData?.meta?.totalPages || 1;
+	const totalPages = productsData?.meta?.totalPages || 1;
 
-    return (
-        <div className="space-y-4">
-            {/* Filters and Search */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-                    <div className="relative w-full sm:w-64">
-                        <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Tìm kiếm sản phẩm..."
-                            className="pl-9"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                        <SelectTrigger className="w-full sm:w-[150px]">
-                            <SelectValue placeholder="Danh mục" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ALL">Tất cả danh mục</SelectItem>
-                            <SelectItem value="THỨC UỐNG">Thức uống</SelectItem>
-                            <SelectItem value="ĐỒ ĂN">Đồ ăn</SelectItem>
-                            <SelectItem value="PHỤ KIỆN">Phụ kiện</SelectItem>
-                            <SelectItem value="KHÁC">Khác</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-full sm:w-[150px]">
-                            <SelectValue placeholder="Trạng thái" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-                            <SelectItem value="AVAILABLE">Đang bán</SelectItem>
-                            <SelectItem value="UNAVAILABLE">Ngừng bán</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <Button onClick={handleCreate}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Thêm sản phẩm
-                </Button>
-            </div>
+	return (
+		<div className="space-y-4">
+			{/* Filters and Search */}
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+				<div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+					<div className="relative w-full sm:w-64">
+						<SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+						<Input
+							placeholder="Tìm kiếm sản phẩm..."
+							className="pl-9"
+							value={searchTerm}
+							onChange={(e) => setSearchTerm(e.target.value)}
+						/>
+					</div>
+					<Select value={categoryFilter} onValueChange={setCategoryFilter}>
+						<SelectTrigger className="w-full sm:w-[150px]">
+							<SelectValue placeholder="Danh mục" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="ALL">Tất cả danh mục</SelectItem>
+							<SelectItem value="THỨC UỐNG">Thức uống</SelectItem>
+							<SelectItem value="ĐỒ ĂN">Đồ ăn</SelectItem>
+							<SelectItem value="PHỤ KIỆN">Phụ kiện</SelectItem>
+							<SelectItem value="KHÁC">Khác</SelectItem>
+						</SelectContent>
+					</Select>
+					<Select value={statusFilter} onValueChange={setStatusFilter}>
+						<SelectTrigger className="w-full sm:w-[150px]">
+							<SelectValue placeholder="Trạng thái" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="ALL">Tất cả trạng thái</SelectItem>
+							<SelectItem value="AVAILABLE">Đang bán</SelectItem>
+							<SelectItem value="UNAVAILABLE">Ngừng bán</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+				<Button onClick={handleCreate}>
+					<Plus className="mr-2 h-4 w-4" />
+					Thêm sản phẩm
+				</Button>
+			</div>
 
-            {/* Product Grid */}
-            {isLoading ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {[...Array(8)].map((_, i) => (
-                        <ProductCardSkeleton key={i} />
-                    ))}
-                </div>
-            ) : productsData?.data && productsData.data.length > 0 ? (
-                <>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {productsData.data.map((product: Product) => (
-                            <ProductCard
-                                key={product.id}
-                                product={product}
-                                onEdit={handleEdit}
-                                onDelete={handleDelete}
-                                onInventory={handleInventory}
-                            />
-                        ))}
-                    </div>
-                    
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="flex items-center justify-end space-x-2 py-4">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPage((old) => Math.max(old - 1, 1))}
-                                disabled={page === 1}
-                            >
-                                Trước
-                            </Button>
-                            <div className="text-sm font-medium">
-                                Trang {page} / {totalPages}
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPage((old) => Math.min(old + 1, totalPages))}
-                                disabled={page === totalPages}
-                            >
-                                Tiếp
-                            </Button>
-                        </div>
-                    )}
-                </>
-            ) : (
-                <div className="flex h-[200px] flex-col items-center justify-center rounded-lg border border-dashed text-center">
-                    <p className="text-muted-foreground">Không tìm thấy sản phẩm nào.</p>
-                    <Button
-                        variant="link"
-                        onClick={() => {
-                            setSearchTerm("");
-                            setCategoryFilter("ALL");
-                            setStatusFilter("ALL");
-                        }}
-                    >
-                        Xóa bộ lọc
-                    </Button>
-                </div>
-            )}
+			{/* Product Grid */}
+			{isLoading ? (
+				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+					{[...Array(8)].map((_, i) => (
+						<ProductCardSkeleton key={i} />
+					))}
+				</div>
+			) : productsData?.data && productsData.data.length > 0 ? (
+				<>
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+						{productsData.data.map((product: Product) => (
+							<ProductCard
+								key={product.id}
+								product={product}
+								onEdit={handleEdit}
+								onDelete={handleDelete}
+								onInventory={handleInventory}
+							/>
+						))}
+					</div>
 
-            {/* Forms and Dialogs */}
-            <CreateProductForm open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+					{/* Pagination */}
+					{totalPages > 1 && (
+						<div className="flex items-center justify-end space-x-2 py-4">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => setPage((old) => Math.max(old - 1, 1))}
+								disabled={page === 1}
+							>
+								Trước
+							</Button>
+							<div className="text-sm font-medium">
+								Trang {page} / {totalPages}
+							</div>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => setPage((old) => Math.min(old + 1, totalPages))}
+								disabled={page === totalPages}
+							>
+								Tiếp
+							</Button>
+						</div>
+					)}
+				</>
+			) : (
+				<div className="flex h-[200px] flex-col items-center justify-center rounded-lg border border-dashed text-center">
+					<p className="text-muted-foreground">Không tìm thấy sản phẩm nào.</p>
+					<Button
+						variant="link"
+						onClick={() => {
+							setSearchTerm("");
+							setCategoryFilter("ALL");
+							setStatusFilter("ALL");
+						}}
+					>
+						Xóa bộ lọc
+					</Button>
+				</div>
+			)}
 
-            {selectedProduct && (
-                <UpdateProductForm
-                    open={isUpdateOpen}
-                    onOpenChange={setIsUpdateOpen}
-                    initialData={selectedProduct}
-                />
-            )}
+			{/* Forms and Dialogs */}
+			<CreateProductForm open={isCreateOpen} onOpenChange={setIsCreateOpen} />
 
-            {inventoryProduct && (
-                <InventoryForm
-                    open={isInventoryOpen}
-                    onOpenChange={setIsInventoryOpen}
-                    product={inventoryProduct}
-                />
-            )}
-        </div>
-    );
+			{selectedProduct && (
+				<UpdateProductForm
+					open={isUpdateOpen}
+					onOpenChange={setIsUpdateOpen}
+					initialData={selectedProduct}
+				/>
+			)}
+
+			{inventoryProduct && (
+				<InventoryForm
+					open={isInventoryOpen}
+					onOpenChange={setIsInventoryOpen}
+					product={inventoryProduct}
+				/>
+			)}
+		</div>
+	);
 }

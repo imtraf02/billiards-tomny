@@ -235,18 +235,28 @@ export abstract class BookingService {
 			let orderTotal = 0;
 
 			for (const order of booking.orders) {
-				console.log(`[BookingService.complete] Processing order ${order.id} (status: ${order.status})`);
+				console.log(
+					`[BookingService.complete] Processing order ${order.id} (status: ${order.status})`,
+				);
 				// Only add to total if NOT cancelled or already completed (paid)
-				if (order.status as string === "CANCELLED" || order.status as string === "COMPLETED") {
+				if (
+					(order.status as string) === "CANCELLED" ||
+					(order.status as string) === "COMPLETED"
+				) {
 					continue;
 				}
 
 				orderTotal += Number(order.totalAmount);
 
 				// Process status for PENDING/PREPARING/DELIVERED orders
-				if (order.status as string !== "COMPLETED" && order.status as string !== "CANCELLED") {
+				if (
+					(order.status as string) !== "COMPLETED" &&
+					(order.status as string) !== "CANCELLED"
+				) {
 					// Update order status
-					console.log(`[BookingService.complete] Updating order ${order.id} status to COMPLETED`);
+					console.log(
+						`[BookingService.complete] Updating order ${order.id} status to COMPLETED`,
+					);
 					await tx.order.update({
 						where: { id: order.id },
 						data: { status: "COMPLETED" as any },

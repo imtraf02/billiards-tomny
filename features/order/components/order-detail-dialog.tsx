@@ -3,17 +3,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { 
-    CheckCircle2, 
-    FileText, 
-    Loader2, 
-    MoreHorizontal, 
-    Package, 
-    Receipt, 
-    Truck, 
-    XCircle 
+import {
+	CheckCircle2,
+	FileText,
+	Loader2,
+	MoreHorizontal,
+	Package,
+	Receipt,
+	Truck,
+	XCircle,
 } from "lucide-react";
-import { api } from "@/lib/eden";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -21,18 +23,16 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useUpdateOrder } from "@/features/order/hooks/use-order";
-import { toast } from "sonner";
+import { api } from "@/lib/eden";
 
 interface OrderDetailDialogProps {
 	open: boolean;
@@ -56,34 +56,48 @@ export function OrderDetailDialog({
 		enabled: !!orderId && open,
 	});
 
-    const { mutate: updateStatus, isPending: isUpdating } = useUpdateOrder(() => {
-        toast.success("Cập nhật trạng thái thành công");
-    });
+	const { mutate: updateStatus, isPending: isUpdating } = useUpdateOrder(() => {
+		toast.success("Cập nhật trạng thái thành công");
+	});
 
-    const handleUpdateStatus = (status: "PENDING" | "PREPARING" | "DELIVERED" | "COMPLETED" | "CANCELLED") => {
-        if (!orderId) return;
-        updateStatus({ id: orderId, data: { status } });
-    };
+	const handleUpdateStatus = (
+		status: "PENDING" | "PREPARING" | "DELIVERED" | "COMPLETED" | "CANCELLED",
+	) => {
+		if (!orderId) return;
+		updateStatus({ id: orderId, data: { status } });
+	};
 
 	const getStatusIcon = (status: string) => {
 		switch (status) {
-			case "PENDING": return <Loader2 className="h-4 w-4 animate-spin text-yellow-600" />;
-			case "PREPARING": return <Package className="h-4 w-4 text-blue-600" />;
-			case "DELIVERED": return <Truck className="h-4 w-4 text-purple-600" />;
-			case "COMPLETED": return <CheckCircle2 className="h-4 w-4 text-green-600" />;
-			case "CANCELLED": return <XCircle className="h-4 w-4 text-red-600" />;
-			default: return null;
+			case "PENDING":
+				return <Loader2 className="h-4 w-4 animate-spin text-yellow-600" />;
+			case "PREPARING":
+				return <Package className="h-4 w-4 text-blue-600" />;
+			case "DELIVERED":
+				return <Truck className="h-4 w-4 text-purple-600" />;
+			case "COMPLETED":
+				return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+			case "CANCELLED":
+				return <XCircle className="h-4 w-4 text-red-600" />;
+			default:
+				return null;
 		}
 	};
 
 	const getStatusText = (status: string) => {
 		switch (status) {
-			case "PENDING": return "Chờ xử lý";
-			case "PREPARING": return "Đang chuẩn bị";
-			case "DELIVERED": return "Đã giao";
-			case "COMPLETED": return "Hoàn thành";
-			case "CANCELLED": return "Đã hủy";
-			default: return status;
+			case "PENDING":
+				return "Chờ xử lý";
+			case "PREPARING":
+				return "Đang chuẩn bị";
+			case "DELIVERED":
+				return "Đã giao";
+			case "COMPLETED":
+				return "Hoàn thành";
+			case "CANCELLED":
+				return "Đã hủy";
+			default:
+				return status;
 		}
 	};
 
@@ -115,7 +129,9 @@ export function OrderDetailDialog({
 										</Button>
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end">
-										<DropdownMenuItem onClick={() => handleUpdateStatus("PENDING")}>
+										<DropdownMenuItem
+											onClick={() => handleUpdateStatus("PENDING")}
+										>
 											Chờ xử lý
 										</DropdownMenuItem>
 										<DropdownMenuItem

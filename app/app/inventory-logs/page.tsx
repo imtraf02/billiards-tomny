@@ -50,9 +50,7 @@ export default function InventoryLogsPage() {
 			<Main>
 				<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div>
-						<h1 className="text-2xl font-bold tracking-tight">
-							Lịch sử kho
-						</h1>
+						<h1 className="text-2xl font-bold tracking-tight">Lịch sử kho</h1>
 						<p className="text-muted-foreground">
 							Theo dõi mọi biến động nhập, xuất và điều chỉnh tồn kho.
 						</p>
@@ -95,7 +93,7 @@ export default function InventoryLogsPage() {
 					) : (
 						<>
 							<InventoryLogsList logs={data?.data || []} />
-							
+
 							{data && data.meta.totalPages > 1 && (
 								<div className="flex items-center justify-end space-x-2 py-4">
 									<Button
@@ -112,7 +110,9 @@ export default function InventoryLogsPage() {
 									<Button
 										variant="outline"
 										size="sm"
-										onClick={() => setPage((p) => Math.min(data.meta.totalPages, p + 1))}
+										onClick={() =>
+											setPage((p) => Math.min(data.meta.totalPages, p + 1))
+										}
 										disabled={page === data.meta.totalPages}
 									>
 										Sau
