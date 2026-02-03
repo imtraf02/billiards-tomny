@@ -5,9 +5,13 @@ export abstract class DashboardService {
 	static async getMetrics() {
 		const today = startOfDay(new Date());
 
-		// 1. Revenue
+		// 1. Revenue (From SALE and REVENUE transactions)
 		const transactions = await prisma.transaction.findMany({
-			where: { type: "REVENUE" },
+			where: {
+				type: {
+					in: ["REVENUE", "SALE"],
+				},
+			},
 			select: { amount: true, createdAt: true },
 		});
 
@@ -16,12 +20,31 @@ export abstract class DashboardService {
 			.filter((t) => t.createdAt >= today)
 			.reduce((sum, t) => sum + t.amount, 0);
 
-		// 2. Bookings & Orders
-		const [totalBookings, totalOrders, activeBookings] = await Promise.all([
+		// 2. Bookings, Orders & Inventory
+		const [
+			totalBookings,
+			totalOrders,
+			activeBookings,
+			lowStockProductsRaw,
+		] = await Promise.all([
 			prisma.booking.count(),
 			prisma.order.count(),
-			prisma.booking.count({ where: { status: "PENDING" } }),
+			prisma.booking.count({
+				where: {
+					status: {
+						in: ["PENDING", "CONFIRMED"],
+					},
+				},
+			}),
+			prisma.product.findMany({
+				where: { isAvailable: true },
+				select: { currentStock: true, minStock: true },
+			}),
 		]);
+
+		const lowStockProducts = lowStockProductsRaw.filter(
+			(p) => p.currentStock <= p.minStock,
+		).length;
 
 		// 3. Last 7 days revenue for chart
 		const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -46,6 +69,7 @@ export abstract class DashboardService {
 			totalBookings,
 			totalOrders,
 			activeBookings,
+			lowStockCount: lowStockProducts,
 			revenueByDay: last7Days.map((d) => ({
 				date: d.date.toISOString(),
 				amount: d.amount,

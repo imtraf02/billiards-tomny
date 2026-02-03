@@ -7,6 +7,7 @@ import { dashboard } from "./modules/dashboard";
 import { order } from "./modules/order";
 import { product } from "./modules/product";
 import { table } from "./modules/table";
+import { transaction } from "./modules/transaction";
 
 export const app = new Elysia({ prefix: "/api" })
 	.use(cors())
@@ -53,6 +54,7 @@ export const app = new Elysia({ prefix: "/api" })
 	.use(product)
 	.use(booking)
 	.use(order)
+	.use(transaction)
 	.use(dashboard);
 
 // export type App = typeof app;

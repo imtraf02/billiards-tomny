@@ -55,7 +55,7 @@ export function InventoryForm({
 			productId: product.id,
 			type: "IN",
 			quantity: 1,
-      costSnapshot: product.cost ?? 0,
+			costSnapshot: product.cost ?? 0,
 			priceSnapshot: product.price,
 			reason: "",
 			note: "",
