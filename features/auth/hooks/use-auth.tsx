@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { api } from "@/lib/eden";
 import type { LoginInput } from "@/shared/schemas/auth";
 import { useAuthStore } from "../auth-store";
@@ -9,7 +8,6 @@ import { useAuthStore } from "../auth-store";
 export const useAuth = () => {
 	const queryClient = useQueryClient();
 	const { setToken } = useAuthStore();
-	const router = useRouter();
 	const { data: me, isLoading: isMeLoading } = useQuery({
 		queryKey: ["me"],
 		queryFn: async () => {
@@ -25,6 +23,7 @@ export const useAuth = () => {
 		onSuccess: (data) => {
 			if (data.data) {
 				setToken(null);
+				queryClient.clear();
 			}
 		},
 	});
@@ -42,8 +41,6 @@ export const useAuth = () => {
 				queryClient.invalidateQueries({
 					queryKey: ["me"],
 				});
-				console.log("Login successful");
-				router.push("/app/dashboard");
 			}
 		},
 	});

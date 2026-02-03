@@ -2,6 +2,7 @@
 
 import { useForm } from "@tanstack/react-form";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +27,7 @@ export function LoginForm({
 	className,
 	...props
 }: React.ComponentProps<"div">) {
-	const { login, isLoggingIn } = useAuth();
+	const { me, isMeLoading, login, isLoggingIn } = useAuth();
 
 	const form = useForm({
 		defaultValues: {
@@ -40,6 +41,10 @@ export function LoginForm({
 			login(value);
 		},
 	});
+
+	if (!isMeLoading && me) {
+		return redirect("/app/dashboard");
+	}
 
 	return (
 		<div className={cn("flex flex-col gap-6", className)} {...props}>
