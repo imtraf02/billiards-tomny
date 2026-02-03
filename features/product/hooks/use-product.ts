@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/eden";
-import type { CreateProductInput } from "@/shared/schemas/product";
+import type { 
+	CreateProductInput, 
+	CreateCategoryInput, 
+	UpdateCategoryInput,
+	GetProductsQuery,
+	GetInventoryLogsQuery
+} from "@/shared/schemas/product";
 
 interface GetProductsParams {
   search?: string;
@@ -47,6 +53,52 @@ export function useGetCategories() {
       return [];
     },
   });
+}
+
+export function useCreateCategory(onSuccess?: () => void) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (data: CreateCategoryInput) => {
+			const res = await api.products.categories.post(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["categories"] });
+			onSuccess?.();
+		},
+	});
+}
+
+export function useUpdateCategory(onSuccess?: () => void) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async ({ id, data }: { id: string; data: UpdateCategoryInput }) => {
+			const res = await api.products.categories({ id }).put(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["categories"] });
+			onSuccess?.();
+		},
+	});
+}
+
+export function useDeleteCategory(onSuccess?: () => void) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (id: string) => {
+			const res = await api.products.categories({ id }).delete();
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["categories"] });
+			queryClient.invalidateQueries({ queryKey: ["products"] });
+			onSuccess?.();
+		},
+	});
 }
 
 export function useCreateProduct(onSuccess?: () => void) {
@@ -151,4 +203,17 @@ export function useGetInventoryLogs(productId?: string) {
     },
     enabled: !!productId, // Chỉ chạy khi có productId
   });
+}
+
+export function useGetInventoryLogs(query: Partial<GetInventoryLogsQuery> = {}) {
+	return useQuery({
+		queryKey: ["inventory-logs", query],
+		queryFn: async () => {
+			const res = await api.products.inventory.get({ query });
+			if (res.status === 200) {
+				return res.data;
+			}
+			return { data: [], meta: { total: 0, page: 1, limit: 10, totalPages: 0 } };
+		},
+	});
 }

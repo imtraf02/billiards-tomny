@@ -11,4 +11,9 @@ export const api = treaty<typeof app>("http://localhost:3000", {
 			...options.headers,
 		};
 	},
+	onResponse(response) {
+		if (response.status === 401) {
+			console.log(response);
+		}
+	},
 }).api;

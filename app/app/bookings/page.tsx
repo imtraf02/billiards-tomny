@@ -1,8 +1,16 @@
 "use client";
 
+import { endOfDay, startOfDay, startOfWeek, subDays } from "date-fns";
+import {
+	Calendar as CalendarIcon,
+	ChevronLeft,
+	ChevronRight,
+	Download,
+	Filter,
+} from "lucide-react";
+import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { Main } from "@/components/layout/main";
-import { Search } from "@/components/search";
 import { ModeSwitcher } from "@/components/mode-switcher";
 import { Bookings } from "@/features/booking/components/bookings";
 
