@@ -68,14 +68,10 @@ export const sidebarData: SidebarData = {
 		{
 			title: "Tài chính",
 			items: [
-				{
-					title: "Giao dịch",
-					url: "/app/transactions",
-					icon: Receipt,
-				},
+
 				{
 					title: "Báo cáo",
-					url: "/app/reports",
+					url: "/app/finance",
 					icon: BarChart,
 				},
 			],
