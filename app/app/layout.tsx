@@ -1,12 +1,25 @@
+"use client";
+
+import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { LayoutProvider } from "@/context/layout-provider";
 import { SearchProvider } from "@/context/search-provider";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 import { getCookie } from "@/lib/cookies";
 import { cn } from "@/lib/utils";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
 	const defaultOpen = getCookie("sidebar_state") !== "false";
+	const { me, isMeLoading } = useAuth();
+
+	if (isMeLoading) {
+		return <div>Loading...</div>;
+	}
+
+	if (!me) {
+		return redirect("/login");
+	}
 
 	return (
 		<LayoutProvider>

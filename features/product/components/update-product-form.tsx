@@ -28,8 +28,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { Product } from "@/generated/prisma/client";
 import {
-	type CreateProductInput,
 	createProductSchema,
+	updateProductSchema,
 } from "@/shared/schemas/product";
 import { useGetCategories, useUpdateProduct } from "../hooks/use-product";
 
@@ -66,7 +66,7 @@ export function UpdateProductForm({
 			isAvailable: initialData.isAvailable,
 		},
 		validators: {
-			onChange: createProductSchema,
+			onChange: updateProductSchema,
 		},
 		onSubmit: async ({ value }) => {
 			updateProduct({ id: initialData.id, data: value });

@@ -10,11 +10,7 @@ import {
 import { useLayout } from "@/context/layout-provider";
 import { sidebarData } from "./data/sidebar-data";
 import { NavGroup } from "./nav-group";
-// import { AppTitle } from './app-title'
-// import { sidebarData } from './data/sidebar-data'
-// import { NavGroup } from './nav-group'
-// import { NavUser } from './nav-user'
-// import { TeamSwitcher } from './team-switcher'
+import { NavUser } from "./nav-user";
 
 export function AppSidebar() {
 	const { collapsible, variant } = useLayout();
@@ -26,7 +22,9 @@ export function AppSidebar() {
 					<NavGroup key={props.title} {...props} />
 				))}
 			</SidebarContent>
-			<SidebarFooter>{/*<NavUser user={sidebarData.user} />*/}</SidebarFooter>
+			<SidebarFooter>
+				<NavUser />
+			</SidebarFooter>
 			<SidebarRail />
 		</Sidebar>
 	);

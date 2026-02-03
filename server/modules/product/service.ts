@@ -2,7 +2,9 @@ import type { Prisma } from "@/generated/prisma/client";
 import prisma from "@/lib/db";
 import type {
 	CreateCategoryInput,
+	CreateInventoryLogInput,
 	CreateProductInput,
+	GetInventoryLogsQuery,
 	GetProductsQuery,
 	UpdateCategoryInput,
 	UpdateProductInput,
@@ -114,6 +116,136 @@ export abstract class ProductService {
 	static async deleteProduct(id: string) {
 		return await prisma.product.delete({
 			where: { id },
+		});
+	}
+
+	// Inventory Methods
+	static async createInventoryLog(
+		data: CreateInventoryLogInput,
+		userId: string,
+	) {
+		return await prisma.$transaction(async (tx) => {
+			// Get current product
+			const product = await tx.product.findUnique({
+				where: { id: data.productId },
+			});
+
+			if (!product) {
+				throw new Error("Sản phẩm không tồn tại");
+			}
+
+			const stockBefore = product.currentStock;
+			const quantityChange = data.type === "IN" ? data.quantity : -data.quantity;
+			const stockAfter = stockBefore + quantityChange;
+
+			if (stockAfter < 0) {
+				throw new Error("Số lượng xuất vượt quá tồn kho hiện tại");
+			}
+
+			// Update product stock
+			await tx.product.update({
+				where: { id: data.productId },
+				data: {
+					currentStock: stockAfter,
+					// Update cost if importing with unit cost
+					...(data.type === "IN" && data.unitCost !== undefined
+						? { cost: data.unitCost }
+						: {}),
+				},
+			});
+
+			// Create inventory log
+			return await tx.inventoryLog.create({
+				data: {
+					productId: data.productId,
+					userId,
+					type: data.type,
+					quantity: data.quantity,
+					unitCost: data.unitCost,
+					reason: data.reason,
+					note: data.note,
+					stockBefore,
+					stockAfter,
+				},
+				include: {
+					product: true,
+					user: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
+				},
+			});
+		});
+	}
+
+	static async getInventoryLogs(query: GetInventoryLogsQuery) {
+		const where: Prisma.InventoryLogWhereInput = {};
+
+		if (query.productId) {
+			where.productId = query.productId;
+		}
+
+		if (query.type) {
+			where.type = query.type;
+		}
+
+		const skip = (query.page - 1) * query.limit;
+
+		const [logs, total] = await Promise.all([
+			prisma.inventoryLog.findMany({
+				where,
+				orderBy: {
+					createdAt: "desc",
+				},
+				include: {
+					product: {
+						select: {
+							id: true,
+							name: true,
+							unit: true,
+						},
+					},
+					user: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
+				},
+				skip,
+				take: query.limit,
+			}),
+			prisma.inventoryLog.count({ where }),
+		]);
+
+		return {
+			data: logs,
+			meta: {
+				total,
+				page: query.page,
+				limit: query.limit,
+				totalPages: Math.ceil(total / query.limit),
+			},
+		};
+	}
+
+	static async getProductInventoryLogs(productId: string) {
+		return await prisma.inventoryLog.findMany({
+			where: { productId },
+			orderBy: {
+				createdAt: "desc",
+			},
+			include: {
+				user: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
+			},
+			take: 50,
 		});
 	}
 }

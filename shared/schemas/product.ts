@@ -21,35 +21,28 @@ export const createProductSchema = z.object({
 	name: z
 		.string()
 		.min(1, { message: "Tên sản phẩm là bắt buộc" })
-		.max(100, { message: "Tên sản phẩm quá dài" }),
-	price: z.coerce
-		.number()
-		.int()
-		.positive({ message: "Giá bán phải lớn hơn 0" }),
-	cost: z.coerce
-		.number()
-		.int()
-		.positive({ message: "Giá vốn phải lớn hơn 0" })
-		.default(0),
-	description: z.string().default(""),
-	imageUrl: z.url({ message: "URL ảnh không hợp lệ" }).default(""),
-	isAvailable: z.boolean().default(true),
-	currentStock: z.coerce.number().int().min(0).default(0),
-	minStock: z.coerce.number().int().min(0).default(0),
-	unit: z.string().default("cái"),
+		.max(100, { error: "Tên sản phẩm quá dài" }),
+	price: z.int().min(0),
+	cost: z.int().min(0),
+	description: z.string(),
+	imageUrl: z.url({ message: "URL ảnh không hợp lệ" }),
+	isAvailable: z.boolean(),
+	currentStock: z.int().min(0),
+	minStock: z.int().min(0),
+	unit: z.string(),
 });
 
 export const updateProductSchema = z.object({
-	categoryId: z.string().optional(),
-	name: z.string().max(100).optional(),
-	price: z.coerce.number().int().positive().optional(),
-	cost: z.coerce.number().int().positive().optional(),
-	description: z.string().optional(),
-	imageUrl: z.url().optional(),
-	isAvailable: z.boolean().optional(),
-	currentStock: z.coerce.number().int().min(0).optional(),
-	minStock: z.coerce.number().int().min(0).optional(),
-	unit: z.string().optional(),
+	categoryId: z.string(),
+	name: z.string().max(100),
+	price: z.int().min(0),
+	cost: z.int().min(0),
+	description: z.string(),
+	imageUrl: z.url({ message: "URL ảnh không hợp lệ" }),
+	isAvailable: z.boolean(),
+	currentStock: z.int().min(0),
+	minStock: z.int().min(0),
+	unit: z.string(),
 });
 
 export const getProductsQuerySchema = z.object({
@@ -69,3 +62,23 @@ export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 export type GetProductsQuery = z.infer<typeof getProductsQuerySchema>;
+
+// Inventory Schemas
+export const createInventoryLogSchema = z.object({
+	productId: z.string().min(1, { message: "Sản phẩm là bắt buộc" }),
+	type: z.enum(["IN", "OUT"]),
+	quantity: z.int().min(1, { message: "Số lượng phải lớn hơn 0" }),
+	unitCost: z.int().min(0),
+	reason: z.string(),
+	note: z.string(),
+});
+
+export const getInventoryLogsQuerySchema = z.object({
+	productId: z.string().optional(),
+	type: z.enum(["IN", "OUT"]).optional(),
+	page: z.coerce.number().int().min(1).default(1),
+	limit: z.coerce.number().int().min(1).max(100).default(50),
+});
+
+export type CreateInventoryLogInput = z.infer<typeof createInventoryLogSchema>;
+export type GetInventoryLogsQuery = z.infer<typeof getInventoryLogsQuerySchema>;

@@ -2,7 +2,6 @@ import {
 	BarChart,
 	CalendarClock,
 	ClipboardList,
-	Command,
 	Grid3x3,
 	Layers,
 	LayoutDashboard,
@@ -15,18 +14,6 @@ import {
 import type { SidebarData } from "../types";
 
 export const sidebarData: SidebarData = {
-	user: {
-		name: "Admin",
-		email: "admin@tomny.com",
-		avatar: "/avatars/shadcn.jpg",
-	},
-	teams: [
-		{
-			name: "Tomny Billiards",
-			logo: Command,
-			plan: "Pro",
-		},
-	],
 	navGroups: [
 		{
 			title: "Tổng quan",

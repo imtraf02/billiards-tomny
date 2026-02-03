@@ -25,11 +25,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { Product } from "@/generated/prisma/client";
-import {
-	type CreateProductInput,
-	createProductSchema,
-} from "@/shared/schemas/product";
+import { createProductSchema } from "@/shared/schemas/product";
 import { useCreateProduct, useGetCategories } from "../hooks/use-product";
 
 interface CreateProductFormProps {
@@ -56,10 +52,10 @@ export function CreateProductForm({
 			categoryId: "",
 			price: 0,
 			cost: 0,
+			description: "",
 			currentStock: 0,
 			minStock: 0,
 			unit: "cái",
-			description: "",
 			imageUrl: "",
 			isAvailable: true,
 		},
@@ -121,7 +117,7 @@ export function CreateProductForm({
 											value={field.state.value}
 											onValueChange={(val) => field.handleChange(val)}
 										>
-											<SelectTrigger>
+											<SelectTrigger className="w-full">
 												<SelectValue placeholder="Chọn danh mục" />
 											</SelectTrigger>
 											<SelectContent>

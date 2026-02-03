@@ -1,9 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,32 +18,15 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/eden";
 import { cn } from "@/lib/utils";
-import { type LoginInput, loginSchema } from "@/shared/schemas/auth";
-import { useAuthStore } from "../auth-store";
+import { loginSchema } from "@/shared/schemas/auth";
+import { useAuth } from "../hooks/use-auth";
 
 export function LoginForm({
 	className,
 	...props
 }: React.ComponentProps<"div">) {
-	const router = useRouter();
-	const { setToken } = useAuthStore();
-	const { mutate, isPending } = useMutation({
-		mutationFn: async (data: LoginInput) => {
-			return await api.auth.login.post({
-				email: data.email,
-				password: data.password,
-			});
-		},
-		onSuccess: ({ data }) => {
-			if (data?.token) {
-				setToken(data.token);
-				router.push("/app/dashboard");
-			}
-		},
-		onError: (error) => {},
-	});
+	const { login, isLoggingIn } = useAuth();
 
 	const form = useForm({
 		defaultValues: {
@@ -56,7 +37,7 @@ export function LoginForm({
 			onSubmit: loginSchema,
 		},
 		onSubmit: async ({ value }) => {
-			mutate(value);
+			login(value);
 		},
 	});
 
@@ -96,7 +77,7 @@ export function LoginForm({
 												type="email"
 												placeholder="m@example.com"
 												aria-invalid={isInvalid}
-												disabled={isPending}
+												disabled={isLoggingIn}
 											/>
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />
@@ -130,7 +111,7 @@ export function LoginForm({
 												onChange={(e) => field.handleChange(e.target.value)}
 												type="password"
 												aria-invalid={isInvalid}
-												disabled={isPending}
+												disabled={isLoggingIn}
 											/>
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />
@@ -139,8 +120,8 @@ export function LoginForm({
 									);
 								}}
 							/>
-							<Button type="submit" className="w-full" disabled={isPending}>
-								{isPending ? "Đang đăng nhập..." : "Đăng nhập"}
+							<Button type="submit" className="w-full" disabled={isLoggingIn}>
+								{isLoggingIn ? "Đang đăng nhập..." : "Đăng nhập"}
 							</Button>
 						</FieldGroup>
 					</form>

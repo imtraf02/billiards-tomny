@@ -1,4 +1,14 @@
 import { treaty } from "@elysiajs/eden";
-import { type App, app } from "@/server";
+import { useAuthStore } from "@/features/auth/auth-store";
+import type { app } from "@/server";
 
-export const api = treaty<App>("http://localhost:3000").api;
+export const api = treaty<typeof app>("http://localhost:3000", {
+	headers(_path, options) {
+		const token = useAuthStore.getState().token;
+
+		return {
+			...(token ? { Authorization: `Bearer ${token}` } : {}),
+			...options.headers,
+		};
+	},
+}).api;

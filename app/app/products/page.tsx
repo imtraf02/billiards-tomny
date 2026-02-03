@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	ChevronLeft,
 	ChevronRight,
+	Package,
 	Pencil,
 	Plus,
 	Search as SearchIcon,
@@ -18,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CreateProductForm } from "@/features/product/components/create-product-form";
+import { InventoryForm } from "@/features/product/components/inventory-form";
+import { InventoryLogsDialog } from "@/features/product/components/inventory-logs-dialog";
 import { UpdateProductForm } from "@/features/product/components/update-product-form";
 import type { Product } from "@/generated/prisma/client";
 import { api } from "@/lib/eden";
@@ -31,6 +34,8 @@ export default function ProductsPage() {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [isUpdateOpen, setIsUpdateOpen] = useState(false);
 	const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+	const [inventoryProduct, setInventoryProduct] = useState<Product | null>(null);
+	const [isInventoryOpen, setIsInventoryOpen] = useState(false);
 
 	const { data: productsData, isLoading } = useQuery({
 		queryKey: ["products", page, limit, searchTerm],
@@ -76,6 +81,11 @@ export default function ProductsPage() {
 		if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
 			deleteProduct(id);
 		}
+	};
+
+	const handleInventory = (product: Product) => {
+		setInventoryProduct(product);
+		setIsInventoryOpen(true);
 	};
 
 	const totalPages = productsData?.meta?.totalPages || 1;
@@ -174,10 +184,20 @@ export default function ProductsPage() {
 											</Badge>
 										</td>
 										<td className="p-4 align-middle text-right">
-											<div className="flex justify-end gap-2">
+											<div className="flex justify-end gap-1">
 												<Button
 													variant="ghost"
 													size="icon"
+													title="Nhập/Xuất kho"
+													onClick={() => handleInventory(product)}
+												>
+													<Package className="h-4 w-4" />
+												</Button>
+												<InventoryLogsDialog product={product} />
+												<Button
+													variant="ghost"
+													size="icon"
+													title="Chỉnh sửa"
 													onClick={() => handleEdit(product)}
 												>
 													<Pencil className="h-4 w-4" />
@@ -186,6 +206,7 @@ export default function ProductsPage() {
 													variant="ghost"
 													size="icon"
 													className="text-red-500 hover:text-red-600 hover:bg-red-100"
+													title="Xóa"
 													onClick={() => handleDelete(product.id)}
 												>
 													<Trash2 className="h-4 w-4" />
@@ -237,6 +258,14 @@ export default function ProductsPage() {
 						open={isUpdateOpen}
 						onOpenChange={setIsUpdateOpen}
 						initialData={editingProduct}
+					/>
+				)}
+
+				{inventoryProduct && (
+					<InventoryForm
+						open={isInventoryOpen}
+						onOpenChange={setIsInventoryOpen}
+						product={inventoryProduct}
 					/>
 				)}
 			</Main>

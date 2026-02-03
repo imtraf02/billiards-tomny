@@ -3,7 +3,9 @@ import { Role } from "@/generated/prisma/client";
 import { authorization } from "@/server/plugins/authorization";
 import {
 	createCategorySchema,
+	createInventoryLogSchema,
 	createProductSchema,
+	getInventoryLogsQuerySchema,
 	getProductsQuerySchema,
 	updateCategorySchema,
 	updateProductSchema,
@@ -124,6 +126,51 @@ export const product = new Elysia({ prefix: "/products" })
 			authorized: [Role.ADMIN, Role.STAFF],
 			detail: {
 				tags: ["Products"],
+			},
+		},
+	)
+	// Inventory
+	.group("/inventory", (app) =>
+		app
+			.post(
+				"/",
+				async ({ body, user }) => {
+					return await ProductService.createInventoryLog(body, user.id);
+				},
+				{
+					body: createInventoryLogSchema,
+					authorized: [Role.ADMIN, Role.STAFF],
+					detail: {
+						tags: ["Products", "Inventory"],
+						summary: "Nhập/Xuất kho",
+					},
+				},
+			)
+			.get(
+				"/",
+				async ({ query }) => {
+					return await ProductService.getInventoryLogs(query);
+				},
+				{
+					query: getInventoryLogsQuerySchema,
+					authorized: [Role.ADMIN, Role.STAFF],
+					detail: {
+						tags: ["Products", "Inventory"],
+						summary: "Lấy danh sách lịch sử kho",
+					},
+				},
+			),
+	)
+	.get(
+		"/:id/inventory",
+		async ({ params: { id } }) => {
+			return await ProductService.getProductInventoryLogs(id);
+		},
+		{
+			authorized: [Role.ADMIN, Role.STAFF],
+			detail: {
+				tags: ["Products", "Inventory"],
+				summary: "Lấy lịch sử kho của 1 sản phẩm",
 			},
 		},
 	);
