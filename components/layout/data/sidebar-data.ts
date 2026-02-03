@@ -60,7 +60,7 @@ export const sidebarData: SidebarData = {
 				},
 				{
 					title: "Lịch sử kho",
-					url: "/app/inventory-logs",
+					url: "/app/inventory",
 					icon: ClipboardList,
 				},
 			],

@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { createCategorySchema } from "@/shared/schemas/product";
-import { useCreateCategory, useUpdateCategory } from "../hooks/use-product";
+import { useCreateCategory, useUpdateCategory } from "@/features/product/hooks/use-product";
 
 interface CategoryDialogProps {
 	open: boolean;

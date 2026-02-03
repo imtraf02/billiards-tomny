@@ -7,13 +7,15 @@ import {
 	ChevronRight,
 	Download,
 	Filter,
+	Plus,
+	Search as SearchIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { Main } from "@/components/layout/main";
 import { ModeSwitcher } from "@/components/mode-switcher";
-import { Search } from "@/components/search";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -29,6 +31,7 @@ export default function OrdersPage() {
 	const [page, setPage] = useState(1);
 	const [status, setStatus] = useState<string>("ALL");
 	const [dateRange, setDateRange] = useState<string>("TODAY");
+	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 	const [isDetailOpen, setIsDetailOpen] = useState(false);
 
@@ -60,6 +63,7 @@ export default function OrdersPage() {
 			endDate,
 			page,
 			limit: 10,
+			search: searchTerm || undefined,
 		};
 	};
 
@@ -75,7 +79,15 @@ export default function OrdersPage() {
 	return (
 		<>
 			<Header>
-				<Search />
+				<div className="relative w-full max-w-sm">
+					<SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+					<Input
+						placeholder="Tìm kiếm đơn hàng..."
+						className="pl-9"
+						value={searchTerm}
+						onChange={(e) => setSearchTerm(e.target.value)}
+					/>
+				</div>
 				<div className="ms-auto flex items-center space-x-4">
 					<ModeSwitcher />
 				</div>
@@ -92,6 +104,10 @@ export default function OrdersPage() {
 						</p>
 					</div>
 					<div className="flex items-center gap-2">
+						<Button>
+							<Plus className="mr-2 h-4 w-4" />
+							Tạo đơn hàng
+						</Button>
 						<Button variant="outline" size="sm">
 							<Download className="mr-2 h-4 w-4" /> Xuất báo cáo
 						</Button>
@@ -100,47 +116,49 @@ export default function OrdersPage() {
 
 				<div className="space-y-4">
 					{/* Filters Toolbar */}
-					<div className="flex flex-col gap-3 p-4 bg-muted/30 rounded-lg border sm:flex-row sm:items-center">
-						<div className="flex items-center gap-2 flex-1">
-							<Filter className="h-4 w-4 text-muted-foreground" />
-							<Select
-								value={dateRange}
-								onValueChange={(v) => {
-									setDateRange(v);
-									setPage(1);
-								}}
-							>
-								<SelectTrigger className="w-[160px] bg-white">
-									<CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-									<SelectValue placeholder="Thời gian" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="TODAY">Hôm nay</SelectItem>
-									<SelectItem value="YESTERDAY">Hôm qua</SelectItem>
-									<SelectItem value="WEEK">Tuần này</SelectItem>
-									<SelectItem value="ALL">Tất cả thời gian</SelectItem>
-								</SelectContent>
-							</Select>
+					<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+						<div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+							<div className="flex items-center gap-2 flex-wrap">
+								<Filter className="h-4 w-4 text-muted-foreground" />
+								<Select
+									value={dateRange}
+									onValueChange={(v) => {
+										setDateRange(v);
+										setPage(1);
+									}}
+								>
+									<SelectTrigger className="w-[160px]">
+										<CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+										<SelectValue placeholder="Thời gian" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="TODAY">Hôm nay</SelectItem>
+										<SelectItem value="YESTERDAY">Hôm qua</SelectItem>
+										<SelectItem value="WEEK">Tuần này</SelectItem>
+										<SelectItem value="ALL">Tất cả thời gian</SelectItem>
+									</SelectContent>
+								</Select>
 
-							<Select
-								value={status}
-								onValueChange={(v) => {
-									setStatus(v);
-									setPage(1);
-								}}
-							>
-								<SelectTrigger className="w-[180px] bg-white">
-									<SelectValue placeholder="Trạng thái" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-									<SelectItem value="PENDING">Chờ xử lý</SelectItem>
-									<SelectItem value="PREPARING">Đang chuẩn bị</SelectItem>
-									<SelectItem value="DELIVERED">Đã giao</SelectItem>
-									<SelectItem value="COMPLETED">Hoàn thành</SelectItem>
-									<SelectItem value="CANCELLED">Đã hủy</SelectItem>
-								</SelectContent>
-							</Select>
+								<Select
+									value={status}
+									onValueChange={(v) => {
+										setStatus(v);
+										setPage(1);
+									}}
+								>
+									<SelectTrigger className="w-[180px]">
+										<SelectValue placeholder="Trạng thái" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="ALL">Tất cả trạng thái</SelectItem>
+										<SelectItem value="PENDING">Chờ xử lý</SelectItem>
+										<SelectItem value="PREPARING">Đang chuẩn bị</SelectItem>
+										<SelectItem value="DELIVERED">Đã giao</SelectItem>
+										<SelectItem value="COMPLETED">Hoàn thành</SelectItem>
+										<SelectItem value="CANCELLED">Đã hủy</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
 						</div>
 
 						<div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
@@ -151,11 +169,11 @@ export default function OrdersPage() {
 
 					{/* Orders List */}
 					{isLoading ? (
-						<div className="space-y-3">
-							{[...Array(5)].map((_, i) => (
+						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+							{[...Array(6)].map((_, i) => (
 								<div
 									key={`skeleton-${i}`}
-									className="h-16 w-full animate-pulse rounded-md bg-muted"
+									className="h-64 w-full animate-pulse rounded-md bg-muted"
 								/>
 							))}
 						</div>
@@ -177,7 +195,7 @@ export default function OrdersPage() {
 									>
 										<ChevronLeft className="h-4 w-4 mr-1" /> Trước
 									</Button>
-									<div className="text-sm font-medium bg-muted px-3 py-1 rounded-md">
+									<div className="text-sm font-medium">
 										Trang {page} / {totalPages}
 									</div>
 									<Button

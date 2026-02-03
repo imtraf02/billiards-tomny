@@ -11,7 +11,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { useDeleteCategory } from "../hooks/use-product";
+import { useDeleteCategory } from "@/features/product/hooks/use-product";
 
 interface DeleteCategoryDialogProps {
 	open: boolean;
