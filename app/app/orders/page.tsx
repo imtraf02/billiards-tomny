@@ -23,6 +23,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { CreateOrderDialog } from "@/features/order/components/create-order-dialog";
 import { OrderDetailDialog } from "@/features/order/components/order-detail-dialog";
 import { OrdersList } from "@/features/order/components/orders-list";
 import { useGetOrders } from "@/features/order/hooks/use-order";
@@ -34,6 +35,7 @@ export default function OrdersPage() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 	const [isDetailOpen, setIsDetailOpen] = useState(false);
+	const [isCreateOpen, setIsCreateOpen] = useState(false);
 
 	const getQueryFilters = () => {
 		const now = new Date();
@@ -62,7 +64,7 @@ export default function OrdersPage() {
 			startDate,
 			endDate,
 			page,
-			limit: 10,
+			limit: 12,
 			search: searchTerm || undefined,
 		};
 	};
@@ -104,7 +106,7 @@ export default function OrdersPage() {
 						</p>
 					</div>
 					<div className="flex items-center gap-2">
-						<Button>
+						<Button onClick={() => setIsCreateOpen(true)}>
 							<Plus className="mr-2 h-4 w-4" />
 							Tạo đơn hàng
 						</Button>
@@ -217,6 +219,7 @@ export default function OrdersPage() {
 					onOpenChange={setIsDetailOpen}
 					orderId={selectedOrderId}
 				/>
+				<CreateOrderDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
 			</Main>
 		</>
 	);

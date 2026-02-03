@@ -101,7 +101,7 @@ export function OrdersList({ orders, onViewDetail }: OrdersListProps) {
 							<div className="flex items-center gap-2">
 								<CreditCard className="h-5 w-5 text-primary" />
 								<div>
-									<h3 className="text-lg font-bold">#{order.id.slice(-6)}</h3>
+									<h3 className="text-lg font-bold line-clamp-1">#{order.id}</h3>
 									<p className="text-xs text-muted-foreground">
 										{getOrderType(order)}
 									</p>

@@ -108,7 +108,7 @@ export function OrderDetailDialog({
 					<div className="flex items-center justify-between mb-2 min-h-[24px]">
 						{order && (
 							<Badge variant="outline" className="font-mono uppercase">
-								#{order.id.slice(-8)}
+								#{order.id}
 							</Badge>
 						)}
 						{order && (
