@@ -17,7 +17,7 @@ export const createOrderSchema = z.object({
 });
 
 export const updateOrderSchema = z.object({
-	status: z.enum(["PENDING", "PREPARING", "DELIVERED", "CANCELLED"]),
+	status: z.enum(["PENDING", "PREPARING", "DELIVERED", "COMPLETED", "CANCELLED"]),
 });
 
 export const updateOrderItemSchema = z.object({
@@ -30,7 +30,7 @@ export const updateOrderItemSchema = z.object({
 export const getOrdersQuerySchema = z.object({
 	bookingId: z.string().optional(),
 	userId: z.string().optional(),
-	status: z.enum(["PENDING", "PREPARING", "DELIVERED", "CANCELLED"]).optional(),
+	status: z.enum(["PENDING", "PREPARING", "DELIVERED", "COMPLETED", "CANCELLED"]).optional(),
 	startDate: z.coerce.date().optional(),
 	endDate: z.coerce.date().optional(),
 	page: z.coerce.number().min(1).default(1),

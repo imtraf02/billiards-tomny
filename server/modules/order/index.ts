@@ -13,8 +13,8 @@ export const order = new Elysia({ prefix: "/orders" })
     .use(authorization)
     .post(
         "/",
-        async ({ body }) => {
-            return await OrderService.create(body);
+        async ({ body, user }) => {
+            return await OrderService.create(body, user.id);
         },
         {
             body: createOrderSchema,
@@ -51,8 +51,8 @@ export const order = new Elysia({ prefix: "/orders" })
     )
     .patch(
         "/:id",
-        async ({ params: { id }, body }) => {
-            return await OrderService.update(id, body);
+        async ({ params: { id }, body, user }) => {
+            return await OrderService.update(id, body, user.id);
         },
         {
             body: updateOrderSchema,

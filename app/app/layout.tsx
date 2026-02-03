@@ -17,7 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 		return <div>Loading...</div>;
 	}
 
-	if (!me) {
+	if (!isMeLoading && !me) {
 		return redirect("/login");
 	}
 
