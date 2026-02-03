@@ -22,7 +22,7 @@ export default function BookingsPage() {
                         Xem lại các phiên chơi đã hoàn thành, doanh thu và chi tiết đơn hàng.
                     </p>
                 </div>
-                <Bookings />
+                <Bookings/>
             </Main>
         </>
     );

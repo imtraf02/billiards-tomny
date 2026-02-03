@@ -13,8 +13,8 @@ import {
 import { useGetBookings } from "@/features/booking/hooks/use-booking";
 import { BookingCard } from "./booking-card";
 import { BookingDetailDialog } from "./booking-detail-dialog";
-import { format, startOfDay, endOfDay, subDays, startOfWeek } from "date-fns";
 import { BookingCardSkeleton } from "./booking-card-skeleton";
+import { startOfDay, endOfDay, subDays, startOfWeek } from "date-fns";
 
 export function Bookings() {
     const [page, setPage] = useState(1);
@@ -50,7 +50,7 @@ export function Bookings() {
             startDate,
             endDate,
             page,
-            limit: 12, // Tăng limit để phù hợp với grid
+            limit: 12,
         };
     };
 
@@ -64,54 +64,64 @@ export function Bookings() {
     const totalPages = bookingsData?.meta?.totalPages || 1;
 
     return (
-        <div className="space-y-4">
+        <div className="flex flex-col h-full">
             {/* Filters Toolbar */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-                    <div className="flex items-center gap-2">
-                        <Select value={dateRange} onValueChange={(v) => { setDateRange(v); setPage(1); }}>
-                            <SelectTrigger className="w-[160px] bg-white">
-                                <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                <SelectValue placeholder="Thời gian" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="TODAY">Hôm nay</SelectItem>
-                                <SelectItem value="YESTERDAY">Hôm qua</SelectItem>
-                                <SelectItem value="WEEK">Tuần này</SelectItem>
-                                <SelectItem value="ALL">Tất cả thời gian</SelectItem>
-                            </SelectContent>
-                        </Select>
+            <div className="sticky top-0 z-10 bg-background pb-4 mb-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <div className="flex items-center gap-2">
+                            <Select value={dateRange} onValueChange={(v) => { setDateRange(v); setPage(1); }}>
+                                <SelectTrigger className="w-[160px]">
+                                    <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                    <SelectValue placeholder="Thời gian" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="TODAY">Hôm nay</SelectItem>
+                                    <SelectItem value="YESTERDAY">Hôm qua</SelectItem>
+                                    <SelectItem value="WEEK">Tuần này</SelectItem>
+                                    <SelectItem value="ALL">Tất cả thời gian</SelectItem>
+                                </SelectContent>
+                            </Select>
 
-                        <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
-                            <SelectTrigger className="w-[160px] bg-white">
-                                <SelectValue placeholder="Trạng thái" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-                                <SelectItem value="COMPLETED">Đã hoàn thành</SelectItem>
-                                <SelectItem value="PENDING">Đang chơi</SelectItem>
-                                <SelectItem value="CANCELLED">Đã hủy</SelectItem>
-                            </SelectContent>
-                        </Select>
+                            <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
+                                <SelectTrigger className="w-[160px]">
+                                    <SelectValue placeholder="Trạng thái" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
+                                    <SelectItem value="COMPLETED">Đã hoàn thành</SelectItem>
+                                    <SelectItem value="PENDING">Đang chơi</SelectItem>
+                                    <SelectItem value="CANCELLED">Đã hủy</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm">
+                            <Download className="mr-2 h-4 w-4" /> Xuất báo cáo
+                        </Button>
                     </div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                        <Download className="mr-2 h-4 w-4" /> Xuất báo cáo
-                    </Button>
-                </div>
+                
+                {/* Hiển thị thông tin lọc */}
+                {bookingsData && (
+                    <div className="mt-2 text-sm text-muted-foreground">
+                        Hiển thị {bookingsData.data?.length || 0} trong tổng số {bookingsData.meta?.total || 0} phiên chơi
+                    </div>
+                )}
             </div>
 
-            {/* Bookings Grid */}
-            {isLoading ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {[...Array(8)].map((_, i) => (
-                        <BookingCardSkeleton key={i} />
-                    ))}
-                </div>
-            ) : bookingsData?.data && bookingsData.data.length > 0 ? (
-                <>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto pb-4">
+                {/* Bookings Grid */}
+                {isLoading ? (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {[...Array(8)].map((_, i) => (
+                            <BookingCardSkeleton key={i} />
+                        ))}
+                    </div>
+                ) : bookingsData?.data && bookingsData.data.length > 0 ? (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {bookingsData.data.map((booking: any) => (
                             <BookingCard
@@ -121,10 +131,31 @@ export function Bookings() {
                             />
                         ))}
                     </div>
+                ) : (
+                    <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border border-dashed text-center">
+                        <div className="text-muted-foreground mb-2">Không tìm thấy booking nào</div>
+                        <Button
+                            variant="link"
+                            onClick={() => {
+                                setStatus("ALL");
+                                setDateRange("ALL");
+                                setPage(1);
+                            }}
+                        >
+                            Xóa bộ lọc
+                        </Button>
+                    </div>
+                )}
+            </div>
 
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="flex items-center justify-end space-x-2 py-4">
+            {/* Pagination - Fixed at bottom */}
+            {bookingsData?.data && bookingsData.data.length > 0 && totalPages > 1 && (
+                <div className="sticky bottom-0 bg-background border-t pt-4 mt-4">
+                    <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                            Trang {page} trên {totalPages}
+                        </div>
+                        <div className="flex items-center space-x-2">
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -133,9 +164,6 @@ export function Bookings() {
                             >
                                 <ChevronLeft className="h-4 w-4 mr-1" /> Trước
                             </Button>
-                            <div className="text-sm font-medium">
-                                Trang {page} / {totalPages}
-                            </div>
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -145,21 +173,7 @@ export function Bookings() {
                                 Tiếp <ChevronRight className="h-4 w-4 ml-1" />
                             </Button>
                         </div>
-                    )}
-                </>
-            ) : (
-                <div className="flex h-[200px] flex-col items-center justify-center rounded-lg border border-dashed text-center">
-                    <p className="text-muted-foreground">Không tìm thấy booking nào.</p>
-                    <Button
-                        variant="link"
-                        onClick={() => {
-                            setStatus("ALL");
-                            setDateRange("ALL");
-                            setPage(1);
-                        }}
-                    >
-                        Xóa bộ lọc
-                    </Button>
+                    </div>
                 </div>
             )}
 
