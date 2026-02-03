@@ -8,7 +8,7 @@ import {
 	PlayCircle,
 	Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,24 +49,13 @@ const statusLabels: Record<string, string> = {
 	RESERVED: "Đã đặt",
 };
 
-export function TableCard({
-	table,
-	activeBooking,
-	onEdit,
-	onDelete,
-	onViewSession,
-}: TableCardProps) {
-	const { mutate: createBooking, isPending: isStarting } = useCreateBooking();
+// Tách Timer riêng cho TableCard
+const TableTimer = memo(({ startTime }: { startTime: Date }) => {
 	const [duration, setDuration] = useState<string>("");
 
 	useEffect(() => {
-		if (!activeBooking || table.status !== "OCCUPIED") {
-			setDuration("");
-			return;
-		}
-
-		const interval = setInterval(() => {
-			const start = new Date(activeBooking.startTime);
+		const updateDuration = () => {
+			const start = new Date(startTime);
 			const now = new Date();
 			const diff = now.getTime() - start.getTime();
 
@@ -77,12 +66,35 @@ export function TableCard({
 			setDuration(
 				`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`,
 			);
-		}, 1000);
+		};
 
+		updateDuration();
+		const interval = setInterval(updateDuration, 1000);
 		return () => clearInterval(interval);
-	}, [activeBooking, table.status]);
+	}, [startTime]);
 
-	const handleAction = () => {
+	if (!duration) return null;
+
+	return (
+		<div className="flex items-center text-xs font-mono font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded animate-pulse">
+			<Clock className="mr-1 h-3 w-3" />
+			{duration}
+		</div>
+	);
+});
+
+TableTimer.displayName = 'TableTimer';
+
+export const TableCard = memo(function TableCard({
+	table,
+	activeBooking,
+	onEdit,
+	onDelete,
+	onViewSession,
+}: TableCardProps) {
+	const { mutate: createBooking, isPending: isStarting } = useCreateBooking();
+
+	const handleAction = useCallback(() => {
 		if (table.status === "AVAILABLE") {
 			createBooking({
 				tableIds: [table.id],
@@ -91,7 +103,15 @@ export function TableCard({
 		} else if (table.status === "OCCUPIED" && onViewSession) {
 			onViewSession(table);
 		}
-	};
+	}, [table.status, table.id, createBooking, onViewSession]);
+
+	const handleEdit = useCallback(() => {
+		onEdit(table);
+	}, [onEdit, table]);
+
+	const handleDelete = useCallback(() => {
+		onDelete(table.id);
+	}, [onDelete, table.id]);
 
 	return (
 		<Card className="overflow-hidden transition-all hover:shadow-md">
@@ -104,13 +124,13 @@ export function TableCard({
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
-						<DropdownMenuItem onClick={() => onEdit(table)}>
+						<DropdownMenuItem onClick={handleEdit}>
 							<Pencil className="mr-2 h-4 w-4" />
 							Sửa
 						</DropdownMenuItem>
 						<DropdownMenuItem
 							className="text-red-600"
-							onClick={() => onDelete(table.id)}
+							onClick={handleDelete}
 						>
 							<Trash2 className="mr-2 h-4 w-4" />
 							Xóa
@@ -142,11 +162,8 @@ export function TableCard({
 							/ giờ
 						</span>
 					</div>
-					{duration && (
-						<div className="flex items-center text-xs font-mono font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded animate-pulse">
-							<Clock className="mr-1 h-3 w-3" />
-							{duration}
-						</div>
+					{activeBooking && table.status === "OCCUPIED" && (
+						<TableTimer startTime={new Date(activeBooking.startTime)} />
 					)}
 				</div>
 			</CardContent>
@@ -160,7 +177,7 @@ export function TableCard({
 					{table.status === "AVAILABLE" ? (
 						<>
 							<PlayCircle className="mr-2 h-4 w-4" />
-							Bắt đầu chơi
+							{isStarting ? "Đang xử lý..." : "Bắt đầu chơi"}
 						</>
 					) : (
 						<>
@@ -172,4 +189,12 @@ export function TableCard({
 			</CardFooter>
 		</Card>
 	);
-}
+}, (prevProps, nextProps) => {
+	// Custom comparison function để tránh re-render không cần thiết
+	return (
+		prevProps.table.id === nextProps.table.id &&
+		prevProps.table.status === nextProps.table.status &&
+		prevProps.activeBooking?.id === nextProps.activeBooking?.id &&
+		prevProps.activeBooking?.startTime === nextProps.activeBooking?.startTime
+	);
+});
