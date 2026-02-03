@@ -3,6 +3,7 @@ import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { auth } from "./modules/auth";
 import { booking } from "./modules/booking";
+import { dashboard } from "./modules/dashboard";
 import { order } from "./modules/order";
 import { product } from "./modules/product";
 import { table } from "./modules/table";
@@ -39,6 +40,10 @@ export const app = new Elysia({ prefix: "/api" })
 						name: "Orders",
 						description: "Quản lý đơn hàng đồ ăn/uống",
 					},
+					{
+						name: "Dashboard",
+						description: "Thống kê và báo cáo tổng quan",
+					},
 				],
 			},
 		}),
@@ -47,6 +52,7 @@ export const app = new Elysia({ prefix: "/api" })
 	.use(table)
 	.use(product)
 	.use(booking)
-	.use(order);
+	.use(order)
+	.use(dashboard);
 
 // export type App = typeof app;

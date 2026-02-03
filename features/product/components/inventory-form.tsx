@@ -172,7 +172,7 @@ export function InventoryForm({
 										value={field.state.value}
 										onValueChange={(val) => field.handleChange(val)}
 									>
-										<SelectTrigger>
+										<SelectTrigger className="w-full">
 											<SelectValue placeholder="Chọn lý do" />
 										</SelectTrigger>
 										<SelectContent>

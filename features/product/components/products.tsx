@@ -12,7 +12,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { Product } from "@/generated/prisma/client";
-import { useDeleteProduct, useGetProducts } from "../hooks/use-product";
+import {
+	useDeleteProduct,
+	useGetCategories,
+	useGetProducts,
+} from "../hooks/use-product";
 import { CreateProductForm } from "./create-product-form";
 import { InventoryForm } from "./inventory-form";
 import { ProductCard } from "./product-card";
@@ -33,10 +37,13 @@ export function Products() {
 		null,
 	);
 
+	const { data: categoriesData } = useGetCategories();
+
 	const { data: productsData, isLoading } = useGetProducts({
 		search: searchTerm || undefined,
-		category: categoryFilter !== "ALL" ? categoryFilter : undefined,
-		status: statusFilter !== "ALL" ? statusFilter : undefined,
+		categoryId: categoryFilter !== "ALL" ? categoryFilter : undefined,
+		isAvailable:
+			statusFilter !== "ALL" ? statusFilter === "AVAILABLE" : undefined,
 		page,
 		limit,
 	});
@@ -80,19 +87,20 @@ export function Products() {
 						/>
 					</div>
 					<Select value={categoryFilter} onValueChange={setCategoryFilter}>
-						<SelectTrigger className="w-full sm:w-[150px]">
+						<SelectTrigger className="w-full sm:w-44">
 							<SelectValue placeholder="Danh mục" />
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="ALL">Tất cả danh mục</SelectItem>
-							<SelectItem value="THỨC UỐNG">Thức uống</SelectItem>
-							<SelectItem value="ĐỒ ĂN">Đồ ăn</SelectItem>
-							<SelectItem value="PHỤ KIỆN">Phụ kiện</SelectItem>
-							<SelectItem value="KHÁC">Khác</SelectItem>
+							{categoriesData?.map((category) => (
+								<SelectItem key={category.id} value={category.id}>
+									{category.name}
+								</SelectItem>
+							))}
 						</SelectContent>
 					</Select>
 					<Select value={statusFilter} onValueChange={setStatusFilter}>
-						<SelectTrigger className="w-full sm:w-[150px]">
+						<SelectTrigger className="w-full sm:w-44">
 							<SelectValue placeholder="Trạng thái" />
 						</SelectTrigger>
 						<SelectContent>
@@ -155,7 +163,7 @@ export function Products() {
 					)}
 				</>
 			) : (
-				<div className="flex h-[200px] flex-col items-center justify-center rounded-lg border border-dashed text-center">
+				<div className="flex h-52 flex-col items-center justify-center rounded-lg border border-dashed text-center">
 					<p className="text-muted-foreground">Không tìm thấy sản phẩm nào.</p>
 					<Button
 						variant="link"

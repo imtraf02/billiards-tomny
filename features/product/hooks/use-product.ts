@@ -11,8 +11,8 @@ import type {
 
 interface GetProductsParams {
 	search?: string;
-	category?: string;
-	status?: string;
+	categoryId?: string;
+	isAvailable?: boolean;
 	page?: number;
 	limit?: number;
 }
@@ -24,8 +24,8 @@ export function useGetProducts(params?: GetProductsParams) {
 			const res = await api.products.get({
 				query: {
 					search: params?.search,
-					category: params?.category,
-					status: params?.status,
+					categoryId: params?.categoryId,
+					isAvailable: params?.isAvailable,
 					page: params?.page || 1,
 					limit: params?.limit || 12,
 				},
