@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Search as SearchIcon } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,35 +40,52 @@ export function Tables() {
 		limit: 100,
 		page: 1,
 	});
-	const activeBookings = bookingsData?.data || [];
+
+	// Memoize activeBookingMap để tránh tính toán lại mỗi lần render
+	const activeBookingMap = useMemo(() => {
+		const map: Record<string, any> = {};
+		(bookingsData?.data || []).forEach((booking: any) => {
+			booking.bookingTables.forEach((bt: any) => {
+				map[bt.tableId] = booking;
+			});
+		});
+		return map;
+	}, [bookingsData?.data]);
 
 	const { mutate: deleteTable } = useDeleteTable();
 
-	const handleEdit = (table: Table) => {
+	// Sử dụng useCallback cho các event handler
+	const handleEdit = useCallback((table: Table) => {
 		setSelectedTable(table);
 		setIsFormOpen(true);
-	};
+	}, []);
 
-	const handleDelete = (id: string) => {
+	const handleDelete = useCallback((id: string) => {
 		if (confirm("Bạn có chắc chắn muốn xóa bàn này?")) {
 			deleteTable(id);
 		}
-	};
+	}, [deleteTable]);
 
-	const handleCreate = () => {
+	const handleCreate = useCallback(() => {
 		setSelectedTable(null);
 		setIsFormOpen(true);
-	};
+	}, []);
 
-	const handleViewSession = (table: Table) => {
+	const handleViewSession = useCallback((table: Table) => {
 		setSelectedTable(table);
 		setIsSessionOpen(true);
-	};
+	}, []);
 
-	const handleOpenOrder = (bookingId: string) => {
+	const handleOpenOrder = useCallback((bookingId: string) => {
 		setActiveBookingId(bookingId);
 		setIsOrderOpen(true);
-	};
+	}, []);
+
+	// Memoize filtered tables
+	const filteredTables = useMemo(() => {
+		if (!tables) return [];
+		return tables;
+	}, [tables]);
 
 	return (
 		<div className="space-y-4">
@@ -123,12 +140,10 @@ export function Tables() {
 						/>
 					))}
 				</div>
-			) : tables && tables.length > 0 ? (
+			) : filteredTables && filteredTables.length > 0 ? (
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-					{tables.map((table: Table) => {
-						const activeBooking = activeBookings.find((b) =>
-							b.bookingTables.some((bt: any) => bt.tableId === table.id),
-						);
+					{filteredTables.map((table: Table) => {
+						const activeBooking = activeBookingMap[table.id];
 						return (
 							<TableCard
 								key={table.id}
