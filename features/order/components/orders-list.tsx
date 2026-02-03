@@ -2,17 +2,19 @@
 
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Eye, ReceiptText } from "lucide-react";
+import {
+	Eye,
+	ReceiptText,
+	User,
+	Calendar,
+	CreditCard,
+	Table,
+	Package,
+	Clock,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 interface OrdersListProps {
 	orders: any[];
@@ -65,6 +67,16 @@ export function OrdersList({ orders, onViewDetail }: OrdersListProps) {
 		}
 	};
 
+	const getOrderType = (order: any) => {
+		if (order.items?.some((item: any) => item.type === "PRODUCT")) {
+			return "Sản phẩm";
+		}
+		if (order.items?.some((item: any) => item.type === "SERVICE")) {
+			return "Dịch vụ";
+		}
+		return "Hỗn hợp";
+	};
+
 	if (orders.length === 0) {
 		return (
 			<div className="flex flex-col items-center justify-center py-12 border rounded-lg bg-muted/10">
@@ -77,67 +89,101 @@ export function OrdersList({ orders, onViewDetail }: OrdersListProps) {
 	}
 
 	return (
-		<div className="rounded-md border bg-white overflow-hidden">
-			<Table>
-				<TableHeader>
-					<TableRow>
-						<TableHead className="w-[120px]">Mã đơn</TableHead>
-						<TableHead>Khách hàng / Bàn</TableHead>
-						<TableHead className="text-right">Tổng tiền</TableHead>
-						<TableHead className="text-center">Trạng thái</TableHead>
-						<TableHead>Thời gian</TableHead>
-						<TableHead className="w-[100px] text-right">Thao tác</TableHead>
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					{orders.map((order) => (
-						<TableRow
-							key={order.id}
-							className="cursor-pointer hover:bg-muted/50"
-							onClick={() => onViewDetail(order.id)}
-						>
-							<TableCell className="font-medium font-mono text-xs uppercase">
-								#{order.id.slice(-6)}
-							</TableCell>
-							<TableCell>
-								<div className="flex flex-col">
-									<span className="font-medium">
+		<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+			{orders.map((order) => (
+				<Card
+					key={order.id}
+					className="overflow-hidden transition-all hover:shadow-md h-full flex flex-col"
+				>
+					<CardContent className="pt-6 pb-2 flex-grow">
+						{/* Header */}
+						<div className="flex items-center justify-between mb-4">
+							<div className="flex items-center gap-2">
+								<CreditCard className="h-5 w-5 text-primary" />
+								<div>
+									<h3 className="text-lg font-bold">#{order.id.slice(-6)}</h3>
+									<p className="text-xs text-muted-foreground">
+										{getOrderType(order)}
+									</p>
+								</div>
+							</div>
+							{getStatusBadge(order.status)}
+						</div>
+
+						{/* Order Info */}
+						<div className="space-y-3 mb-4">
+							<div className="flex items-center gap-3">
+								<div className="bg-muted p-2 rounded-lg">
+									<User className="h-4 w-4" />
+								</div>
+								<div className="flex-1">
+									<p className="text-sm text-muted-foreground">Khách hàng</p>
+									<p className="font-medium">{order.user?.name || "Nhân viên"}</p>
+								</div>
+							</div>
+
+							<div className="flex items-center gap-3">
+								<div className="bg-muted p-2 rounded-lg">
+									<Table className="h-4 w-4" />
+								</div>
+								<div className="flex-1">
+									<p className="text-sm text-muted-foreground">Bàn</p>
+									<p className="font-medium">
 										{order.booking?.bookingTables
 											?.map((bt: any) => bt.table?.name)
 											.join(", ") || "Khách lẻ"}
-									</span>
-									<span className="text-xs text-muted-foreground">
-										{order.user?.name || "Nhân viên"}
-									</span>
+									</p>
 								</div>
-							</TableCell>
-							<TableCell className="text-right font-bold text-primary">
-								{new Intl.NumberFormat("vi-VN").format(order.totalAmount)} đ
-							</TableCell>
-							<TableCell className="text-center">
-								{getStatusBadge(order.status)}
-							</TableCell>
-							<TableCell className="text-muted-foreground text-sm">
-								{format(new Date(order.createdAt), "HH:mm - dd/MM/yyyy", {
-									locale: vi,
-								})}
-							</TableCell>
-							<TableCell className="text-right">
-								<Button
-									size="icon"
-									variant="ghost"
-									onClick={(e) => {
-										e.stopPropagation();
-										onViewDetail(order.id);
-									}}
-								>
-									<Eye className="h-4 w-4" />
-								</Button>
-							</TableCell>
-						</TableRow>
-					))}
-				</TableBody>
-			</Table>
+							</div>
+
+							<div className="flex items-center gap-3">
+								<div className="bg-muted p-2 rounded-lg">
+									<Package className="h-4 w-4" />
+								</div>
+								<div className="flex-1">
+									<p className="text-sm text-muted-foreground">Sản phẩm</p>
+									<p className="font-medium">{order.items?.length || 0} món</p>
+								</div>
+							</div>
+
+							<div className="flex items-center gap-3">
+								<div className="bg-muted p-2 rounded-lg">
+									<Clock className="h-4 w-4" />
+								</div>
+								<div className="flex-1">
+									<p className="text-sm text-muted-foreground">Thời gian</p>
+									<p className="font-medium">
+										{format(new Date(order.createdAt), "HH:mm - dd/MM", {
+											locale: vi,
+										})}
+									</p>
+								</div>
+							</div>
+						</div>
+
+						{/* Total Amount */}
+						<div className="bg-muted/30 rounded-lg p-3">
+							<div className="flex items-center justify-between">
+								<span className="text-sm font-medium">Tổng tiền</span>
+								<span className="text-xl font-bold text-primary">
+									{new Intl.NumberFormat("vi-VN").format(order.totalAmount)} đ
+								</span>
+							</div>
+						</div>
+					</CardContent>
+
+					<CardFooter className="pt-2">
+						<Button
+							variant="default"
+							className="w-full"
+							onClick={() => onViewDetail(order.id)}
+						>
+							<Eye className="mr-2 h-4 w-4" />
+							Xem chi tiết
+						</Button>
+					</CardFooter>
+				</Card>
+			))}
 		</div>
 	);
 }

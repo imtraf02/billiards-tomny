@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import type { Product } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
-import { useGetProductInventoryLogs } from "../hooks/use-product";
+import { useGetProductInventoryLogs } from "@/features/product/hooks/use-product";
 
 interface InventoryLogsDialogProps {
 	product: Product;
