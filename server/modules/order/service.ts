@@ -212,7 +212,15 @@ export abstract class OrderService {
 						},
 					},
 					user: true,
-					booking: true,
+					booking: {
+						include: {
+							bookingTables: {
+								include: {
+									table: true,
+								},
+							},
+						},
+					},
 				},
 				skip,
 				take: query.limit,
@@ -241,7 +249,15 @@ export abstract class OrderService {
 					},
 				},
 				user: true,
-				booking: true,
+				booking: {
+					include: {
+						bookingTables: {
+							include: {
+								table: true,
+							},
+						},
+					},
+				},
 			},
 		});
 	}
@@ -296,11 +312,6 @@ export abstract class OrderService {
 	}
 
 	static async updateItem(itemId: string, data: UpdateOrderItemInput) {
-		const item = await prisma.orderItem.findUniqueOrThrow({
-			where: { id: itemId },
-			include: { order: true },
-		});
-
 		// Recalculate order total if quantity changes (simplified)
 		// In real app, might need transaction to update order total atomically
 		return await prisma.orderItem.update({

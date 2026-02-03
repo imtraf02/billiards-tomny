@@ -266,6 +266,8 @@ export abstract class ProductService {
 							id: true,
 							name: true,
 							unit: true,
+							price: true,
+							cost: true,
 						},
 					},
 					user: {

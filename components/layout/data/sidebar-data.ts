@@ -20,7 +20,7 @@ export const sidebarData: SidebarData = {
 			items: [
 				{
 					title: "Bảng điều khiển",
-					url: "/",
+					url: "/app/dashboard",
 					icon: LayoutDashboard,
 				},
 			],
