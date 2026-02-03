@@ -5,7 +5,8 @@ import type {
 	CreateCategoryInput, 
 	UpdateCategoryInput,
 	GetProductsQuery,
-	GetInventoryLogsQuery
+	GetInventoryLogsQuery,
+	CreateInventoryLogInput
 } from "@/shared/schemas/product";
 
 interface GetProductsParams {
@@ -152,7 +153,7 @@ export function useDeleteProduct(onSuccess?: () => void) {
   });
 }
 
-export function useGetAllProducts(query: any = {}) {
+export function useGetAllProducts(query: Partial<GetProductsQuery> = {}) {
   return useQuery({
     queryKey: ["products", "all", query],
     queryFn: async () => {
@@ -165,45 +166,8 @@ export function useGetAllProducts(query: any = {}) {
   });
 }
 
-// Hook cho inventory (nhập/xuất kho)
-interface InventoryInput {
-  productId: string;
-  quantity: number;
-  type: "IMPORT" | "EXPORT";
-  note?: string;
-}
+// Consolidated Inventory Logs hook below
 
-export function useUpdateInventory(onSuccess?: () => void) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: InventoryInput) => {
-      const res = await api.products.inventory.post(data);
-      if (res.error) throw res.error;
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      onSuccess?.();
-    },
-  });
-}
-
-// Hook cho inventory logs
-export function useGetInventoryLogs(productId?: string) {
-  return useQuery({
-    queryKey: ["inventory-logs", productId],
-    queryFn: async () => {
-      const res = await api.products.inventory.get({
-        query: productId ? { productId } : undefined,
-      });
-      if (res.status === 200) {
-        return res.data;
-      }
-      return [];
-    },
-    enabled: !!productId, // Chỉ chạy khi có productId
-  });
-}
 
 export function useGetInventoryLogs(query: Partial<GetInventoryLogsQuery> = {}) {
 	return useQuery({
@@ -215,5 +179,35 @@ export function useGetInventoryLogs(query: Partial<GetInventoryLogsQuery> = {}) 
 			}
 			return { data: [], meta: { total: 0, page: 1, limit: 10, totalPages: 0 } };
 		},
+	});
+}
+
+export function useCreateInventoryLog(onSuccess?: () => void) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (data: CreateInventoryLogInput) => {
+			const res = await api.products.inventory.post(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["products"] });
+			queryClient.invalidateQueries({ queryKey: ["inventory-logs"] });
+			onSuccess?.();
+		},
+	});
+}
+
+export function useGetProductInventoryLogs(productId: string) {
+	return useQuery({
+		queryKey: ["inventory", "product", productId],
+		queryFn: async () => {
+			const res = await api.products({ id: productId }).inventory.get();
+			if (res.status === 200) {
+				return res.data;
+			}
+			return [];
+		},
+		enabled: !!productId,
 	});
 }

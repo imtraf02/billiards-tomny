@@ -30,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Product } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
 import { createInventoryLogSchema } from "@/shared/schemas/product";
-import { useCreateInventoryLog } from "../hooks/use-inventory";
+import { useCreateInventoryLog } from "../hooks/use-product";
 
 interface InventoryFormProps {
 	open: boolean;
