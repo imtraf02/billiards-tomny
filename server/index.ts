@@ -49,4 +49,4 @@ export const app = new Elysia({ prefix: "/api" })
 	.use(booking)
 	.use(order);
 
-export type App = typeof app;
+// export type App = typeof app;

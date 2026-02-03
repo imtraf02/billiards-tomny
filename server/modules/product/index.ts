@@ -70,8 +70,8 @@ export const product = new Elysia({ prefix: "/products" })
 	// Products
 	.post(
 		"/",
-		async ({ body }) => {
-			return await ProductService.createProduct(body);
+		async ({ body, user }) => {
+			return await ProductService.createProduct(body, user.id);
 		},
 		{
 			body: createProductSchema,
@@ -106,8 +106,8 @@ export const product = new Elysia({ prefix: "/products" })
 	)
 	.patch(
 		"/:id",
-		async ({ params: { id }, body }) => {
-			return await ProductService.updateProduct(id, body);
+		async ({ params: { id }, body, user }) => {
+			return await ProductService.updateProduct(id, body, user.id);
 		},
 		{
 			body: updateProductSchema,

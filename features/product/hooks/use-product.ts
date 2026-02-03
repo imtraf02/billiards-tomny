@@ -50,3 +50,15 @@ export function useUpdateProduct(onSuccess?: () => void) {
 		},
 	});
 }
+export function useGetAllProducts(query: any = {}) {
+	return useQuery({
+		queryKey: ["products", query],
+		queryFn: async () => {
+			const res = await api.products.get({ query });
+			if (res.status === 200) {
+				return res.data;
+			}
+			return { data: [], meta: { total: 0, page: 1, limit: 10, totalPages: 0 } };
+		},
+	});
+}

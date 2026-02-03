@@ -30,17 +30,17 @@ export const sidebarData: SidebarData = {
 			items: [
 				{
 					title: "Danh sách bàn",
-					url: "/tables",
+					url: "/app/tables",
 					icon: Grid3x3,
 				},
 				{
 					title: "Lịch đặt bàn",
-					url: "/bookings",
+					url: "/app/bookings",
 					icon: CalendarClock,
 				},
 				{
 					title: "Đơn hàng",
-					url: "/orders",
+					url: "/app/orders",
 					icon: ShoppingCart,
 				},
 			],
@@ -55,12 +55,12 @@ export const sidebarData: SidebarData = {
 				},
 				{
 					title: "Danh mục",
-					url: "/categories",
+					url: "/app/categories",
 					icon: Layers,
 				},
 				{
 					title: "Lịch sử kho",
-					url: "/inventory-logs",
+					url: "/app/inventory-logs",
 					icon: ClipboardList,
 				},
 			],
@@ -70,12 +70,12 @@ export const sidebarData: SidebarData = {
 			items: [
 				{
 					title: "Giao dịch",
-					url: "/transactions",
+					url: "/app/transactions",
 					icon: Receipt,
 				},
 				{
 					title: "Báo cáo",
-					url: "/reports",
+					url: "/app/reports",
 					icon: BarChart,
 				},
 			],
@@ -85,12 +85,12 @@ export const sidebarData: SidebarData = {
 			items: [
 				{
 					title: "Người dùng",
-					url: "/users",
+					url: "/app/users",
 					icon: Users,
 				},
 				{
 					title: "Cài đặt",
-					url: "/settings",
+					url: "/app/settings",
 					icon: Settings,
 				},
 			],

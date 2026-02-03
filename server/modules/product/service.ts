@@ -45,9 +45,30 @@ export abstract class ProductService {
 	}
 
 	// Product Methods
-	static async createProduct(data: CreateProductInput) {
-		return await prisma.product.create({
-			data,
+	static async createProduct(data: CreateProductInput, userId: string) {
+		return await prisma.$transaction(async (tx) => {
+			const product = await tx.product.create({
+				data,
+			});
+
+			// If initial stock is specified, create an inventory log
+			if (data.currentStock > 0) {
+				await tx.inventoryLog.create({
+					data: {
+						productId: product.id,
+						userId,
+						type: "IN",
+						quantity: data.currentStock,
+						unitCost: data.cost,
+						reason: "initial",
+						note: "Khởi tạo tồn kho ban đầu",
+						stockBefore: 0,
+						stockAfter: data.currentStock,
+					},
+				});
+			}
+
+			return product;
 		});
 	}
 
@@ -106,10 +127,50 @@ export abstract class ProductService {
 		});
 	}
 
-	static async updateProduct(id: string, data: UpdateProductInput) {
-		return await prisma.product.update({
-			where: { id },
-			data,
+	static async updateProduct(
+		id: string,
+		data: UpdateProductInput,
+		userId: string,
+	) {
+		return await prisma.$transaction(async (tx) => {
+			// Get current state to compare stock change
+			const currentProduct = await tx.product.findUnique({
+				where: { id },
+				select: { currentStock: true },
+			});
+
+			if (!currentProduct) {
+				throw new Error("Sản phẩm không tồn tại");
+			}
+
+			const product = await tx.product.update({
+				where: { id },
+				data,
+			});
+
+			// Only log if currentStock has changed or was explicitly provided in data
+			if (data.currentStock !== undefined && data.currentStock !== currentProduct.currentStock) {
+				const stockBefore = currentProduct.currentStock;
+				const stockAfter = data.currentStock;
+				const quantity = Math.abs(stockAfter - stockBefore);
+				const type = stockAfter > stockBefore ? "IN" : "OUT";
+
+				await tx.inventoryLog.create({
+					data: {
+						productId: id,
+						userId,
+						type,
+						quantity,
+						unitCost: data.cost, // use updated cost if available
+						reason: "adjustment",
+						note: "Điều chỉnh tồn kho khi cập nhật sản phẩm",
+						stockBefore,
+						stockAfter,
+					},
+				});
+			}
+
+			return product;
 		});
 	}
 

@@ -38,6 +38,7 @@ enum OrderStatus {
   PENDING
   PREPARING
   DELIVERED
+  COMPLETED
   CANCELLED
 }
 
@@ -165,10 +166,10 @@ model Order {
 }
 
 model OrderItem {
-  id            String   @id @default(uuid(7))
+  id            String @id @default(uuid(7))
   orderId       String
   productId     String
-  quantity      Int      @default(1)
+  quantity      Int    @default(1)
   priceSnapshot Int
   costSnapshot  Int? // Giá vốn tại thời điểm bán
 

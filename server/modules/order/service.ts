@@ -6,46 +6,172 @@ import type {
 	UpdateOrderInput,
 	UpdateOrderItemInput,
 } from "@/shared/schemas/order";
+import { BadRequestError } from "@/server/utils/errors";
 
 export abstract class OrderService {
-	static async create(data: CreateOrderInput) {
-		// Calculate total price for items
-		let totalAmount = 0;
+	static async create(data: CreateOrderInput, executorId: string) {
+		// 1. Fetch products and calculate prices
 		const itemsWithPrice = await Promise.all(
 			data.items.map(async (item) => {
 				const product = await prisma.product.findUniqueOrThrow({
 					where: { id: item.productId },
 				});
 
-				const lineTotal = product.price * item.quantity;
-				totalAmount += lineTotal;
-
 				return {
 					productId: item.productId,
 					quantity: item.quantity,
 					priceSnapshot: product.price,
 					costSnapshot: product.cost,
+					lineTotal: product.price * item.quantity,
 				};
 			}),
 		);
 
-		return await prisma.order.create({
-			data: {
-				bookingId: data.bookingId,
-				userId: data.userId,
-				totalAmount,
-				status: "PENDING",
-				orderItems: {
-					create: itemsWithPrice,
+		// 2. Calculate grand total safely
+		const totalAmount = itemsWithPrice.reduce((sum, item) => sum + item.lineTotal, 0);
+
+		// 3. Find existing PENDING order if bookingId is provided
+		if (data.bookingId) {
+			const existingOrder = await prisma.order.findFirst({
+				where: {
+					bookingId: data.bookingId,
+					status: "PENDING",
 				},
-			},
-			include: {
-				orderItems: {
-					include: {
-						product: true,
+				include: {
+					orderItems: true,
+				},
+			});
+
+			if (existingOrder) {
+				return await prisma.$transaction(async (tx) => {
+					// Update order items and deduct inventory
+					for (const newItem of itemsWithPrice) {
+						// 1. Check stock
+						const product = await tx.product.findUniqueOrThrow({
+							where: { id: newItem.productId },
+						});
+
+						if (product.currentStock < newItem.quantity) {
+							throw new BadRequestError(`Sản phẩm "${product.name}" không đủ tồn kho (còn ${product.currentStock})`);
+						}
+
+						// 2. Deduct stock
+						const stockBefore = product.currentStock;
+						const stockAfter = stockBefore - newItem.quantity;
+
+						await tx.product.update({
+							where: { id: product.id },
+							data: { currentStock: stockAfter },
+						});
+
+						// 3. Log inventory
+						await tx.inventoryLog.create({
+							data: {
+								productId: product.id,
+								quantity: newItem.quantity,
+								type: "OUT",
+								reason: "sale",
+								stockBefore,
+								stockAfter,
+								note: `Bán hàng cho booking ${data.bookingId} (cập nhật đơn hàng)`,
+								userId: executorId,
+							},
+						});
+
+						const existingItem = existingOrder.orderItems.find(
+							(item) => item.productId === newItem.productId,
+						);
+
+						if (existingItem) {
+							await tx.orderItem.update({
+								where: { id: existingItem.id },
+								data: {
+									quantity: { increment: newItem.quantity },
+								},
+							});
+						} else {
+							await tx.orderItem.create({
+								data: {
+									orderId: existingOrder.id,
+									productId: newItem.productId,
+									quantity: newItem.quantity,
+									priceSnapshot: newItem.priceSnapshot,
+									costSnapshot: newItem.costSnapshot,
+								},
+							});
+						}
+					}
+
+					// Update total amount
+					return await tx.order.update({
+						where: { id: existingOrder.id },
+						data: {
+							totalAmount: { increment: totalAmount },
+						},
+						include: {
+							orderItems: {
+								include: {
+									product: true,
+								},
+							},
+						},
+					});
+				});
+			}
+		}
+
+		// 4. Create new order if no existing pending order
+		return await prisma.$transaction(async (tx) => {
+			// Deduct inventory for all items
+			for (const item of itemsWithPrice) {
+				const product = await tx.product.findUniqueOrThrow({
+					where: { id: item.productId },
+				});
+
+				if (product.currentStock < item.quantity) {
+					throw new BadRequestError(`Sản phẩm "${product.name}" không đủ tồn kho (còn ${product.currentStock})`);
+				}
+
+				const stockBefore = product.currentStock;
+				const stockAfter = stockBefore - item.quantity;
+
+				await tx.product.update({
+					where: { id: product.id },
+					data: { currentStock: stockAfter },
+				});
+
+				await tx.inventoryLog.create({
+					data: {
+						productId: product.id,
+						quantity: item.quantity,
+						type: "OUT",
+						reason: "sale",
+						stockBefore,
+						stockAfter,
+						note: `Bán hàng cho booking ${data.bookingId}`,
+						userId: executorId,
+					},
+				});
+			}
+
+			return await tx.order.create({
+				data: {
+					bookingId: data.bookingId,
+					userId: data.userId,
+					totalAmount,
+					status: "PENDING",
+					orderItems: {
+						create: itemsWithPrice.map(({ lineTotal, ...item }) => item),
 					},
 				},
-			},
+				include: {
+					orderItems: {
+						include: {
+							product: true,
+						},
+					},
+				},
+			});
 		});
 	}
 
@@ -120,7 +246,49 @@ export abstract class OrderService {
 		});
 	}
 
-	static async update(id: string, data: UpdateOrderInput) {
+	static async update(id: string, data: UpdateOrderInput, executorId: string) {
+		const order = await prisma.order.findUniqueOrThrow({
+			where: { id },
+			include: { orderItems: true },
+		});
+
+		// Handle inventory restoration if cancelled
+		if (data.status === "CANCELLED" && order.status !== "CANCELLED") {
+			return await prisma.$transaction(async (tx) => {
+				for (const item of order.orderItems) {
+					const product = await tx.product.findUniqueOrThrow({
+						where: { id: item.productId },
+					});
+
+					const stockBefore = product.currentStock;
+					const stockAfter = stockBefore + item.quantity;
+
+					await tx.product.update({
+						where: { id: product.id },
+						data: { currentStock: stockAfter },
+					});
+
+					await tx.inventoryLog.create({
+						data: {
+							productId: product.id,
+							quantity: item.quantity,
+							type: "IN",
+							reason: "restock",
+							stockBefore,
+							stockAfter,
+							note: `Hoàn kho do hủy đơn hàng ${id}`,
+							userId: executorId,
+						},
+					});
+				}
+
+				return await tx.order.update({
+					where: { id },
+					data,
+				});
+			});
+		}
+
 		return await prisma.order.update({
 			where: { id },
 			data,

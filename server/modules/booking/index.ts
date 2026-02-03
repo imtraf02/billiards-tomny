@@ -95,8 +95,8 @@ export const booking = new Elysia({ prefix: "/bookings" })
 	// Complete booking (checkout)
 	.post(
 		"/:id/complete",
-		async ({ params: { id }, body }) => {
-			return await BookingService.complete(id, body);
+		async ({ params: { id }, body, user }) => {
+			return await BookingService.complete(id, body, user.id);
 		},
 		{
 			body: completeBookingSchema,
