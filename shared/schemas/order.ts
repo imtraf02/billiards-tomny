@@ -34,6 +34,16 @@ export const updateOrderItemSchema = z.object({
 		.positive({ error: "Số lượng phải lớn hơn 0" }),
 });
 
+export const batchUpdateOrderItemsSchema = z.object({
+	items: z.array(
+		z.object({
+			id: z.string().optional(), // Existing itemId
+			productId: z.string().optional(), // For new items
+			quantity: z.coerce.number().int().nonnegative(), // If 0, delete it
+		}),
+	),
+});
+
 export const getOrdersQuerySchema = z.object({
 	bookingId: z.string().optional(),
 	userId: z.string().optional(),
@@ -61,5 +71,8 @@ export type OrderItemInput = z.infer<typeof orderItemSchema>;
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type UpdateOrderInput = z.infer<typeof updateOrderSchema>;
 export type UpdateOrderItemInput = z.infer<typeof updateOrderItemSchema>;
+export type BatchUpdateOrderItemsInput = z.infer<
+	typeof batchUpdateOrderItemsSchema
+>;
 export type GetOrdersQuery = z.infer<typeof getOrdersQuerySchema>;
 export type CompleteOrderInput = z.infer<typeof completeOrderSchema>;

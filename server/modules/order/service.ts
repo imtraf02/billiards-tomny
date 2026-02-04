@@ -2,6 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import prisma from "@/lib/db";
 import { BadRequestError } from "@/server/utils/errors";
 import type {
+	BatchUpdateOrderItemsInput,
 	CreateOrderInput,
 	GetOrdersQuery,
 	UpdateOrderInput,
@@ -307,8 +308,15 @@ export abstract class OrderService {
 			include: { orderItems: true },
 		});
 
+		// 0. If order is already CANCELLED or COMPLETED, block all updates
+		if (order.status === "CANCELLED" || order.status === "COMPLETED") {
+			throw new BadRequestError(
+				`Không thể cập nhật đơn hàng đã ${order.status === "CANCELLED" ? "hủy" : "hoàn thành"}`,
+			);
+		}
+
 		// 1. Handle inventory restoration if status changes TO CANCELLED
-		if (data.status === "CANCELLED" && order.status !== "CANCELLED") {
+		if (data.status === "CANCELLED") {
 			const executeCancel = async (t: Prisma.TransactionClient) => {
 				for (const item of order.orderItems) {
 					await OrderService.adjustStock(
@@ -335,31 +343,7 @@ export abstract class OrderService {
 		}
 
 		// 2. Handle inventory deduction if status changes FROM CANCELLED
-		if (data.status !== "CANCELLED" && order.status === "CANCELLED") {
-			const executeRestore = async (t: Prisma.TransactionClient) => {
-				for (const item of order.orderItems) {
-					await OrderService.adjustStock(
-						t,
-						item.productId,
-						item.quantity,
-						"OUT",
-						"sale",
-						`Trừ kho do phục hồi đơn hàng ${id}`,
-						executorId,
-						item.priceSnapshot,
-					);
-				}
-
-				return await t.order.update({
-					where: { id },
-					data,
-				});
-			};
-
-			return tx
-				? await executeRestore(tx)
-				: await prisma.$transaction(executeRestore);
-		}
+		// REMOVED: User requested that cancelled orders cannot be updated/restored.
 
 		// 3. Normal status update
 		return await db.order.update({
@@ -379,6 +363,15 @@ export abstract class OrderService {
 				where: { id: itemId },
 				include: { order: true },
 			});
+
+			if (
+				item.order.status === "CANCELLED" ||
+				item.order.status === "COMPLETED"
+			) {
+				throw new BadRequestError(
+					`Không thể cập nhật món của đơn hàng đã ${item.order.status === "CANCELLED" ? "hủy" : "hoàn thành"}`,
+				);
+			}
 
 			const diff = data.quantity - item.quantity;
 
@@ -437,41 +430,123 @@ export abstract class OrderService {
 			: await prisma.$transaction(executeUpdateItem);
 	}
 
-	static async delete(
-		id: string,
+	static async batchUpdateItems(
+		orderId: string,
+		data: BatchUpdateOrderItemsInput,
 		executorId: string,
 		tx?: Prisma.TransactionClient,
 	) {
-		const db = tx || prisma;
-		const order = await db.order.findUniqueOrThrow({
-			where: { id },
-			include: { orderItems: true },
-		});
+		const executeBatchUpdate = async (t: Prisma.TransactionClient) => {
+			const order = await t.order.findUniqueOrThrow({
+				where: { id: orderId },
+				include: { orderItems: true },
+			});
 
-		const executeDelete = async (t: Prisma.TransactionClient) => {
-			// Restore stock only if order wasn't already cancelled
-			if (order.status !== "CANCELLED") {
-				for (const item of order.orderItems) {
+			if (order.status === "CANCELLED" || order.status === "COMPLETED") {
+				throw new BadRequestError(
+					`Không thể cập nhật đơn hàng đã ${order.status === "CANCELLED" ? "hủy" : "hoàn thành"}`,
+				);
+			}
+
+			for (const itemInput of data.items) {
+				if (itemInput.id) {
+					// Update or delete existing item
+					const existingItem = order.orderItems.find(
+						(i) => i.id === itemInput.id,
+					);
+					if (!existingItem) {
+						throw new BadRequestError(
+							`Không tìm thấy món với ID ${itemInput.id}`,
+						);
+					}
+
+					if (itemInput.quantity === 0) {
+						// Restore stock and delete item
+						await OrderService.adjustStock(
+							t,
+							existingItem.productId,
+							existingItem.quantity,
+							"IN",
+							"restock",
+							`Xóa món khỏi đơn hàng ${orderId}`,
+							executorId,
+							existingItem.priceSnapshot,
+						);
+						await t.orderItem.delete({ where: { id: itemInput.id } });
+					} else {
+						// Update quantity and adjust stock
+						const diff = itemInput.quantity - existingItem.quantity;
+						if (diff !== 0) {
+							await OrderService.adjustStock(
+								t,
+								existingItem.productId,
+								Math.abs(diff),
+								diff > 0 ? "OUT" : "IN",
+								diff > 0 ? "sale" : "restock",
+								`Cập nhật số lượng (${diff > 0 ? "+" : ""}${diff}) đơn hàng ${orderId}`,
+								executorId,
+								existingItem.priceSnapshot,
+							);
+							await t.orderItem.update({
+								where: { id: itemInput.id },
+								data: { quantity: itemInput.quantity },
+							});
+						}
+					}
+				} else if (itemInput.productId && itemInput.quantity > 0) {
+					// Add new item
+					const product = await t.product.findUniqueOrThrow({
+						where: { id: itemInput.productId },
+					});
+
 					await OrderService.adjustStock(
 						t,
-						item.productId,
-						item.quantity,
-						"IN",
-						"restock",
-						`Hoàn kho do xóa đơn hàng ${id}`,
+						itemInput.productId,
+						itemInput.quantity,
+						"OUT",
+						"sale",
+						`Bán thêm món cho đơn hàng ${orderId}`,
 						executorId,
-						item.priceSnapshot,
+						product.price,
 					);
+
+					await t.orderItem.create({
+						data: {
+							orderId,
+							productId: itemInput.productId,
+							quantity: itemInput.quantity,
+							priceSnapshot: product.price,
+							costSnapshot: product.cost,
+						},
+					});
 				}
 			}
 
-			return await t.order.delete({
-				where: { id },
+			// Recalculate order total
+			const allItems = await t.orderItem.findMany({
+				where: { orderId },
+			});
+
+			const newTotal = allItems.reduce(
+				(sum, i) => sum + i.priceSnapshot * i.quantity,
+				0,
+			);
+
+			return await t.order.update({
+				where: { id: orderId },
+				data: { totalAmount: newTotal },
+				include: {
+					orderItems: {
+						include: {
+							product: true,
+						},
+					},
+				},
 			});
 		};
 
 		return tx
-			? await executeDelete(tx)
-			: await prisma.$transaction(executeDelete);
+			? await executeBatchUpdate(tx)
+			: await prisma.$transaction(executeBatchUpdate);
 	}
 }

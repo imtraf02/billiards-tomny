@@ -235,7 +235,7 @@ export function TableSessionDrawer({
 				toast.success("Thanh toán thành công!");
 			}, 100);
 		},
-		onError: (error: any) => {
+		onError: (error) => {
 			toast.error("Thanh toán thất bại: " + error.message);
 		},
 	});
@@ -441,7 +441,7 @@ export function TableSessionDrawer({
 					<Button
 						disabled={!activeBooking || isCompleting}
 						onClick={handleCheckout}
-						className="flex-[2] bg-green-600 text-white hover:bg-green-700 sm:flex-none"
+						className="flex-2 bg-green-600 text-white hover:bg-green-700 sm:flex-none"
 					>
 						<Receipt className="mr-2 h-4 w-4" />
 						Thanh toán

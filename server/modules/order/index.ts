@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import { Role } from "@/generated/prisma/client";
 import { authorization } from "@/server/plugins/authorization";
 import {
+	batchUpdateOrderItemsSchema,
 	createOrderSchema,
 	getOrdersQuerySchema,
 	updateOrderItemSchema,
@@ -75,12 +76,13 @@ export const order = new Elysia({ prefix: "/orders" })
 			},
 		},
 	)
-	.delete(
-		"/:id",
-		async ({ params: { id }, user }) => {
-			return await OrderService.delete(id, user.id);
+	.patch(
+		"/:id/items",
+		async ({ params: { id }, body, user }) => {
+			return await OrderService.batchUpdateItems(id, body, user.id);
 		},
 		{
+			body: batchUpdateOrderItemsSchema,
 			authorized: [Role.ADMIN, Role.STAFF],
 			detail: {
 				tags: ["Orders"],
