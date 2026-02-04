@@ -4,19 +4,21 @@ import { ArrowDownToLine, ArrowUpFromLine, History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerHeader,
+	DrawerTitle,
+	DrawerTrigger,
+} from "@/components/ui/drawer";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
 import type { Product } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
-import { useGetProductInventoryLogs } from "@/features/product/hooks/use-product";
 
-interface InventoryLogsDialogProps {
+interface InventoryLogsDrawerProps {
 	product: Product;
+	children?: React.ReactNode;
 }
 
 const reasonLabels: Record<string, string> = {
@@ -28,24 +30,39 @@ const reasonLabels: Record<string, string> = {
 	expired: "Hết hạn",
 };
 
-export function InventoryLogsDialog({ product }: InventoryLogsDialogProps) {
-	const { data: logs, isLoading } = useGetProductInventoryLogs(product.id);
+export function InventoryLogsDrawer({
+	product,
+	children,
+}: InventoryLogsDrawerProps) {
+	const { data: logs, isLoading } = useQuery({
+		queryKey: ["inventory", "product", product.id],
+		queryFn: async () => {
+			const res = await api.products({ id: product.id }).inventory.get();
+			if (res.status === 200) {
+				return res.data;
+			}
+			return [];
+		},
+		enabled: !!product.id,
+	});
 
 	return (
-		<Dialog>
-			<DialogTrigger asChild>
-				<Button variant="ghost" size="icon" title="Xem lịch sử kho">
-					<History className="h-4 w-4" />
-				</Button>
-			</DialogTrigger>
-			<DialogContent className="sm:max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
-				<DialogHeader>
-					<DialogTitle>Lịch sử kho</DialogTitle>
-					<DialogDescription>
+		<Drawer>
+			<DrawerTrigger asChild>
+				{children || (
+					<Button variant="ghost" size="icon" title="Xem lịch sử kho">
+						<History className="h-4 w-4" />
+					</Button>
+				)}
+			</DrawerTrigger>
+			<DrawerContent className="h-[auto] max-h-[95vh] sm:max-w-lg mx-auto rounded-t-xl overflow-hidden flex flex-col">
+				<DrawerHeader>
+					<DrawerTitle>Lịch sử kho</DrawerTitle>
+					<DrawerDescription>
 						{product.name} - Tồn kho hiện tại: {product.currentStock}{" "}
 						{product.unit}
-					</DialogDescription>
-				</DialogHeader>
+					</DrawerDescription>
+				</DrawerHeader>
 
 				<div className="flex-1 overflow-y-auto">
 					{isLoading ? (
@@ -129,7 +146,7 @@ export function InventoryLogsDialog({ product }: InventoryLogsDialogProps) {
 						</div>
 					)}
 				</div>
-			</DialogContent>
-		</Dialog>
+			</DrawerContent>
+		</Drawer>
 	);
 }

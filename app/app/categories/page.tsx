@@ -8,9 +8,10 @@ import { ModeSwitcher } from "@/components/mode-switcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { CategoryDialog } from "@/features/category/components/category-dialog";
-import { DeleteCategoryDialog } from "@/features/category/components/delete-category-dialog";
-import { useGetCategories } from "@/features/product/hooks/use-product";
+import { CategoryDrawer } from "@/features/category/components/category-drawer";
+import { DeleteCategoryDrawer } from "@/features/category/components/delete-category-drawer";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
 import { Badge } from "@/components/ui/badge";
 
 export default function CategoriesPage() {
@@ -19,7 +20,16 @@ export default function CategoriesPage() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
 
-	const { data: categories, isLoading } = useGetCategories();
+	const { data: categories, isLoading } = useQuery({
+		queryKey: ["categories"],
+		queryFn: async () => {
+			const res = await api.products.categories.get();
+			if (res.status === 200) {
+				return res.data;
+			}
+			return [];
+		},
+	});
 
 	const handleAddCategory = () => {
 		setSelectedCategory(null);
@@ -172,13 +182,13 @@ export default function CategoriesPage() {
 					)}
 				</div>
 
-				<CategoryDialog
+				<CategoryDrawer
 					open={isDialogOpen}
 					onOpenChange={setIsDialogOpen}
 					category={selectedCategory}
 				/>
 
-				<DeleteCategoryDialog
+				<DeleteCategoryDrawer
 					open={isDeleteDialogOpen}
 					onOpenChange={setIsDeleteDialogOpen}
 					categoryId={selectedCategory?.id || null}

@@ -52,8 +52,6 @@ export const getProductsQuerySchema = z.object({
 		.enum(["true", "false"])
 		.transform((val) => val === "true")
 		.optional(),
-	page: z.coerce.number().int().min(1).default(1),
-	limit: z.coerce.number().int().min(1).max(100).default(50),
 });
 
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
@@ -77,9 +75,55 @@ export const createInventoryLogSchema = z.object({
 export const getInventoryLogsQuerySchema = z.object({
 	productId: z.string().optional(),
 	type: z.enum(["IN", "OUT"]).optional(),
+	startDate: z.iso.datetime().optional(),
+	endDate: z.iso.datetime().optional(),
 	page: z.coerce.number().int().min(1).default(1),
 	limit: z.coerce.number().int().min(1).max(100).default(50),
 });
 
 export type CreateInventoryLogInput = z.infer<typeof createInventoryLogSchema>;
 export type GetInventoryLogsQuery = z.infer<typeof getInventoryLogsQuerySchema>;
+
+export const getInventoryAnalysisQuerySchema = z.object({
+	productId: z.string().optional(),
+	startDate: z.string().datetime().optional(),
+	endDate: z.string().datetime().optional(),
+});
+
+export type GetInventoryAnalysisQuery = z.infer<
+	typeof getInventoryAnalysisQuerySchema
+>;
+
+export interface InventoryAnalysisTrend {
+	date: string;
+	income: number;
+	expenditure: number;
+	cogs: number;
+	profit: number;
+}
+
+export interface InventoryProductAnalysis {
+	productId: string;
+	productName: string;
+	currentStock: number;
+	unit: string;
+	income: number;
+	expenditure: number;
+	cogs: number;
+	profit: number;
+	soldQuantity: number;
+	importedQuantity: number;
+}
+
+export interface InventoryAnalysisResponse {
+	summary: {
+		totalIncome: number;
+		totalExpenditure: number;
+		totalCOGS: number;
+		netProfit: number;
+		totalInQuantity: number;
+		totalOutQuantity: number;
+	};
+	trends: InventoryAnalysisTrend[];
+	products: InventoryProductAnalysis[];
+}

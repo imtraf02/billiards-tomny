@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Providers } from "@/components/providers";
+import { Toaster } from "@/components/ui/sonner";
 
 const fontSans = Geist({
 	subsets: ["latin"],
@@ -28,7 +29,10 @@ export default function RootLayout({
 				className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased `}
 			>
 				<QueryClientProvider client={queryClient}>
-					<Providers>{children}</Providers>
+					<Providers>
+						{children}
+						<Toaster />
+					</Providers>
 				</QueryClientProvider>
 			</body>
 		</html>

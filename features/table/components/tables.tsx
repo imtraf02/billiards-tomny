@@ -1,23 +1,24 @@
 "use client";
 
-import { Plus, Search as SearchIcon } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { useGetBookings } from "@/features/booking/hooks";
-import { OrderDialog } from "@/features/order/components/order-dialog";
-import type { Table } from "@/generated/prisma/client";
-import { useDeleteTable, useGetTables } from "../hooks/use-table";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { OrderDrawer } from "@/features/order/components/order-drawer";
+import { api } from "@/lib/eden";
+import { Table, TableStatus, TableType } from "@/generated/prisma/client";
+import { Plus, Search as SearchIcon } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import { TableCard } from "./table-card";
-import { TableFormDialog } from "./table-form-dialog";
-import { TableSessionDialog } from "./table-session-dialog";
+import { TableFormDrawer } from "./table-form-drawer";
+import { TableSessionDrawer } from "./table-session-drawer";
+import { toast } from "sonner";
 
 export function Tables() {
 	const [searchTerm, setSearchTerm] = useState("");
@@ -29,16 +30,47 @@ export function Tables() {
 	const [selectedTable, setSelectedTable] = useState<Table | null>(null);
 	const [activeBookingId, setActiveBookingId] = useState<string>("");
 
-	const { data: tables, isLoading } = useGetTables({
-		search: searchTerm || undefined,
-		type: typeFilter !== "ALL" ? (typeFilter as any) : undefined,
-		status: statusFilter !== "ALL" ? (statusFilter as any) : undefined,
+	const queryClient = useQueryClient();
+
+	const { data: tables, isLoading } = useQuery({
+		queryKey: [
+			"tables",
+			{
+				search: searchTerm || undefined,
+				type: typeFilter !== "ALL" ? (typeFilter as TableType) : undefined,
+				status: statusFilter !== "ALL" ? (statusFilter as TableStatus) : undefined,
+			},
+		],
+		queryFn: async () => {
+			const res = await api.tables.get({
+				query: {
+					search: searchTerm || undefined,
+					type: typeFilter !== "ALL" ? (typeFilter as TableType) : undefined,
+					status: statusFilter !== "ALL" ? (statusFilter as TableStatus) : undefined,
+				},
+			});
+			if (res.status === 200) {
+				return res.data;
+			}
+			return [];
+		},
 	});
 
-	const { data: bookingsData } = useGetBookings({
-		status: "PENDING",
-		limit: 100,
-		page: 1,
+	const { data: bookingsData } = useQuery({
+		queryKey: ["bookings", { status: "PENDING" }],
+		queryFn: async () => {
+			const res = await api.bookings.get({
+				query: {
+					status: "PENDING",
+					limit: 100,
+					page: 1,
+				},
+			});
+			if (res.status === 200) {
+				return res.data;
+			}
+			return { data: [], meta: { total: 0, page: 1, limit: 100, totalPages: 0 } };
+		},
 	});
 
 	// Memoize activeBookingMap để tránh tính toán lại mỗi lần render
@@ -52,7 +84,17 @@ export function Tables() {
 		return map;
 	}, [bookingsData?.data]);
 
-	const { mutate: deleteTable } = useDeleteTable();
+	const { mutate: deleteTable } = useMutation({
+		mutationFn: async (id: string) => {
+			const res = await api.tables({ id }).delete();
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["tables"] });
+			toast.success("Xóa bàn thành công");
+		},
+	});
 
 	// Sử dụng useCallback cho các event handler
 	const handleEdit = useCallback((table: Table) => {
@@ -60,11 +102,14 @@ export function Tables() {
 		setIsFormOpen(true);
 	}, []);
 
-	const handleDelete = useCallback((id: string) => {
-		if (confirm("Bạn có chắc chắn muốn xóa bàn này?")) {
-			deleteTable(id);
-		}
-	}, [deleteTable]);
+	const handleDelete = useCallback(
+		(id: string) => {
+			if (confirm("Bạn có chắc chắn muốn xóa bàn này?")) {
+				deleteTable(id);
+			}
+		},
+		[deleteTable],
+	);
 
 	const handleCreate = useCallback(() => {
 		setSelectedTable(null);
@@ -102,26 +147,26 @@ export function Tables() {
 						/>
 					</div>
 					<Select value={typeFilter} onValueChange={setTypeFilter}>
-						<SelectTrigger className="w-full sm:w-[150px]">
+						<SelectTrigger className="w-full sm:w-40">
 							<SelectValue placeholder="Loại bàn" />
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="ALL">Tất cả loại</SelectItem>
-							<SelectItem value="POOL">Pool</SelectItem>
-							<SelectItem value="CAROM">Carom</SelectItem>
-							<SelectItem value="SNOOKER">Snooker</SelectItem>
+							<SelectItem value="POOL">Bida lỗ (POOL)</SelectItem>
+<SelectItem value="CAROM">Bida phăng (CAROM)</SelectItem>
+<SelectItem value="SNOOKER">Bida Snooker (SNOOKER)</SelectItem>
 						</SelectContent>
 					</Select>
 					<Select value={statusFilter} onValueChange={setStatusFilter}>
-						<SelectTrigger className="w-full sm:w-[150px]">
+						<SelectTrigger className="w-full sm:w-48">
 							<SelectValue placeholder="Trạng thái" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-							<SelectItem value="AVAILABLE">Sẵn sàng</SelectItem>
-							<SelectItem value="OCCUPIED">Đang chơi</SelectItem>
-							<SelectItem value="RESERVED">Đã đặt</SelectItem>
-							<SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
+						<SelectItem value="ALL">Tất cả trạng thái</SelectItem>
+<SelectItem value="AVAILABLE">Trống</SelectItem>
+<SelectItem value="OCCUPIED">Đang sử dụng</SelectItem>
+<SelectItem value="RESERVED">Đã đặt trước</SelectItem>
+<SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
@@ -136,7 +181,7 @@ export function Tables() {
 					{[...Array(8)].map((_, i) => (
 						<div
 							key={i}
-							className="h-[200px] animate-pulse rounded-lg bg-muted"
+							className="h-52 animate-pulse rounded-lg bg-muted"
 						/>
 					))}
 				</div>
@@ -157,7 +202,7 @@ export function Tables() {
 					})}
 				</div>
 			) : (
-				<div className="flex h-[200px] flex-col items-center justify-center rounded-lg border border-dashed text-center">
+				<div className="flex h-52 flex-col items-center justify-center rounded-lg border border-dashed text-center">
 					<p className="text-muted-foreground">Không tìm thấy bàn nào.</p>
 					<Button
 						variant="link"
@@ -172,20 +217,20 @@ export function Tables() {
 				</div>
 			)}
 
-			<TableFormDialog
+			<TableFormDrawer
 				open={isFormOpen}
 				onOpenChange={setIsFormOpen}
 				initialData={selectedTable}
 			/>
 
-			<TableSessionDialog
+			<TableSessionDrawer
 				open={isSessionOpen}
 				onOpenChange={setIsSessionOpen}
 				table={selectedTable}
 				onOpenOrder={handleOpenOrder}
 			/>
 
-			<OrderDialog
+			<OrderDrawer
 				open={isOrderOpen}
 				onOpenChange={setIsOrderOpen}
 				bookingId={activeBookingId}

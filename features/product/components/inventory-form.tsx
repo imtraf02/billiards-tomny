@@ -29,8 +29,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { Product } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
-import { createInventoryLogSchema } from "@/shared/schemas/product";
-import { useCreateInventoryLog } from "@/features/product/hooks/use-product";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
+import {
+	type CreateInventoryLogInput,
+	createInventoryLogSchema,
+} from "@/shared/schemas/product";
 
 interface InventoryFormProps {
 	open: boolean;
@@ -44,10 +48,20 @@ export function InventoryForm({
 	product,
 }: InventoryFormProps) {
 	const [type, setType] = useState<"IN" | "OUT">("IN");
+	const queryClient = useQueryClient();
 
-	const { mutate: createLog, isPending } = useCreateInventoryLog(() => {
-		onOpenChange(false);
-		form.reset();
+	const { mutate: createLog, isPending } = useMutation({
+		mutationFn: async (data: CreateInventoryLogInput) => {
+			const res = await api.products.inventory.post(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["products"] });
+			queryClient.invalidateQueries({ queryKey: ["inventory-logs"] });
+			onOpenChange(false);
+			form.reset();
+		},
 	});
 
 	const form = useForm({

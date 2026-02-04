@@ -222,7 +222,12 @@ export abstract class OrderService {
 							product: true,
 						},
 					},
-					user: true,
+					user: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
 					booking: {
 						include: {
 							bookingTables: {

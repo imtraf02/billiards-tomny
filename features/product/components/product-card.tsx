@@ -28,10 +28,16 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Product } from "@/generated/prisma/client";
-import { InventoryLogsDialog } from "./inventory-logs-dialog";
+import { InventoryLogsDrawer } from "./inventory-logs-drawer";
+
+interface ProductWithCategory extends Product {
+	category?: {
+		name: string;
+	};
+}
 
 interface ProductCardProps {
-	product: Product;
+	product: ProductWithCategory;
 	onEdit: (product: Product) => void;
 	onDelete: (id: string) => void;
 	onInventory: (product: Product) => void;
@@ -200,11 +206,11 @@ export function ProductCard({
 						<Package className="mr-2 h-4 w-4" />
 						Kho hàng
 					</Button>
-					<InventoryLogsDialog product={product}>
+					<InventoryLogsDrawer product={product}>
 						<Button variant="secondary" size="icon">
 							<Eye className="h-4 w-4" />
 						</Button>
-					</InventoryLogsDialog>
+					</InventoryLogsDrawer>
 				</div>
 			</CardFooter>
 		</Card>

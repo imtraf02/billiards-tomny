@@ -25,8 +25,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createProductSchema } from "@/shared/schemas/product";
-import { useCreateProduct, useGetCategories } from "../hooks/use-product";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
+import {
+	type CreateProductInput,
+	createProductSchema,
+} from "@/shared/schemas/product";
 
 interface CreateProductFormProps {
 	open: boolean;
@@ -37,14 +41,31 @@ export function CreateProductForm({
 	open,
 	onOpenChange,
 }: CreateProductFormProps) {
-	const { data: categories } = useGetCategories();
+	const queryClient = useQueryClient();
 
-	const { mutate: createProduct, isPending: isCreating } = useCreateProduct(
-		() => {
+	const { data: categories } = useQuery({
+		queryKey: ["categories"],
+		queryFn: async () => {
+			const res = await api.products.categories.get();
+			if (res.status === 200) {
+				return res.data;
+			}
+			return [];
+		},
+	});
+
+	const { mutate: createProduct, isPending: isLoading } = useMutation({
+		mutationFn: async (data: CreateProductInput) => {
+			const res = await api.products.post(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["products"] });
 			onOpenChange(false);
 			form.reset();
 		},
-	);
+	});
 
 	const form = useForm({
 		defaultValues: {
@@ -66,8 +87,6 @@ export function CreateProductForm({
 			createProduct(value);
 		},
 	});
-
-	const isLoading = isCreating;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>

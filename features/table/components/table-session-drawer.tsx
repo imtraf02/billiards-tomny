@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Clock, Plus, Receipt, XCircle } from "lucide-react";
@@ -8,31 +9,26 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle,
+} from "@/components/ui/drawer";
 import { Separator } from "@/components/ui/separator";
-import {
-	useCompleteBooking,
-	useGetBooking,
-	useGetBookings,
-} from "@/features/booking/hooks";
-import { useUpdateOrder } from "@/features/order/hooks/use-order";
+import { api } from "@/lib/eden";
+import { type CompleteBookingInput } from "@/shared/schemas/booking";
+import { type UpdateOrderInput } from "@/shared/schemas/order";
 import type { Table } from "@/generated/prisma/client";
-import { useQueryClient } from "@tanstack/react-query";
 
-interface TableSessionDialogProps {
+interface TableSessionDrawerProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	table: Table | null;
 	onOpenOrder: (bookingId: string) => void;
 }
 
-// Tách component Timer riêng để tránh re-render toàn bộ dialog
 const Timer = memo(({ startTime }: { startTime: Date }) => {
 	const [duration, setDuration] = useState<string>("00:00:00");
 
@@ -53,38 +49,42 @@ const Timer = memo(({ startTime }: { startTime: Date }) => {
 		return () => clearInterval(interval);
 	}, [startTime]);
 
-	return <div className="text-2xl font-mono font-bold text-primary">{duration}</div>;
+	return (
+		<div className="text-2xl font-mono font-bold text-primary">{duration}</div>
+	);
 });
 
-Timer.displayName = 'Timer';
+Timer.displayName = "Timer";
 
-// Tách component OrderItem riêng
-const OrderItem = memo(({ 
-	order, 
-	onCancelOrder, 
-	isUpdatingOrder 
-}: { 
-	order: any; 
-	onCancelOrder: (id: string) => void; 
-	isUpdatingOrder: boolean; 
-}) => {
-	return (
-		<div key={order.id} className="text-sm bg-muted/30 p-2 rounded-lg relative group">
-			<div className="flex justify-between items-start mb-1">
-				<Badge
-					variant="secondary"
-					className={
-						order.status === "COMPLETED"
-							? "bg-green-100 text-green-700"
-							: order.status === "CANCELLED"
-								? "bg-red-100 text-red-700"
-								: "bg-blue-100 text-blue-700"
-					}
-				>
-					{order.status}
-				</Badge>
-				{order.status !== "COMPLETED" &&
-					order.status !== "CANCELLED" && (
+const OrderItem = memo(
+	({
+		order,
+		onCancelOrder,
+		isUpdatingOrder,
+	}: {
+		order: any;
+		onCancelOrder: (id: string) => void;
+		isUpdatingOrder: boolean;
+	}) => {
+		return (
+			<div
+				key={order.id}
+				className="text-sm bg-muted/30 p-2 rounded-lg relative group"
+			>
+				<div className="flex justify-between items-start mb-1">
+					<Badge
+						variant="secondary"
+						className={
+							order.status === "COMPLETED"
+								? "bg-green-100 text-green-700"
+								: order.status === "CANCELLED"
+									? "bg-red-100 text-red-700"
+									: "bg-blue-100 text-blue-700"
+						}
+					>
+						{order.status}
+					</Badge>
+					{order.status !== "COMPLETED" && order.status !== "CANCELLED" && (
 						<Button
 							variant="ghost"
 							size="icon"
@@ -95,119 +95,150 @@ const OrderItem = memo(({
 							<XCircle className="h-4 w-4" />
 						</Button>
 					)}
-			</div>
-			{order.orderItems.map((item: any) => (
-				<div
-					key={item.id}
-					className="flex justify-between py-1 text-xs"
-				>
-					<span>
-						{item.product.name} x{item.quantity}
-					</span>
-					<span className="text-muted-foreground">
-						{new Intl.NumberFormat("vi-VN").format(
-							item.priceSnapshot * item.quantity,
-						)}
-					</span>
 				</div>
-			))}
-		</div>
-	);
-});
-
-OrderItem.displayName = 'OrderItem';
-
-// Tách component OrdersList riêng
-const OrdersList = memo(({ 
-	orders, 
-	onCancelOrder, 
-	isUpdatingOrder 
-}: { 
-	orders: any[];
-	onCancelOrder: (id: string) => void;
-	isUpdatingOrder: boolean;
-}) => {
-	if (!orders || orders.length === 0) {
-		return (
-			<p className="text-sm text-center py-4 text-muted-foreground italic">
-				Chưa có sản phẩm nào được gọi.
-			</p>
+				{order.orderItems.map((item: any) => (
+					<div key={item.id} className="flex justify-between py-1 text-xs">
+						<span>
+							{item.product.name} x{item.quantity}
+						</span>
+						<span className="text-muted-foreground">
+							{new Intl.NumberFormat("vi-VN").format(
+								item.priceSnapshot * item.quantity,
+							)}
+						</span>
+					</div>
+				))}
+			</div>
 		);
-	}
+	},
+);
 
-	return (
-		<div className="max-h-[200px] overflow-y-auto space-y-3">
-			{orders.map((order) => (
-				<OrderItem 
-					key={order.id} 
-					order={order} 
-					onCancelOrder={onCancelOrder}
-					isUpdatingOrder={isUpdatingOrder}
-				/>
-			))}
-		</div>
-	);
-});
+OrderItem.displayName = "OrderItem";
 
-OrdersList.displayName = 'OrdersList';
+const OrdersList = memo(
+	({
+		orders,
+		onCancelOrder,
+		isUpdatingOrder,
+	}: {
+		orders: any[];
+		onCancelOrder: (id: string) => void;
+		isUpdatingOrder: boolean;
+	}) => {
+		if (!orders || orders.length === 0) {
+			return (
+				<p className="text-sm text-center py-4 text-muted-foreground italic">
+					Chưa có sản phẩm nào được gọi.
+				</p>
+			);
+		}
 
-export function TableSessionDialog({
+		return (
+			<div className="max-h-52 overflow-y-auto space-y-3">
+				{orders.map((order) => (
+					<OrderItem
+						key={order.id}
+						order={order}
+						onCancelOrder={onCancelOrder}
+						isUpdatingOrder={isUpdatingOrder}
+					/>
+				))}
+			</div>
+		);
+	},
+);
+
+OrdersList.displayName = "OrdersList";
+
+export function TableSessionDrawer({
 	open,
 	onOpenChange,
 	table,
 	onOpenOrder,
-}: TableSessionDialogProps) {
+}: TableSessionDrawerProps) {
 	const queryClient = useQueryClient();
-	
-	// Sử dụng enable: false ban đầu, chỉ fetch khi cần
+
 	const shouldFetch = open && !!table;
-	
-	const { data: bookingsData } = useGetBookings({
-		tableId: table?.id,
-		status: "PENDING",
-		limit: 1,
-		page: 1,
-	}, {
+
+	const { data: bookingsData } = useQuery({
+		queryKey: [
+			"bookings",
+			{
+				tableId: table?.id,
+				status: "PENDING",
+				limit: 1,
+				page: 1,
+			},
+		],
+		queryFn: async () => {
+			const res = await api.bookings.get({
+				query: {
+					tableId: table?.id,
+					status: "PENDING",
+					limit: 1,
+					page: 1,
+				},
+			});
+			if (res.status === 200) {
+				return res.data;
+			}
+			return { data: [], meta: { total: 0, page: 1, limit: 1, totalPages: 0 } };
+		},
 		enabled: shouldFetch,
-		staleTime: 5 * 60 * 1000, // 5 phút
+		staleTime: 5 * 60 * 1000,
 	});
 
 	const activeBookingBasic = bookingsData?.data?.[0];
-	const { data: activeBooking } = useGetBooking(
-		activeBookingBasic?.id || "",
-		{
-			enabled: shouldFetch && !!activeBookingBasic?.id,
-			staleTime: 5 * 60 * 1000,
-		}
-	);
-
-	const { mutate: completeBooking, isPending: isCompleting } =
-		useCompleteBooking({
-			onSuccess: () => {
-				// Invalidate queries để cập nhật dữ liệu
-				queryClient.invalidateQueries({ queryKey: ["tables"] });
-				queryClient.invalidateQueries({ queryKey: ["bookings"] });
-				
-				// Đóng dialog ngay lập tức
-				onOpenChange(false);
-				
-				// Hiển thị toast sau khi đóng dialog
-				setTimeout(() => {
-					toast.success("Thanh toán thành công!");
-				}, 100);
-			},
-			onError: (error) => {
-				toast.error("Thanh toán thất bại: " + error.message);
+	const { data: activeBooking } = useQuery({
+		queryKey: ["bookings", activeBookingBasic?.id],
+		queryFn: async () => {
+			if (!activeBookingBasic?.id) return null;
+			const res = await api.bookings({ id: activeBookingBasic.id }).get();
+			if (res.status === 200) {
+				return res.data;
 			}
-		});
+			return null;
+		},
+		enabled: shouldFetch && !!activeBookingBasic?.id,
+		staleTime: 5 * 60 * 1000,
+	});
 
-	const { mutate: updateOrder, isPending: isUpdatingOrder } = useUpdateOrder(
-		() => {
+	const { mutate: completeBooking, isPending: isCompleting } = useMutation({
+		mutationFn: async ({
+			id,
+			data,
+		}: { id: string; data: CompleteBookingInput }) => {
+			const res = await api.bookings({ id }).complete.post(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["tables"] });
+			queryClient.invalidateQueries({ queryKey: ["bookings"] });
+
+			onOpenChange(false);
+
+			setTimeout(() => {
+				toast.success("Thanh toán thành công!");
+			}, 100);
+		},
+		onError: (error: any) => {
+			toast.error("Thanh toán thất bại: " + error.message);
+		},
+	});
+
+	const { mutate: updateOrder, isPending: isUpdatingOrder } = useMutation({
+		mutationFn: async ({ id, data }: { id: string; data: UpdateOrderInput }) => {
+			const res = await api.orders({ id }).patch(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["bookings"] });
 			toast.success("Đã cập nhật đơn hàng!");
 		},
-	);
+	});
 
-	// Sử dụng useMemo để memoize các tính toán nặng
 	const serviceTotal = useMemo(() => {
 		if (!activeBooking?.orders) return 0;
 		return activeBooking.orders.reduce(
@@ -228,31 +259,31 @@ export function TableSessionDialog({
 		return hourlyCost + serviceTotal;
 	}, [hourlyCost, serviceTotal]);
 
-	// Sử dụng useCallback để tránh tạo hàm mới mỗi lần render
-	const handleCancelOrder = useCallback((orderId: string) => {
-		if (confirm("Bạn có chắc chắn muốn hủy đơn hàng này?")) {
-			updateOrder({
-				id: orderId,
-				data: { status: "CANCELLED" as any },
-			});
-		}
-	}, [updateOrder]);
+	const handleCancelOrder = useCallback(
+		(orderId: string) => {
+			if (confirm("Bạn có chắc chắn muốn hủy đơn hàng này?")) {
+				updateOrder({
+					id: orderId,
+					data: { status: "CANCELLED" as any },
+				});
+			}
+		},
+		[updateOrder],
+	);
 
 	const handleCheckout = useCallback(() => {
 		if (!activeBooking) return;
-		
-		// Hiển thị xác nhận với thông tin chi tiết
-		const confirmMessage = `Xác nhận thanh toán cho bàn ${table?.name}?\n\n` +
+
+		const confirmMessage =
+			`Xác nhận thanh toán cho bàn ${table?.name}?\n\n` +
 			`• Tiền giờ: ${new Intl.NumberFormat("vi-VN").format(hourlyCost)} đ\n` +
 			`• Tiền dịch vụ: ${new Intl.NumberFormat("vi-VN").format(serviceTotal)} đ\n` +
 			`• Tổng cộng: ${new Intl.NumberFormat("vi-VN").format(totalAmount)} đ\n\n` +
 			`Bạn có chắc chắn muốn thanh toán và kết thúc phiên chơi?`;
-		
+
 		if (confirm(confirmMessage)) {
-			// Đóng dialog ngay lập tức khi người dùng xác nhận
 			onOpenChange(false);
-			
-			// Thực hiện thanh toán
+
 			completeBooking({
 				id: activeBooking.id,
 				data: {
@@ -261,7 +292,15 @@ export function TableSessionDialog({
 				},
 			});
 		}
-	}, [activeBooking, table?.name, hourlyCost, serviceTotal, totalAmount, completeBooking, onOpenChange]);
+	}, [
+		activeBooking,
+		table?.name,
+		hourlyCost,
+		serviceTotal,
+		totalAmount,
+		completeBooking,
+		onOpenChange,
+	]);
 
 	const handleOpenOrder = useCallback(() => {
 		if (activeBooking?.id) {
@@ -272,10 +311,10 @@ export function TableSessionDialog({
 	if (!table) return null;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<DialogTitle className="flex items-center justify-between">
+		<Drawer open={open} onOpenChange={onOpenChange}>
+			<DrawerContent className="h-auto max-h-[95vh] mx-auto rounded-t-xl overflow-hidden flex flex-col">
+				<DrawerHeader>
+					<DrawerTitle className="flex items-center justify-between">
 						<span>Chi tiết phiên chơi: {table.name}</span>
 						<Badge
 							variant="outline"
@@ -283,11 +322,11 @@ export function TableSessionDialog({
 						>
 							Đang chơi
 						</Badge>
-					</DialogTitle>
-					<DialogDescription>
+					</DrawerTitle>
+					<DrawerDescription>
 						Quản lý đồ uống và thanh toán cho bàn này.
-					</DialogDescription>
-				</DialogHeader>
+					</DrawerDescription>
+				</DrawerHeader>
 
 				{!activeBooking ? (
 					<div className="py-8 text-center text-red-500">
@@ -331,8 +370,8 @@ export function TableSessionDialog({
 								</Button>
 							</div>
 
-							<OrdersList 
-								orders={activeBooking.orders || []} 
+							<OrdersList
+								orders={activeBooking.orders || []}
 								onCancelOrder={handleCancelOrder}
 								isUpdatingOrder={isUpdatingOrder}
 							/>
@@ -368,7 +407,7 @@ export function TableSessionDialog({
 					</div>
 				)}
 
-				<DialogFooter className="flex sm:justify-between gap-2">
+				<DrawerFooter className="flex sm:justify-between gap-2">
 					<Button variant="ghost" onClick={() => onOpenChange(false)}>
 						Đóng
 					</Button>
@@ -380,8 +419,8 @@ export function TableSessionDialog({
 						<Receipt className="mr-2 h-4 w-4" />
 						Thanh toán
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</DrawerFooter>
+			</DrawerContent>
+		</Drawer>
 	);
 }

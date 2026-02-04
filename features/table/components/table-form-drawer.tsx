@@ -4,13 +4,13 @@ import { useForm } from "@tanstack/react-form";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle,
+} from "@/components/ui/drawer";
 import {
 	Field,
 	FieldContent,
@@ -25,29 +25,51 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { Table } from "@/generated/prisma/client";
-import { useCreateTable, useUpdateTable } from "../hooks/use-table";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
+import { toast } from "sonner";
+import type { Table, TableStatus, TableType } from "@/generated/prisma/client";
 
-interface TableFormDialogProps {
+interface TableFormDrawerProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	initialData?: Table | null;
 }
 
-export function TableFormDialog({
+export function TableFormDrawer({
 	open,
 	onOpenChange,
 	initialData,
-}: TableFormDialogProps) {
+}: TableFormDrawerProps) {
 	const isEdit = !!initialData;
 
-	const { mutate: createTable, isPending: isCreating } = useCreateTable(() => {
-		onOpenChange(false);
-		form.reset();
+	const queryClient = useQueryClient();
+
+	const { mutate: createTable, isPending: isCreating } = useMutation({
+		mutationFn: async (data: any) => {
+			const res = await api.tables.post(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["tables"] });
+			toast.success("Thêm bàn thành công");
+			onOpenChange(false);
+			form.reset();
+		},
 	});
 
-	const { mutate: updateTable, isPending: isUpdating } = useUpdateTable(() => {
-		onOpenChange(false);
+	const { mutate: updateTable, isPending: isUpdating } = useMutation({
+		mutationFn: async ({ id, data }: { id: string; data: any }) => {
+			const res = await api.tables({ id }).patch(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["tables"] });
+			toast.success("Cập nhật bàn thành công");
+			onOpenChange(false);
+		},
 	});
 
 	const form = useForm({
@@ -75,19 +97,19 @@ export function TableFormDialog({
 		if (open) {
 			form.reset();
 		}
-	}, [open, initialData, form]);
+	}, [open, form]);
 
 	const isLoading = isCreating || isUpdating;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[425px]">
-				<DialogHeader>
-					<DialogTitle>{isEdit ? "Sửa bàn" : "Thêm bàn mới"}</DialogTitle>
-					<DialogDescription>
+		<Drawer open={open} onOpenChange={onOpenChange}>
+			<DrawerContent className="h-auto max-h-[95vh] mx-auto rounded-t-xl">
+				<DrawerHeader>
+					<DrawerTitle>{isEdit ? "Sửa bàn" : "Thêm bàn mới"}</DrawerTitle>
+					<DrawerDescription>
 						Nhập thông tin bàn billiards của bạn.
-					</DialogDescription>
-				</DialogHeader>
+					</DrawerDescription>
+				</DrawerHeader>
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
@@ -124,15 +146,17 @@ export function TableFormDialog({
 								<FieldContent>
 									<Select
 										value={field.state.value}
-										onValueChange={(val) => field.handleChange(val as any)}
+										onValueChange={(val) =>
+											field.handleChange(val as TableType)
+										}
 									>
 										<SelectTrigger>
 											<SelectValue placeholder="Chọn loại bàn" />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="POOL">Pool (Lỗ)</SelectItem>
-											<SelectItem value="CAROM">Carom (3 Băng)</SelectItem>
-											<SelectItem value="SNOOKER">Snooker</SelectItem>
+											<SelectItem value="POOL">POOL (Lỗ)</SelectItem>
+											<SelectItem value="CAROM">CAROM (3 Băng)</SelectItem>
+											<SelectItem value="SNOOKER">SNOOKER (1 Băng)</SelectItem>
 										</SelectContent>
 									</Select>
 								</FieldContent>
@@ -167,16 +191,18 @@ export function TableFormDialog({
 								<FieldContent>
 									<Select
 										value={field.state.value}
-										onValueChange={(val) => field.handleChange(val as any)}
+										onValueChange={(val) =>
+											field.handleChange(val as TableStatus)
+										}
 									>
 										<SelectTrigger>
 											<SelectValue placeholder="Chọn trạng thái" />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="AVAILABLE">Sẵn sàng</SelectItem>
-											<SelectItem value="OCCUPIED">Đang chơi</SelectItem>
-											<SelectItem value="RESERVED">Đã đặt</SelectItem>
-											<SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
+											<SelectItem value="AVAILABLE">AVAILABLE</SelectItem>
+											<SelectItem value="OCCUPIED">OCCUPIED</SelectItem>
+											<SelectItem value="RESERVED">RESERVED</SelectItem>
+											<SelectItem value="MAINTENANCE">MAINTENANCE</SelectItem>
 										</SelectContent>
 									</Select>
 								</FieldContent>
@@ -185,7 +211,7 @@ export function TableFormDialog({
 						)}
 					/>
 
-					<DialogFooter>
+					<DrawerFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -196,9 +222,9 @@ export function TableFormDialog({
 						<Button type="submit" disabled={isLoading}>
 							{isLoading ? "Đang lưu..." : isEdit ? "Cập nhật" : "Tạo mới"}
 						</Button>
-					</DialogFooter>
+					</DrawerFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</DrawerContent>
+		</Drawer>
 	);
 }

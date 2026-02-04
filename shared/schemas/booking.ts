@@ -27,8 +27,8 @@ export const getBookingsQuerySchema = z.object({
 	userId: z.string().optional(),
 	status: z.enum(["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"]).optional(),
 	tableId: z.string().optional(),
-	startDate: z.coerce.date().optional(),
-	endDate: z.coerce.date().optional(),
+	startDate: z.iso.datetime().optional(),
+	endDate: z.iso.datetime().optional(),
 	page: z.coerce.number().min(1).default(1),
 	limit: z.coerce.number().min(1).max(100).default(10),
 });

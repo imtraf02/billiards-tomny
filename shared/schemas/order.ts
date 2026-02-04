@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { OrderStatus } from "@/generated/prisma/enums";
 
 export const orderItemSchema = z.object({
 	productId: z.string().min(1, { error: "ID sản phẩm là bắt buộc" }),
@@ -37,12 +38,19 @@ export const getOrdersQuerySchema = z.object({
 	bookingId: z.string().optional(),
 	userId: z.string().optional(),
 	status: z
-		.enum(["PENDING", "PREPARING", "DELIVERED", "COMPLETED", "CANCELLED"])
+		.enum([
+			OrderStatus.PENDING,
+			OrderStatus.PREPARING,
+			OrderStatus.DELIVERED,
+			OrderStatus.COMPLETED,
+			OrderStatus.CANCELLED,
+		])
 		.optional(),
-	startDate: z.coerce.date().optional(),
-	endDate: z.coerce.date().optional(),
-	page: z.coerce.number().min(1).default(1),
-	limit: z.coerce.number().min(1).max(100).default(10),
+	startDate: z.iso.datetime().optional(),
+	endDate: z.iso.datetime().optional(),
+	page: z.coerce.number().min(1),
+	limit: z.coerce.number().min(1).max(100),
+	search: z.string().optional(),
 });
 
 export const completeOrderSchema = z.object({

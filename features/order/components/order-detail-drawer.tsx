@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
@@ -17,12 +16,12 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerHeader,
+	DrawerTitle,
+} from "@/components/ui/drawer";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -31,20 +30,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useUpdateOrder } from "@/features/order/hooks/use-order";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/eden";
+import { type UpdateOrderInput } from "@/shared/schemas/order";
 
-interface OrderDetailDialogProps {
+interface OrderDetailDrawerProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	orderId: string | null;
 }
 
-export function OrderDetailDialog({
+export function OrderDetailDrawer({
 	open,
 	onOpenChange,
 	orderId,
-}: OrderDetailDialogProps) {
+}: OrderDetailDrawerProps) {
+	const queryClient = useQueryClient();
+
 	const { data: order, isLoading } = useQuery({
 		queryKey: ["orders", orderId],
 		queryFn: async () => {
@@ -56,8 +58,18 @@ export function OrderDetailDialog({
 		enabled: !!orderId && open,
 	});
 
-	const { mutate: updateStatus, isPending: isUpdating } = useUpdateOrder(() => {
-		toast.success("Cập nhật trạng thái thành công");
+	const { mutate: updateStatus, isPending: isUpdating } = useMutation({
+		mutationFn: async ({ id, data }: { id: string; data: UpdateOrderInput }) => {
+			const res = await api.orders({ id }).patch(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["orders"] });
+			queryClient.invalidateQueries({ queryKey: ["bookings"] });
+			queryClient.invalidateQueries({ queryKey: ["tables"] });
+			toast.success("Cập nhật trạng thái thành công");
+		},
 	});
 
 	const handleUpdateStatus = (
@@ -102,10 +114,17 @@ export function OrderDetailDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
-				<DialogHeader>
-					<div className="flex items-center justify-between mb-2 min-h-[24px]">
+		<Drawer open={open} onOpenChange={onOpenChange}>
+			<DrawerContent className="h-[auto] max-h-[95vh] sm:max-w-lg mx-auto rounded-t-xl">
+				<DrawerHeader>
+					<DrawerTitle className="flex items-center gap-2">
+						<Receipt className="h-5 w-5 text-primary" />
+						Chi tiết đơn hàng
+					</DrawerTitle>
+					<DrawerDescription className="text-xs sm:text-sm">
+						Thông tin chi tiết về các món đã chọn và trạng thái phục vụ.
+					</DrawerDescription>
+					<div className="flex items-center justify-between">
 						{order && (
 							<Badge variant="outline" className="font-mono uppercase">
 								#{order.id}
@@ -160,17 +179,10 @@ export function OrderDetailDialog({
 							</div>
 						)}
 					</div>
-					<DialogTitle className="flex items-center gap-2">
-						<Receipt className="h-5 w-5 text-primary" />
-						Chi tiết đơn hàng
-					</DialogTitle>
-					<DialogDescription>
-						Thông tin chi tiết về các món đã chọn và trạng thái phục vụ.
-					</DialogDescription>
-				</DialogHeader>
+				</DrawerHeader>
 
 				{isLoading ? (
-					<div className="flex h-[300px] items-center justify-center">
+					<div className="flex h-76 items-center justify-center">
 						<Loader2 className="h-8 w-8 animate-spin text-primary" />
 					</div>
 				) : order ? (
@@ -201,7 +213,7 @@ export function OrderDetailDialog({
 								<FileText className="h-3 w-3" />
 								Danh sách món
 							</p>
-							<ScrollArea className="h-[250px] pr-4">
+							<ScrollArea className="h-[40vh] sm:h-64 pr-4">
 								<div className="space-y-4">
 									{(order as any).orderItems?.map((item: any) => (
 										<div
@@ -247,7 +259,7 @@ export function OrderDetailDialog({
 						Không tìm thấy dữ liệu đơn hàng.
 					</div>
 				)}
-			</DialogContent>
-		</Dialog>
+			</DrawerContent>
+		</Drawer>
 	);
 }

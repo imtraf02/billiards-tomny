@@ -17,10 +17,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useGetBookings } from "@/features/booking/hooks/use-booking";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
+import { type GetBookingsQuery } from "@/shared/schemas/booking";
 import { BookingCard } from "./booking-card";
 import { BookingCardSkeleton } from "./booking-card-skeleton";
-import { BookingDetailDialog } from "./booking-detail-dialog";
+import { BookingDetailDrawer } from "./booking-detail-drawer";
 
 export function Bookings() {
 	const [page, setPage] = useState(1);
@@ -31,7 +33,7 @@ export function Bookings() {
 	);
 	const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-	const getQueryFilters = () => {
+	const getQueryFilters = (): GetBookingsQuery => {
 		const now = new Date();
 		let startDate: Date | undefined;
 		let endDate: Date | undefined = endOfDay(now);
@@ -55,14 +57,28 @@ export function Bookings() {
 
 		return {
 			status: status !== "ALL" ? (status as any) : undefined,
-			startDate,
-			endDate,
+			startDate: startDate?.toISOString(),
+			endDate: endDate?.toISOString(),
 			page,
 			limit: 12,
 		};
 	};
 
-	const { data: bookingsData, isLoading } = useGetBookings(getQueryFilters());
+	const { data: bookingsData, isLoading } = useQuery({
+		queryKey: ["bookings", getQueryFilters()],
+		queryFn: async () => {
+			const res = await api.bookings.get({
+				query: getQueryFilters(),
+			});
+			if (res.status === 200) {
+				return res.data;
+			}
+			return {
+				data: [],
+				meta: { total: 0, page: 1, limit: 12, totalPages: 0 },
+			};
+		},
+	});
 
 	const handleViewDetail = (id: string) => {
 		setSelectedBookingId(id);
@@ -85,7 +101,7 @@ export function Bookings() {
 									setPage(1);
 								}}
 							>
-								<SelectTrigger className="w-[160px]">
+								<SelectTrigger className="w-48">
 									<CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
 									<SelectValue placeholder="Thời gian" />
 								</SelectTrigger>
@@ -200,7 +216,7 @@ export function Bookings() {
 				</div>
 			)}
 
-			<BookingDetailDialog
+			<BookingDetailDrawer
 				open={isDetailOpen}
 				onOpenChange={setIsDetailOpen}
 				bookingId={selectedBookingId}

@@ -11,12 +11,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
 import type { Product } from "@/generated/prisma/client";
-import {
-	useDeleteProduct,
-	useGetCategories,
-	useGetProducts,
-} from "../hooks/use-product";
 import { CreateProductForm } from "./create-product-form";
 import { InventoryForm } from "./inventory-form";
 import { ProductCard } from "./product-card";
@@ -27,8 +24,6 @@ export function Products() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
 	const [statusFilter, setStatusFilter] = useState<string>("ALL");
-	const [page, setPage] = useState(1);
-	const [limit, setLimit] = useState(12);
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [isUpdateOpen, setIsUpdateOpen] = useState(false);
 	const [isInventoryOpen, setIsInventoryOpen] = useState(false);
@@ -37,18 +32,56 @@ export function Products() {
 		null,
 	);
 
-	const { data: categoriesData } = useGetCategories();
+	const queryClient = useQueryClient();
 
-	const { data: productsData, isLoading } = useGetProducts({
-		search: searchTerm || undefined,
-		categoryId: categoryFilter !== "ALL" ? categoryFilter : undefined,
-		isAvailable:
-			statusFilter !== "ALL" ? statusFilter === "AVAILABLE" : undefined,
-		page,
-		limit,
+	const { data: categoriesData } = useQuery({
+		queryKey: ["categories"],
+		queryFn: async () => {
+			const res = await api.products.categories.get();
+			if (res.status === 200) {
+				return res.data;
+			}
+			return [];
+		},
 	});
 
-	const { mutate: deleteProduct } = useDeleteProduct();
+	const { data: productsData, isLoading } = useQuery({
+		queryKey: ["products"],
+		queryFn: async () => {
+			const res = await api.products.get();
+
+			if (res.status === 200) {
+				return res.data;
+			}
+
+			return [];
+		},
+	});
+
+	const filteredProducts = (productsData || []).filter((product: Product) => {
+		const matchesSearch = product.name
+			.toLowerCase()
+			.includes(searchTerm.toLowerCase());
+		const matchesCategory =
+			categoryFilter === "ALL" || product.categoryId === categoryFilter;
+		const matchesStatus =
+			statusFilter === "ALL" ||
+			(statusFilter === "AVAILABLE" && product.isAvailable) ||
+			(statusFilter === "UNAVAILABLE" && !product.isAvailable);
+
+		return matchesSearch && matchesCategory && matchesStatus;
+	});
+
+	const { mutate: deleteProduct } = useMutation({
+		mutationFn: async (id: string) => {
+			const res = await api.products({ id }).delete();
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["products"] });
+		},
+	});
 
 	const handleEdit = (product: Product) => {
 		setSelectedProduct(product);
@@ -69,8 +102,6 @@ export function Products() {
 		setInventoryProduct(product);
 		setIsInventoryOpen(true);
 	};
-
-	const totalPages = productsData?.meta?.totalPages || 1;
 
 	return (
 		<div className="space-y-4">
@@ -123,10 +154,10 @@ export function Products() {
 						<ProductCardSkeleton key={i} />
 					))}
 				</div>
-			) : productsData?.data && productsData.data.length > 0 ? (
+			) : filteredProducts.length > 0 ? (
 				<>
 					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-						{productsData.data.map((product: Product) => (
+						{filteredProducts.map((product: Product) => (
 							<ProductCard
 								key={product.id}
 								product={product}
@@ -136,31 +167,6 @@ export function Products() {
 							/>
 						))}
 					</div>
-
-					{/* Pagination */}
-					{totalPages > 1 && (
-						<div className="flex items-center justify-end space-x-2 py-4">
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => setPage((old) => Math.max(old - 1, 1))}
-								disabled={page === 1}
-							>
-								Trước
-							</Button>
-							<div className="text-sm font-medium">
-								Trang {page} / {totalPages}
-							</div>
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => setPage((old) => Math.min(old + 1, totalPages))}
-								disabled={page === totalPages}
-							>
-								Tiếp
-							</Button>
-						</div>
-					)}
 				</>
 			) : (
 				<div className="flex h-52 flex-col items-center justify-center rounded-lg border border-dashed text-center">

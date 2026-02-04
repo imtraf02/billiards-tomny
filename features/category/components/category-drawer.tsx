@@ -5,13 +5,13 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle,
+} from "@/components/ui/drawer";
 import {
 	Field,
 	FieldContent,
@@ -19,36 +19,51 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { createCategorySchema } from "@/shared/schemas/product";
-import { useCreateCategory, useUpdateCategory } from "@/features/product/hooks/use-product";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
+import { createCategorySchema, type CreateCategoryInput, type UpdateCategoryInput } from "@/shared/schemas/product";
 
-interface CategoryDialogProps {
+interface CategoryDrawerProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	category: any | null; // null for creating, object for editing
 }
 
-export function CategoryDialog({
+export function CategoryDrawer({
 	open,
 	onOpenChange,
 	category,
-}: CategoryDialogProps) {
+}: CategoryDrawerProps) {
 	const isEditing = !!category;
 
-	const { mutate: createCategory, isPending: isCreating } = useCreateCategory(
-		() => {
+	const queryClient = useQueryClient();
+
+	const { mutate: createCategory, isPending: isCreating } = useMutation({
+		mutationFn: async (data: CreateCategoryInput) => {
+			const res = await api.products.categories.post(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["categories"] });
 			toast.success("Tạo danh mục thành công!");
 			onOpenChange(false);
 			form.reset();
 		},
-	);
+	});
 
-	const { mutate: updateCategory, isPending: isUpdating } = useUpdateCategory(
-		() => {
+	const { mutate: updateCategory, isPending: isUpdating } = useMutation({
+		mutationFn: async ({ id, data }: { id: string; data: UpdateCategoryInput }) => {
+			const res = await api.products.categories({ id }).put(data);
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["categories"] });
 			toast.success("Cập nhật danh mục thành công!");
 			onOpenChange(false);
 		},
-	);
+	});
 
 	const form = useForm({
 		defaultValues: {
@@ -80,18 +95,18 @@ export function CategoryDialog({
 	const isLoading = isCreating || isUpdating;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<DialogTitle>
+		<Drawer open={open} onOpenChange={onOpenChange}>
+			<DrawerContent className="h-[auto] max-h-[95vh] sm:max-w-md mx-auto rounded-t-xl">
+				<DrawerHeader>
+					<DrawerTitle>
 						{isEditing ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}
-					</DialogTitle>
-					<DialogDescription>
+					</DrawerTitle>
+					<DrawerDescription>
 						{isEditing
 							? "Thay đổi tên danh mục sản phẩm của bạn."
 							: "Nhập tên danh mục mới để phân loại sản phẩm."}
-					</DialogDescription>
-				</DialogHeader>
+					</DrawerDescription>
+				</DrawerHeader>
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
@@ -121,7 +136,7 @@ export function CategoryDialog({
 						)}
 					/>
 
-					<DialogFooter>
+					<DrawerFooter>
 						<Button
 							type="button"
 							variant="outline"
@@ -137,9 +152,9 @@ export function CategoryDialog({
 									? "Lưu thay đổi"
 									: "Thêm mới"}
 						</Button>
-					</DialogFooter>
+					</DrawerFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</DrawerContent>
+		</Drawer>
 	);
 }

@@ -19,22 +19,22 @@ export const sidebarData: SidebarData = {
 			title: "Tổng quan",
 			items: [
 				{
-					title: "Bảng điều khiển",
+					title: "Dashboard",
 					url: "/app/dashboard",
 					icon: LayoutDashboard,
 				},
 			],
 		},
 		{
-			title: "Quản lý",
+			title: "Vận hành",
 			items: [
 				{
-					title: "Danh sách bàn",
+					title: "Quản lý bàn",
 					url: "/app/tables",
 					icon: Grid3x3,
 				},
 				{
-					title: "Lịch đặt bàn",
+					title: "Đặt bàn",
 					url: "/app/bookings",
 					icon: CalendarClock,
 				},
@@ -59,22 +59,31 @@ export const sidebarData: SidebarData = {
 					icon: Layers,
 				},
 				{
-					title: "Lịch sử kho",
-					url: "/app/inventory",
+					title: "Quản lý kho",
 					icon: ClipboardList,
+					items: [
+						{
+							title: "Lịch sử nhập xuất",
+							url: "/app/inventory",
+						},
+						{
+							title: "Phân tích tồn kho",
+							url: "/app/inventory/analysis",
+						},
+					],
 				},
 			],
 		},
 		{
 			title: "Tài chính",
 			items: [
-        {
-          title: "Giao dịch",
-          url: "/app/transactions",
-          icon: Receipt,
-        },
-        {
-					title: "Báo cáo",
+				{
+					title: "Giao dịch",
+					url: "/app/transactions",
+					icon: Receipt,
+				},
+				{
+					title: "Báo cáo tài chính",
 					url: "/app/finance",
 					icon: BarChart,
 				},
@@ -84,12 +93,12 @@ export const sidebarData: SidebarData = {
 			title: "Hệ thống",
 			items: [
 				{
-					title: "Người dùng",
+					title: "Quản lý người dùng",
 					url: "/app/users",
 					icon: Users,
 				},
 				{
-					title: "Cài đặt",
+					title: "Cài đặt hệ thống",
 					url: "/app/settings",
 					icon: Settings,
 				},

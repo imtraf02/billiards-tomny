@@ -15,7 +15,7 @@ export default function ProductsPage() {
 					<ModeSwitcher />
 				</div>
 			</Header>
-			<Main fixed>
+			<Main>
 				<div className="mb-6 flex flex-col gap-2">
 					<h1 className="text-2xl font-bold tracking-tight">
 						Quản lý sản phẩm

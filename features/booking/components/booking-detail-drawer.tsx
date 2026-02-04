@@ -5,28 +5,40 @@ import { vi } from "date-fns/locale";
 import { Calendar, Clock, History, Package, Receipt, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerHeader,
+	DrawerTitle,
+} from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useGetBooking } from "@/features/booking/hooks/use-booking";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
 
-interface BookingDetailDialogProps {
+interface BookingDetailDrawerProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	bookingId: string | null;
 }
 
-export function BookingDetailDialog({
+export function BookingDetailDrawer({
 	open,
 	onOpenChange,
 	bookingId,
-}: BookingDetailDialogProps) {
-	const { data: booking, isLoading } = useGetBooking(bookingId || "");
+}: BookingDetailDrawerProps) {
+	const { data: booking, isLoading } = useQuery({
+		queryKey: ["bookings", bookingId],
+		queryFn: async () => {
+			if (!bookingId) return null;
+			const res = await api.bookings({ id: bookingId }).get();
+			if (res.status === 200) {
+				return res.data;
+			}
+			return null;
+		},
+		enabled: !!bookingId && open,
+	});
 
 	if (!bookingId) return null;
 
@@ -53,10 +65,10 @@ export function BookingDetailDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
-				<DialogHeader>
-					<DialogTitle className="flex items-center justify-between">
+		<Drawer open={open} onOpenChange={onOpenChange}>
+			<DrawerContent className="h-[auto] max-h-[95vh] sm:max-w-xl mx-auto rounded-t-xl overflow-hidden flex flex-col">
+				<DrawerHeader>
+					<DrawerTitle className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
 							<History className="h-5 w-5 text-primary" />
 							<span>Chi tiết phiên chơi</span>
@@ -66,11 +78,11 @@ export function BookingDetailDialog({
 								{statusLabels[booking.status]}
 							</Badge>
 						)}
-					</DialogTitle>
-					<DialogDescription>
+					</DrawerTitle>
+					<DrawerDescription>
 						Mã phiên: {bookingId.split("-")[0].toUpperCase()}
-					</DialogDescription>
-				</DialogHeader>
+					</DrawerDescription>
+				</DrawerHeader>
 
 				{isLoading ? (
 					<div className="flex-1 flex items-center justify-center py-12 text-muted-foreground italic">
@@ -230,7 +242,7 @@ export function BookingDetailDialog({
 						Không tìm thấy thông tin phiên chơi này.
 					</div>
 				)}
-			</DialogContent>
-		</Dialog>
+			</DrawerContent>
+		</Drawer>
 	);
 }

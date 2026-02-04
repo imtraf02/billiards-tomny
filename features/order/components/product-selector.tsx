@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useGetProducts } from "@/features/product/hooks/use-product";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
 import type { Product } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
 
@@ -20,15 +21,27 @@ export function ProductSelector({
 	selectedProductIds = [],
 }: ProductSelectorProps) {
 	const [searchTerm, setSearchTerm] = useState("");
-	const { data: productsData, isLoading } = useGetProducts({
-		limit: 100, // Fetch more for selection
-		search: searchTerm,
-		isAvailable: true,
+	const { data: productsData, isLoading } = useQuery({
+		queryKey: ["products"],
+		queryFn: async () => {
+			const res = await api.products.get();
+
+			if (res.status === 200) {
+				return res.data;
+			}
+
+			return [];
+		},
 	});
 
-	// Filter out products with 0 stock on the client side just in case,
-	// though UI should handle it gracefully
-	const products = productsData?.data || [];
+	// Filter on the client side
+	const products = (productsData || []).filter((product: Product) => {
+		const matchesSearch = product.name
+			.toLowerCase()
+			.includes(searchTerm.toLowerCase());
+		const matchesAvailable = product.isAvailable;
+		return matchesSearch && matchesAvailable;
+	});
 
 	return (
 		<div className="flex flex-col h-full border rounded-md">
@@ -43,7 +56,7 @@ export function ProductSelector({
 					/>
 				</div>
 			</div>
-			<ScrollArea className="flex-1 h-[300px]">
+			<ScrollArea className="flex-1 h-76">
 				{isLoading ? (
 					<div className="p-4 space-y-2">
 						{[...Array(5)].map((_, i) => (

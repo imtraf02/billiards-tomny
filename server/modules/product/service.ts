@@ -1,11 +1,15 @@
+import { format } from "date-fns";
 import type { Prisma } from "@/generated/prisma/client";
 import prisma from "@/lib/db";
 import type {
 	CreateCategoryInput,
 	CreateInventoryLogInput,
 	CreateProductInput,
+	GetInventoryAnalysisQuery,
 	GetInventoryLogsQuery,
-	GetProductsQuery,
+	InventoryAnalysisResponse,
+	InventoryAnalysisTrend,
+	InventoryProductAnalysis,
 	UpdateCategoryInput,
 	UpdateProductInput,
 } from "@/shared/schemas/product";
@@ -73,50 +77,11 @@ export abstract class ProductService {
 		});
 	}
 
-	static async getAllProducts(query: GetProductsQuery) {
-		const where: Prisma.ProductWhereInput = {};
-
-		if (query.categoryId) {
-			where.categoryId = query.categoryId;
-		}
-
-		if (query.search) {
-			where.name = {
-				contains: query.search,
-				mode: "insensitive",
-			};
-		}
-
-		if (query.isAvailable !== undefined) {
-			where.isAvailable = query.isAvailable;
-		}
-
-		const skip = (query.page - 1) * query.limit;
-
-		const [products, total] = await Promise.all([
-			prisma.product.findMany({
-				where,
-				orderBy: {
-					name: "asc",
-				},
-				include: {
-					category: true,
-				},
-				skip,
-				take: query.limit,
-			}),
-			prisma.product.count({ where }),
-		]);
-
-		return {
-			data: products,
-			meta: {
-				total,
-				page: query.page,
-				limit: query.limit,
-				totalPages: Math.ceil(total / query.limit),
-			},
-		};
+	static async getAllProducts() {
+		return await prisma.product.findMany({
+			orderBy: { name: "asc" },
+			include: { category: true },
+		});
 	}
 
 	static async getProductById(id: string) {
@@ -280,6 +245,13 @@ export abstract class ProductService {
 			where.type = query.type;
 		}
 
+		if (query.startDate || query.endDate) {
+			where.createdAt = {
+				gte: query.startDate,
+				lte: query.endDate,
+			};
+		}
+
 		const skip = (query.page - 1) * query.limit;
 
 		const [logs, total] = await Promise.all([
@@ -338,5 +310,125 @@ export abstract class ProductService {
 			},
 			take: 50,
 		});
+	}
+
+	static async getInventoryAnalysis(
+		query: GetInventoryAnalysisQuery,
+	): Promise<InventoryAnalysisResponse> {
+		const where: Prisma.InventoryLogWhereInput = {};
+
+		if (query.productId) {
+			where.productId = query.productId;
+		}
+
+		if (query.startDate || query.endDate) {
+			where.createdAt = {
+				gte: query.startDate ? new Date(query.startDate) : undefined,
+				lte: query.endDate ? new Date(query.endDate) : undefined,
+			};
+		}
+
+		const logs = await prisma.inventoryLog.findMany({
+			where,
+			orderBy: {
+				createdAt: "asc",
+			},
+		});
+
+		const summary = {
+			totalIncome: 0,
+			totalExpenditure: 0,
+			totalCOGS: 0,
+			netProfit: 0,
+			totalInQuantity: 0,
+			totalOutQuantity: 0,
+		};
+
+		const trendsMap = new Map<string, InventoryAnalysisTrend>();
+		const productsMap = new Map<string, InventoryProductAnalysis>();
+
+		// Pre-fetch all products to get their names and units efficiently
+		const allProducts = await prisma.product.findMany({
+			select: { id: true, name: true, unit: true, currentStock: true },
+		});
+		const productInfoMap = new Map(allProducts.map((p) => [p.id, p]));
+
+		for (const log of logs) {
+			const logDate = format(log.createdAt, "yyyy-MM-dd");
+			let trend = trendsMap.get(logDate);
+			if (!trend) {
+				trend = {
+					date: logDate,
+					income: 0,
+					expenditure: 0,
+					cogs: 0,
+					profit: 0,
+				};
+				trendsMap.set(logDate, trend);
+			}
+
+			let productStats = productsMap.get(log.productId);
+			if (!productStats) {
+				const info = productInfoMap.get(log.productId);
+				productStats = {
+					productId: log.productId,
+					productName: info?.name || "Sản phẩm đã xóa",
+					currentStock: info?.currentStock || 0,
+					unit: info?.unit || "",
+					income: 0,
+					expenditure: 0,
+					cogs: 0,
+					profit: 0,
+					soldQuantity: 0,
+					importedQuantity: 0,
+				};
+				productsMap.set(log.productId, productStats);
+			}
+
+			const quantity = log.quantity;
+			const cost = log.costSnapshot || 0;
+			const price = log.priceSnapshot || 0;
+
+			if (log.type === "IN") {
+				const exp = quantity * cost;
+				summary.totalExpenditure += exp;
+				summary.totalInQuantity += quantity;
+				trend.expenditure += exp;
+				productStats.expenditure += exp;
+				productStats.importedQuantity += quantity;
+			} else if (log.type === "OUT") {
+				const income = quantity * price;
+				const cogs = quantity * cost;
+				summary.totalIncome += income;
+				summary.totalCOGS += cogs;
+				summary.totalOutQuantity += quantity;
+				trend.income += income;
+				trend.cogs += cogs;
+				productStats.income += income;
+				productStats.cogs += cogs;
+				productStats.soldQuantity += quantity;
+			}
+		}
+
+		summary.netProfit = summary.totalIncome - summary.totalCOGS;
+
+		const trends = Array.from(trendsMap.values()).map((t) => ({
+			...t,
+			profit: t.income - t.cogs,
+		}));
+
+		const productAnalysis = Array.from(productsMap.values()).map((p) => ({
+			...p,
+			profit: p.income - p.cogs,
+		}));
+
+		// Sort products by income (revenue) descending by default
+		productAnalysis.sort((a, b) => b.income - a.income);
+
+		return {
+			summary,
+			trends,
+			products: productAnalysis,
+		};
 	}
 }

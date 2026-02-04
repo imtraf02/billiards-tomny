@@ -5,6 +5,7 @@ import {
 	createCategorySchema,
 	createInventoryLogSchema,
 	createProductSchema,
+	getInventoryAnalysisQuerySchema,
 	getInventoryLogsQuerySchema,
 	getProductsQuerySchema,
 	updateCategorySchema,
@@ -83,11 +84,10 @@ export const product = new Elysia({ prefix: "/products" })
 	)
 	.get(
 		"/",
-		async ({ query }) => {
-			return await ProductService.getAllProducts(query);
+		async () => {
+			return await ProductService.getAllProducts();
 		},
 		{
-			query: getProductsQuerySchema,
 			detail: {
 				tags: ["Products"],
 			},
@@ -157,6 +157,20 @@ export const product = new Elysia({ prefix: "/products" })
 					detail: {
 						tags: ["Products", "Inventory"],
 						summary: "Lấy danh sách lịch sử kho",
+					},
+				},
+			)
+			.get(
+				"/analysis",
+				async ({ query }) => {
+					return await ProductService.getInventoryAnalysis(query);
+				},
+				{
+					query: getInventoryAnalysisQuerySchema,
+					authorized: [Role.ADMIN, Role.STAFF],
+					detail: {
+						tags: ["Products", "Inventory"],
+						summary: "Phân tích thu chi kho",
 					},
 				},
 			),

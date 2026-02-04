@@ -23,21 +23,24 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { CreateOrderDialog } from "@/features/order/components/create-order-dialog";
-import { OrderDetailDialog } from "@/features/order/components/order-detail-dialog";
+import { CreateOrderDrawer } from "@/features/order/components/create-order-drawer";
+import { OrderDetailDrawer } from "@/features/order/components/order-detail-drawer";
 import { OrdersList } from "@/features/order/components/orders-list";
-import { useGetOrders } from "@/features/order/hooks/use-order";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
+import type { OrderStatus } from "@/generated/prisma/enums";
+import type { GetOrdersQuery } from "@/shared/schemas/order";
 
 export default function OrdersPage() {
 	const [page, setPage] = useState(1);
-	const [status, setStatus] = useState<string>("ALL");
+	const [status, setStatus] = useState<OrderStatus | "ALL">("ALL");
 	const [dateRange, setDateRange] = useState<string>("TODAY");
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 	const [isDetailOpen, setIsDetailOpen] = useState(false);
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-	const getQueryFilters = () => {
+	const getQueryFilters = (): GetOrdersQuery => {
 		const now = new Date();
 		let startDate: Date | undefined;
 		let endDate: Date | undefined = endOfDay(now);
@@ -60,16 +63,30 @@ export default function OrdersPage() {
 		}
 
 		return {
-			status: status !== "ALL" ? (status as any) : undefined,
-			startDate,
-			endDate,
+			status: status !== "ALL" ? status : undefined,
+			startDate: startDate?.toISOString(),
+			endDate: endDate?.toISOString(),
 			page,
-			limit: 12,
+			limit: 20,
 			search: searchTerm || undefined,
 		};
 	};
 
-	const { data: ordersData, isLoading } = useGetOrders(getQueryFilters());
+	const { data: ordersData, isLoading } = useQuery({
+		queryKey: ["orders", getQueryFilters()],
+		queryFn: async () => {
+			const res = await api.orders.get({
+				query: getQueryFilters(),
+			});
+			if (res.status === 200) {
+				return res.data;
+			}
+			return {
+				data: [],
+				meta: { total: 0, page: 1, limit: 20, totalPages: 0 },
+			};
+		},
+	});
 
 	const handleViewDetail = (id: string) => {
 		setSelectedOrderId(id);
@@ -129,7 +146,7 @@ export default function OrdersPage() {
 										setPage(1);
 									}}
 								>
-									<SelectTrigger className="w-[160px]">
+									<SelectTrigger className="w-48">
 										<CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
 										<SelectValue placeholder="Thời gian" />
 									</SelectTrigger>
@@ -143,12 +160,12 @@ export default function OrdersPage() {
 
 								<Select
 									value={status}
-									onValueChange={(v) => {
-										setStatus(v);
+									onValueChange={(value) => {
+										setStatus(value as OrderStatus | "ALL");
 										setPage(1);
 									}}
 								>
-									<SelectTrigger className="w-[180px]">
+									<SelectTrigger className="w-48">
 										<SelectValue placeholder="Trạng thái" />
 									</SelectTrigger>
 									<SelectContent>
@@ -171,7 +188,7 @@ export default function OrdersPage() {
 
 					{/* Orders List */}
 					{isLoading ? (
-						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							{[...Array(6)].map((_, i) => (
 								<div
 									key={`skeleton-${i}`}
@@ -214,12 +231,12 @@ export default function OrdersPage() {
 					)}
 				</div>
 
-				<OrderDetailDialog
+				<OrderDetailDrawer
 					open={isDetailOpen}
 					onOpenChange={setIsDetailOpen}
 					orderId={selectedOrderId}
 				/>
-				<CreateOrderDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+				<CreateOrderDrawer open={isCreateOpen} onOpenChange={setIsCreateOpen} />
 			</Main>
 		</>
 	);

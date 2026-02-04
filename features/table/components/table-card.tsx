@@ -24,8 +24,11 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useCreateBooking } from "@/features/booking/hooks";
+import { type CreateBookingInput } from "@/shared/schemas/booking";
 import type { Table } from "@/generated/prisma/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
+import { toast } from "sonner";
 
 interface TableCardProps {
 	table: Table;
@@ -83,118 +86,134 @@ const TableTimer = memo(({ startTime }: { startTime: Date }) => {
 	);
 });
 
-TableTimer.displayName = 'TableTimer';
+TableTimer.displayName = "TableTimer";
 
-export const TableCard = memo(function TableCard({
-	table,
-	activeBooking,
-	onEdit,
-	onDelete,
-	onViewSession,
-}: TableCardProps) {
-	const { mutate: createBooking, isPending: isStarting } = useCreateBooking();
+export const TableCard = memo(
+	function TableCard({
+		table,
+		activeBooking,
+		onEdit,
+		onDelete,
+		onViewSession,
+	}: TableCardProps) {
+		const queryClient = useQueryClient();
 
-	const handleAction = useCallback(() => {
-		if (table.status === "AVAILABLE") {
-			createBooking({
-				tableIds: [table.id],
-				startTime: new Date(),
-			});
-		} else if (table.status === "OCCUPIED" && onViewSession) {
-			onViewSession(table);
-		}
-	}, [table.status, table.id, createBooking, onViewSession]);
+		const { mutate: createBooking, isPending: isStarting } = useMutation({
+			mutationFn: async (data: CreateBookingInput) => {
+				const res = await api.bookings.post(data);
+				if (res.error) throw res.error;
+				return res.data;
+			},
+			onSuccess: () => {
+				queryClient.invalidateQueries({ queryKey: ["tables"] });
+				queryClient.invalidateQueries({ queryKey: ["bookings"] });
+				toast.success("Bắt đầu phiên chơi");
+			},
+			onError: (error: any) => {
+				toast.error("Không thể bắt đầu phiên chơi: " + (error.value?.message || "Lỗi không xác định"));
+			},
+		});
 
-	const handleEdit = useCallback(() => {
-		onEdit(table);
-	}, [onEdit, table]);
+		const handleAction = useCallback(() => {
+			if (table.status === "AVAILABLE") {
+				createBooking({
+					tableIds: [table.id],
+					startTime: new Date(),
+				});
+			} else if (table.status === "OCCUPIED" && onViewSession) {
+				onViewSession(table);
+			}
+		}, [table.status, table.id, createBooking, onViewSession]);
 
-	const handleDelete = useCallback(() => {
-		onDelete(table.id);
-	}, [onDelete, table.id]);
+		const handleEdit = useCallback(() => {
+			onEdit(table);
+		}, [onEdit, table]);
 
-	return (
-		<Card className="overflow-hidden transition-all hover:shadow-md">
-			<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-				<CardTitle className="text-lg font-bold">{table.name}</CardTitle>
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button variant="ghost" className="h-8 w-8 p-0">
-							<MoreHorizontal className="h-4 w-4" />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						<DropdownMenuItem onClick={handleEdit}>
-							<Pencil className="mr-2 h-4 w-4" />
-							Sửa
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							className="text-red-600"
-							onClick={handleDelete}
-						>
-							<Trash2 className="mr-2 h-4 w-4" />
-							Xóa
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</CardHeader>
-			<CardContent className="space-y-2 pb-2">
-				<div className="flex items-center justify-between">
-					<Badge variant="outline" className="text-xs">
-						{table.type}
-					</Badge>
-					<div className="flex items-center gap-1.5">
-						<div
-							className={`h-2 w-2 rounded-full ${statusColors[table.status]}`}
-						/>
-						<span className="text-xs font-medium">
-							{statusLabels[table.status]}
-						</span>
+		const handleDelete = useCallback(() => {
+			onDelete(table.id);
+		}, [onDelete, table.id]);
+
+		return (
+			<Card className="overflow-hidden transition-all hover:shadow-md">
+				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+					<CardTitle className="text-lg font-bold">{table.name}</CardTitle>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="ghost" className="h-8 w-8 p-0">
+								<MoreHorizontal className="h-4 w-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onClick={handleEdit}>
+								<Pencil className="mr-2 h-4 w-4" />
+								Sửa
+							</DropdownMenuItem>
+							<DropdownMenuItem className="text-red-600" onClick={handleDelete}>
+								<Trash2 className="mr-2 h-4 w-4" />
+								Xóa
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</CardHeader>
+				<CardContent className="space-y-2 pb-2">
+					<div className="flex items-center justify-between">
+						<Badge variant="outline" className="text-xs">
+							{table.type}
+						</Badge>
+						<div className="flex items-center gap-1.5">
+							<div
+								className={`h-2 w-2 rounded-full ${statusColors[table.status]}`}
+							/>
+							<span className="text-xs font-medium">
+								{statusLabels[table.status]}
+							</span>
+						</div>
 					</div>
-				</div>
-				<div className="flex items-center justify-between">
-					<div className="text-sm font-semibold">
-						{new Intl.NumberFormat("vi-VN", {
-							style: "currency",
-							currency: "VND",
-						}).format(table.hourlyRate)}
-						<span className="text-xs font-normal text-muted-foreground ml-1">
-							/ giờ
-						</span>
+					<div className="flex items-center justify-between">
+						<div className="text-sm font-semibold">
+							{new Intl.NumberFormat("vi-VN", {
+								style: "currency",
+								currency: "VND",
+							}).format(table.hourlyRate)}
+							<span className="text-xs font-normal text-muted-foreground ml-1">
+								/ giờ
+							</span>
+						</div>
+						{activeBooking && table.status === "OCCUPIED" && (
+							<TableTimer startTime={new Date(activeBooking.startTime)} />
+						)}
 					</div>
-					{activeBooking && table.status === "OCCUPIED" && (
-						<TableTimer startTime={new Date(activeBooking.startTime)} />
-					)}
-				</div>
-			</CardContent>
-			<CardFooter className="pt-2">
-				<Button
-					className="w-full"
-					variant={table.status === "AVAILABLE" ? "default" : "secondary"}
-					onClick={handleAction}
-					disabled={isStarting}
-				>
-					{table.status === "AVAILABLE" ? (
-						<>
-							<PlayCircle className="mr-2 h-4 w-4" />
-							{isStarting ? "Đang xử lý..." : "Bắt đầu chơi"}
-						</>
-					) : (
-						<>
-							<Eye className="mr-2 h-4 w-4" />
-							Chi tiết
-						</>
-					)}
-				</Button>
-			</CardFooter>
-		</Card>
-	);
-}, (prevProps, nextProps) => {
-	// Custom comparison function để tránh re-render không cần thiết
-	return (
-		prevProps.table.id === nextProps.table.id &&
-		prevProps.table.status === nextProps.table.status &&
-		prevProps.activeBooking?.id === nextProps.activeBooking?.id &&
-		prevProps.activeBooking?.startTime === nextProps.activeBooking?.startTime
-	);
-});
+				</CardContent>
+				<CardFooter className="pt-2">
+					<Button
+						className="w-full"
+						variant={table.status === "AVAILABLE" ? "default" : "secondary"}
+						onClick={handleAction}
+						disabled={isStarting}
+					>
+						{table.status === "AVAILABLE" ? (
+							<>
+								<PlayCircle className="mr-2 h-4 w-4" />
+								{isStarting ? "Đang xử lý..." : "Bắt đầu chơi"}
+							</>
+						) : (
+							<>
+								<Eye className="mr-2 h-4 w-4" />
+								Chi tiết
+							</>
+						)}
+					</Button>
+				</CardFooter>
+			</Card>
+		);
+	},
+	(prevProps, nextProps) => {
+		// Custom comparison function để tránh re-render không cần thiết
+		return (
+			prevProps.table.id === nextProps.table.id &&
+			prevProps.table.status === nextProps.table.status &&
+			prevProps.activeBooking?.id === nextProps.activeBooking?.id &&
+			prevProps.activeBooking?.startTime === nextProps.activeBooking?.startTime
+		);
+	},
+);

@@ -8,7 +8,6 @@ import type {
 	GetBookingsQuery,
 	UpdateBookingInput,
 } from "@/shared/schemas/booking";
-import { BadRequestError } from "../../utils/errors";
 
 export abstract class BookingService {
 	static async create(data: CreateBookingInput) {

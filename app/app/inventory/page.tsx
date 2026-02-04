@@ -32,8 +32,9 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InventoryList } from "@/features/inventory/components/inventory-list";
-import { useGetInventoryLogs } from "@/features/product/hooks/use-product";
-import type { GetInventoryLogsQuery } from "@/shared/schemas/product";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
+import { type GetInventoryLogsQuery } from "@/shared/schemas/product";
 
 type TypeFilter = "ALL" | "IN" | "OUT";
 
@@ -108,7 +109,19 @@ export default function InventoryPage() {
 		...(type !== "ALL" && { type: type as "IN" | "OUT" }),
 	};
 
-	const { data, isLoading } = useGetInventoryLogs(query);
+	const { data, isLoading } = useQuery({
+		queryKey: ["inventory-logs", query],
+		queryFn: async () => {
+			const res = await api.products.inventory.get({ query });
+			if (res.status === 200) {
+				return res.data;
+			}
+			return {
+				data: [],
+				meta: { total: 0, page: 1, limit: 20, totalPages: 0 },
+			};
+		},
+	});
 
 	// Format date range display
 	const getDateRangeDisplay = () => {
