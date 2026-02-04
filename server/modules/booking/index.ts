@@ -7,6 +7,7 @@ import {
 	createBookingSchema,
 	endTableInBookingSchema,
 	getBookingsQuerySchema,
+	mergeBookingSchema,
 	updateBookingSchema,
 } from "@/shared/schemas/booking";
 import { BookingService } from "./service";
@@ -33,6 +34,18 @@ export const booking = new Elysia({ prefix: "/bookings" })
 		},
 		{
 			query: getBookingsQuerySchema,
+			authorized: [Role.ADMIN, Role.STAFF],
+			detail: {
+				tags: ["Bookings"],
+			},
+		},
+	)
+	.get(
+		"/active",
+		async () => {
+			return await BookingService.getActiveBookings();
+		},
+		{
 			authorized: [Role.ADMIN, Role.STAFF],
 			detail: {
 				tags: ["Bookings"],
@@ -100,6 +113,20 @@ export const booking = new Elysia({ prefix: "/bookings" })
 		},
 		{
 			body: completeBookingSchema,
+			authorized: [Role.ADMIN, Role.STAFF],
+			detail: {
+				tags: ["Bookings"],
+			},
+		},
+	)
+	// Merge two bookings
+	.post(
+		"/:id/merge",
+		async ({ params: { id }, body }) => {
+			return await BookingService.merge(id, body);
+		},
+		{
+			body: mergeBookingSchema,
 			authorized: [Role.ADMIN, Role.STAFF],
 			detail: {
 				tags: ["Bookings"],

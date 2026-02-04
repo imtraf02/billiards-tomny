@@ -13,8 +13,12 @@ export abstract class TableService {
 		});
 	}
 
-	static async getAll(query: GetTablesQuery) {
+	static async getAll(query: GetTablesQuery = {}) {
 		const where: Prisma.TableWhereInput = {};
+
+		if (query.search) {
+			where.name = { contains: query.search, mode: "insensitive" };
+		}
 
 		if (query.type) {
 			where.type = query.type;
@@ -24,17 +28,25 @@ export abstract class TableService {
 			where.status = query.status;
 		}
 
-		if (query.search) {
-			where.name = {
-				contains: query.search,
-				mode: "insensitive",
-			};
-		}
-
 		return await prisma.table.findMany({
 			where,
 			orderBy: {
 				name: "asc",
+			},
+			include: {
+				bookingTables: {
+					where: {
+						endTime: null,
+					},
+					include: {
+						booking: {
+							select: {
+								id: true,
+								startTime: true,
+							},
+						},
+					},
+				},
 			},
 		});
 	}

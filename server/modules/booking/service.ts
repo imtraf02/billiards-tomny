@@ -1,11 +1,13 @@
 import type { Prisma } from "@/generated/prisma/client";
 import prisma from "@/lib/db";
+import { BadRequestError } from "@/server/utils/errors";
 import type {
 	AddTableToBookingInput,
 	CompleteBookingInput,
 	CreateBookingInput,
 	EndTableInBookingInput,
 	GetBookingsQuery,
+	MergeBookingInput,
 	UpdateBookingInput,
 } from "@/shared/schemas/booking";
 import { OrderService } from "../order/service";
@@ -98,6 +100,15 @@ export abstract class BookingService {
 							name: true,
 						},
 					},
+					orders: {
+						include: {
+							orderItems: {
+								include: {
+									product: true,
+								},
+							},
+						},
+					},
 				},
 				skip,
 				take: query.limit,
@@ -114,6 +125,33 @@ export abstract class BookingService {
 				totalPages: Math.ceil(total / query.limit),
 			},
 		};
+	}
+
+	static async getActiveBookings() {
+		return await prisma.booking.findMany({
+			where: {
+				status: "PENDING",
+			},
+			orderBy: {
+				startTime: "desc",
+			},
+			include: {
+				bookingTables: {
+					include: {
+						table: true,
+					},
+				},
+				orders: {
+					include: {
+						orderItems: {
+							include: {
+								product: true,
+							},
+						},
+					},
+				},
+			},
+		});
 	}
 
 	static async getById(id: string) {
@@ -343,6 +381,158 @@ export abstract class BookingService {
 					status: "COMPLETED",
 					endTime,
 					totalAmount,
+				},
+			});
+		});
+	}
+
+	static async merge(targetId: string, data: MergeBookingInput) {
+		const sourceId = data.sourceBookingId;
+
+		if (targetId === sourceId) {
+			throw new BadRequestError("Không thể gộp một booking vào chính nó");
+		}
+
+		return await prisma.$transaction(async (tx) => {
+			const sourceBooking = await tx.booking.findUniqueOrThrow({
+				where: { id: sourceId },
+				include: {
+					bookingTables: true,
+					orders: {
+						include: { orderItems: true },
+					},
+				},
+			});
+
+			const targetBooking = await tx.booking.findUniqueOrThrow({
+				where: { id: targetId },
+				include: {
+					orders: {
+						where: { status: "PENDING" },
+						include: { orderItems: true },
+					},
+				},
+			});
+
+			if (sourceBooking.status !== "PENDING") {
+				throw new BadRequestError("Booking nguồn đã hoàn thành hoặc bị hủy");
+			}
+
+			if (targetBooking.status !== "PENDING") {
+				throw new BadRequestError("Booking đích đã hoàn thành hoặc bị hủy");
+			}
+
+			// 1. Calculate earliest start time
+			const earliestStartTime = new Date(
+				Math.min(
+					sourceBooking.startTime.getTime(),
+					targetBooking.startTime.getTime(),
+				),
+			);
+
+			// 2. Move all table session data from source to target
+			await tx.bookingTable.updateMany({
+				where: { bookingId: sourceId },
+				data: { bookingId: targetId },
+			});
+
+			// 3. Consolidate Pending Orders
+			const sourcePendingOrder = sourceBooking.orders.find(
+				(o) => o.status === "PENDING",
+			);
+			const targetPendingOrder = targetBooking.orders[0]; // Already filtered by status: "PENDING"
+
+			if (sourcePendingOrder) {
+				if (targetPendingOrder) {
+					// Both have pending orders -> Move all items from source to target
+					for (const item of sourcePendingOrder.orderItems) {
+						// Check if target already has this product in its pending order
+						const existingItem = targetPendingOrder.orderItems.find(
+							(i) => i.productId === item.productId,
+						);
+
+						if (existingItem) {
+							await tx.orderItem.update({
+								where: { id: existingItem.id },
+								data: {
+									quantity: { increment: item.quantity },
+								},
+							});
+						} else {
+							await tx.orderItem.create({
+								data: {
+									orderId: targetPendingOrder.id,
+									productId: item.productId,
+									quantity: item.quantity,
+									priceSnapshot: item.priceSnapshot,
+									costSnapshot: item.costSnapshot,
+								},
+							});
+						}
+					}
+
+					// Delete the source pending order once items are moved
+					await tx.order.delete({
+						where: { id: sourcePendingOrder.id },
+					});
+
+					// Recalculate target pending order total
+					const finalItems = await tx.orderItem.findMany({
+						where: { orderId: targetPendingOrder.id },
+					});
+					const newTotal = finalItems.reduce(
+						(sum, i) => sum + i.priceSnapshot * i.quantity,
+						0,
+					);
+					await tx.order.update({
+						where: { id: targetPendingOrder.id },
+						data: { totalAmount: newTotal },
+					});
+				} else {
+					// Only source has a pending order -> Move it directly to target
+					await tx.order.update({
+						where: { id: sourcePendingOrder.id },
+						data: { bookingId: targetId },
+					});
+				}
+			}
+
+			// 4. Move all OTHER orders (PREPARING, DELIVERED, COMPLETED, CANCELLED)
+			// These are orders that aren't the sourcePendingOrder we just handled
+			await tx.order.updateMany({
+				where: {
+					bookingId: sourceId,
+					id: {
+						notIn: sourcePendingOrder ? [sourcePendingOrder.id] : [],
+					},
+				},
+				data: { bookingId: targetId },
+			});
+
+			// 5. Delete source booking
+			await tx.booking.delete({
+				where: { id: sourceId },
+			});
+
+			// 6. Update target booking with earliest startTime
+			return await tx.booking.update({
+				where: { id: targetId },
+				data: { startTime: earliestStartTime },
+				include: {
+					bookingTables: {
+						include: {
+							table: true,
+						},
+					},
+					orders: {
+						include: {
+							orderItems: {
+								include: {
+									product: true,
+								},
+							},
+						},
+					},
 				},
 			});
 		});

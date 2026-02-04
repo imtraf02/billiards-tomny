@@ -38,9 +38,14 @@ export const completeBookingSchema = z.object({
 	endTime: z.coerce.date().optional(),
 });
 
+export const mergeBookingSchema = z.object({
+	sourceBookingId: z.string().min(1, { error: "ID booking nguồn là bắt buộc" }),
+});
+
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
 export type UpdateBookingInput = z.infer<typeof updateBookingSchema>;
 export type AddTableToBookingInput = z.infer<typeof addTableToBookingSchema>;
 export type EndTableInBookingInput = z.infer<typeof endTableInBookingSchema>;
 export type GetBookingsQuery = z.infer<typeof getBookingsQuerySchema>;
 export type CompleteBookingInput = z.infer<typeof completeBookingSchema>;
+export type MergeBookingInput = z.infer<typeof mergeBookingSchema>;

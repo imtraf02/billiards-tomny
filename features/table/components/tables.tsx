@@ -58,37 +58,6 @@ export function Tables() {
 		},
 	});
 
-	const { data: bookingsData } = useQuery({
-		queryKey: ["bookings", { status: "PENDING" }],
-		queryFn: async () => {
-			const res = await api.bookings.get({
-				query: {
-					status: "PENDING",
-					limit: 100,
-					page: 1,
-				},
-			});
-			if (res.status === 200) {
-				return res.data;
-			}
-			return {
-				data: [],
-				meta: { total: 0, page: 1, limit: 100, totalPages: 0 },
-			};
-		},
-	});
-
-	// Memoize activeBookingMap để tránh tính toán lại mỗi lần render
-	const activeBookingMap = useMemo(() => {
-		const map: Record<string, any> = {};
-		(bookingsData?.data || []).forEach((booking: any) => {
-			booking.bookingTables.forEach((bt: any) => {
-				map[bt.tableId] = booking;
-			});
-		});
-		return map;
-	}, [bookingsData?.data]);
-
 	const { mutate: deleteTable } = useMutation({
 		mutationFn: async (id: string) => {
 			const res = await api.tables({ id }).delete();
@@ -189,8 +158,11 @@ export function Tables() {
 				</div>
 			) : filteredTables && filteredTables.length > 0 ? (
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-					{filteredTables.map((table: Table) => {
-						const activeBooking = activeBookingMap[table.id];
+					{filteredTables.map((table) => {
+						const activeBooking =
+							table.bookingTables && table.bookingTables.length > 0
+								? table.bookingTables[0]
+								: null;
 						return (
 							<TableCard
 								key={table.id}
@@ -229,6 +201,11 @@ export function Tables() {
 				open={isSessionOpen}
 				onOpenChange={setIsSessionOpen}
 				table={selectedTable}
+				activeBooking={
+					selectedTable && (selectedTable as any).bookingTables?.length > 0
+						? (selectedTable as any).bookingTables[0].booking
+						: null
+				}
 				onOpenOrder={handleOpenOrder}
 			/>
 

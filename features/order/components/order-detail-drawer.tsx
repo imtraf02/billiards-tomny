@@ -6,6 +6,7 @@ import { vi } from "date-fns/locale";
 import {
 	CheckCircle2,
 	FileText,
+	GitMerge,
 	Loader2,
 	Minus,
 	MoreHorizontal,
@@ -39,11 +40,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/eden";
+import { cn } from "@/lib/utils";
 import type {
 	BatchUpdateOrderItemsInput,
 	UpdateOrderInput,
 } from "@/shared/schemas/order";
-import { cn } from "@/lib/utils";
 
 interface OrderDetailDrawerProps {
 	open: boolean;
@@ -57,6 +58,8 @@ export function OrderDetailDrawer({
 	orderId,
 }: OrderDetailDrawerProps) {
 	const queryClient = useQueryClient();
+	const [isMerging, setIsMerging] = useState(false);
+	const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
 
 	const { data: order, isLoading } = useQuery({
 		queryKey: ["orders", orderId],
@@ -160,13 +163,60 @@ export function OrderDetailDrawer({
 		},
 	});
 
+	const { mutate: mergeBookings, isPending: isMergingBookings } = useMutation({
+		mutationFn: async ({
+			targetId,
+			sourceId,
+		}: {
+			targetId: string;
+			sourceId: string;
+		}) => {
+			const res = await api.bookings({ id: targetId }).merge.post({
+				sourceBookingId: sourceId,
+			});
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["orders"] });
+			queryClient.invalidateQueries({ queryKey: ["bookings"] });
+			queryClient.invalidateQueries({ queryKey: ["tables"] });
+			toast.success("Gộp bill thành công");
+			onOpenChange(false);
+			setIsMerging(false);
+			setSelectedTargetId(null);
+		},
+		onError: (error: any) => {
+			toast.error(error.message || "Gộp bill thất bại");
+		},
+	});
+
+	const { data: activeBookings } = useQuery({
+		queryKey: ["bookings", { status: "PENDING" }],
+		queryFn: async () => {
+			const res = await api.bookings.get({
+				query: {
+					status: "PENDING",
+					limit: 100,
+					page: 1,
+				},
+			});
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		enabled: open && isMerging,
+	});
+
+	const otherActiveBookings = useMemo(() => {
+		if (!activeBookings?.data || !order?.bookingId) return [];
+		return activeBookings.data.filter((b) => b.id !== order.bookingId);
+	}, [activeBookings, order?.bookingId]);
+
 	const hasChanges =
 		order &&
 		(localItems.length !== order.orderItems.length ||
 			localItems.some((item) => {
-				const original = order.orderItems.find(
-					(i: any) => i.id === item.id,
-				);
+				const original = order.orderItems.find((i: any) => i.id === item.id);
 				return !original || item.quantity !== original.quantity;
 			}));
 
@@ -189,7 +239,11 @@ export function OrderDetailDrawer({
 		);
 		order?.orderItems.forEach((original) => {
 			if (!currentIds.has(original.id)) {
-				itemsToUpdate.push({ id: original.id, productId: original.productId, quantity: 0 });
+				itemsToUpdate.push({
+					id: original.id,
+					productId: original.productId,
+					quantity: 0,
+				});
 			}
 		});
 
@@ -232,6 +286,11 @@ export function OrderDetailDrawer({
 					: item,
 			),
 		);
+	};
+
+	const handleMerge = () => {
+		if (!order?.bookingId || !selectedTargetId) return;
+		mergeBookings({ targetId: selectedTargetId, sourceId: order.bookingId });
 	};
 
 	const handleUpdateStatus = (
@@ -303,8 +362,12 @@ export function OrderDetailDrawer({
 										<Button
 											size="icon"
 											variant="ghost"
-											className={cn(order.status === "CANCELLED" ||
-											order.status === "COMPLETED" ? "hidden" : "size-7")}
+											className={cn(
+												order.status === "CANCELLED" ||
+													order.status === "COMPLETED"
+													? "hidden"
+													: "size-7",
+											)}
 											disabled={
 												isUpdating ||
 												order.status === "CANCELLED" ||
@@ -406,6 +469,17 @@ export function OrderDetailDrawer({
 													?.map((bt: any) => bt.table?.name)
 													.join(", ") || "Khách lẻ"}
 											</p>
+											{order.bookingId && (
+												<Button
+													variant="link"
+													size="sm"
+													className="h-auto p-0 text-primary flex items-center gap-1 mt-1"
+													onClick={() => setIsMerging(true)}
+												>
+													<GitMerge className="h-3 w-3" />
+													Gộp bill...
+												</Button>
+											)}
 										</div>
 										<div className="text-right">
 											<p className="text-muted-foreground">Thời gian</p>
@@ -761,6 +835,120 @@ export function OrderDetailDrawer({
 					</TabsContent>
 				</Tabs>
 			</DrawerContent>
+
+			<Drawer open={isMerging} onOpenChange={setIsMerging}>
+				<DrawerContent className="mx-auto max-w-md h-[70vh] flex flex-col">
+					<DrawerHeader>
+						<DrawerTitle>Chọn bàn muốn gộp vào</DrawerTitle>
+						<DrawerDescription>
+							Tất cả các món và giờ chơi của bàn hiện tại sẽ được chuyển sang
+							bàn được chọn.
+						</DrawerDescription>
+					</DrawerHeader>
+
+					<div className="flex-1 overflow-hidden flex flex-col px-4 pb-4">
+						<ScrollArea className="flex-1 border rounded-lg p-2">
+							{otherActiveBookings.length === 0 ? (
+								<p className="text-center py-8 text-sm text-muted-foreground">
+									Không có bàn nào khác đang hoạt động.
+								</p>
+							) : (
+								<div className="space-y-2">
+									{otherActiveBookings.map((b) => {
+										const bookingTotal = (b.orders || []).reduce(
+											(acc: number, o: any) => acc + Number(o.totalAmount || 0),
+											0,
+										);
+										const allItems = (b.orders || []).flatMap(
+											(o: any) => o.orderItems || [],
+										);
+
+										return (
+											<button
+												key={b.id}
+												type="button"
+												className={cn(
+													"w-full text-left p-3 rounded-lg border transition-all hover:bg-muted font-normal",
+													selectedTargetId === b.id &&
+														"border-primary bg-primary/5 ring-1 ring-primary",
+												)}
+												onClick={() => setSelectedTargetId(b.id)}
+											>
+												<div className="flex justify-between items-start">
+													<div className="space-y-1">
+														<p className="font-bold text-sm">
+															{b.bookingTables
+																.map((bt: any) => bt.table.name)
+																.join(", ")}
+														</p>
+														<p className="text-[10px] text-muted-foreground flex items-center gap-1">
+															<Clock className="h-3 w-3" />
+															{format(new Date(b.startTime), "HH:mm, dd/MM")}
+														</p>
+													</div>
+													<div className="text-right space-y-1">
+														<p className="font-bold text-sm text-primary">
+															{new Intl.NumberFormat("vi-VN").format(
+																bookingTotal,
+															)}{" "}
+															đ
+														</p>
+														<Badge
+															variant="secondary"
+															className="text-[10px] h-4"
+														>
+															{b.orders?.length || 0} đơn
+														</Badge>
+													</div>
+												</div>
+
+												{allItems.length > 0 && (
+													<div className="mt-2 flex flex-wrap gap-1">
+														{allItems.slice(0, 3).map((item: any) => (
+															<Badge
+																key={item.id}
+																variant="outline"
+																className="text-[10px] py-0 h-4 font-normal bg-muted/20"
+															>
+																{item.product?.name} x{item.quantity}
+															</Badge>
+														))}
+														{allItems.length > 3 && (
+															<span className="text-[10px] text-muted-foreground">
+																...
+															</span>
+														)}
+													</div>
+												)}
+											</button>
+										);
+									})}
+								</div>
+							)}
+						</ScrollArea>
+
+						<div className="mt-4 flex flex-col gap-2">
+							<Button
+								className="w-full"
+								disabled={!selectedTargetId || isMergingBookings}
+								onClick={handleMerge}
+							>
+								{isMergingBookings && (
+									<Loader2 className="h-4 w-4 animate-spin mr-2" />
+								)}
+								Xác nhận gộp bill
+							</Button>
+							<Button
+								variant="ghost"
+								className="w-full"
+								onClick={() => setIsMerging(false)}
+							>
+								Hủy
+							</Button>
+						</div>
+					</div>
+				</DrawerContent>
+			</Drawer>
 		</Drawer>
 	);
 }

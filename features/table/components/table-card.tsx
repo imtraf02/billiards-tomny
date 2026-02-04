@@ -33,7 +33,10 @@ import type { CreateBookingInput } from "@/shared/schemas/booking";
 
 interface TableCardProps {
 	table: Table;
-	activeBooking?: any;
+	activeBooking?: {
+		id: string;
+		startTime: Date;
+	} | null;
 	onEdit: (table: Table) => void;
 	onDelete: (id: string) => void;
 	onViewSession?: (table: Table) => void;
