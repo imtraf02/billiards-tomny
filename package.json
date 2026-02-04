@@ -6,6 +6,7 @@
 		"dev": "next dev",
 		"build": "next build",
 		"start": "next start",
+		"test": "bun test",
 		"fix:format": "biome check --write",
 		"db:generate": "bun prisma generate",
 		"db:push": "bun prisma db push",

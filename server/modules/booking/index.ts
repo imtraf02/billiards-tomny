@@ -54,8 +54,13 @@ export const booking = new Elysia({ prefix: "/bookings" })
 	)
 	.get(
 		"/:id",
-		async ({ params: { id } }) => {
-			return await BookingService.getById(id);
+		async ({ params: { id }, set }) => {
+			const booking = await BookingService.getById(id);
+			if (!booking) {
+				set.status = 404;
+				return { message: "Không tìm thấy phiên chơi" };
+			}
+			return booking;
 		},
 		{
 			authorized: [Role.ADMIN, Role.STAFF],
