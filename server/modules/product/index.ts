@@ -159,20 +159,6 @@ export const product = new Elysia({ prefix: "/products" })
 						summary: "Lấy danh sách lịch sử kho",
 					},
 				},
-			)
-			.get(
-				"/analysis",
-				async ({ query }) => {
-					return await ProductService.getInventoryAnalysis(query);
-				},
-				{
-					query: getInventoryAnalysisQuerySchema,
-					authorized: [Role.ADMIN, Role.STAFF],
-					detail: {
-						tags: ["Products", "Inventory"],
-						summary: "Phân tích thu chi kho",
-					},
-				},
 			),
 	)
 	.get(

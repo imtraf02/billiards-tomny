@@ -13,6 +13,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { CreateTransactionDialog } from "@/features/transaction/components/create-transaction-dialog";
 import { TransactionsList } from "@/features/transaction/components/transactions-list";
 import { useGetTransactions } from "@/features/transaction/hooks/use-transaction";
 import type { GetTransactionsQuery } from "@/shared/schemas/transaction";
@@ -44,6 +45,7 @@ export default function TransactionsPage() {
 			<Header>
 				<Search />
 				<div className="ms-auto flex items-center space-x-4">
+					<CreateTransactionDialog />
 					<ModeSwitcher />
 				</div>
 			</Header>

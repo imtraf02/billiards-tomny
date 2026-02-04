@@ -4,6 +4,7 @@ import { Elysia } from "elysia";
 import { auth } from "./modules/auth";
 import { booking } from "./modules/booking";
 import { dashboard } from "./modules/dashboard";
+import { financeRoutes } from "./modules/finance";
 import { order } from "./modules/order";
 import { product } from "./modules/product";
 import { table } from "./modules/table";
@@ -55,6 +56,7 @@ export const app = new Elysia({ prefix: "/api" })
 	.use(booking)
 	.use(order)
 	.use(transaction)
+	.use(financeRoutes)
 	.use(dashboard);
 
 // export type App = typeof app;

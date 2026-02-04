@@ -107,7 +107,7 @@ export abstract class OrderService {
 							newItem.quantity,
 							"OUT",
 							"sale",
-							`Bán thêm món cho booking ${data.bookingId}`,
+							`Bán thêm món cho hóa đơn ${data.bookingId}`,
 							executorId,
 							newItem.priceSnapshot,
 						);
@@ -168,7 +168,7 @@ export abstract class OrderService {
 					item.quantity,
 					"OUT",
 					"sale",
-					`Bán hàng cho booking ${data.bookingId || "Khách lẻ"}`,
+					`Bán hàng cho hóa đơn ${data.bookingId || "Khách lẻ"}`,
 					executorId,
 					item.priceSnapshot,
 				);

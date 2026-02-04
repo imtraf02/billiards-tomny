@@ -334,9 +334,6 @@ export abstract class BookingService {
 
 			const totalAmount = tableTotal + orderTotal;
 
-			/**
-			 * 3. Tạo / cập nhật transaction
-			 */
 			if (booking.transaction) {
 				await tx.transaction.update({
 					where: { id: booking.transaction.id },
@@ -355,14 +352,11 @@ export abstract class BookingService {
 						paymentMethod: data.paymentMethod,
 						bookingId: id,
 						userId: executorId,
-						description: `Thanh toán booking ${id}`,
+						description: `Thanh toán hóa đơn ${id}`,
 					},
 				});
 			}
 
-			/**
-			 * 4. Cập nhật booking → COMPLETED
-			 */
 			return await tx.booking.update({
 				where: { id },
 				data: {
@@ -403,11 +397,11 @@ export abstract class BookingService {
 			});
 
 			if (sourceBooking.status !== "PENDING") {
-				throw new BadRequestError("Booking nguồn đã hoàn thành hoặc bị hủy");
+				throw new BadRequestError("Hóa đơn nguồn đã hoàn thành hoặc bị hủy");
 			}
 
 			if (targetBooking.status !== "PENDING") {
-				throw new BadRequestError("Booking đích đã hoàn thành hoặc bị hủy");
+				throw new BadRequestError("Hóa đơn đích đã hoàn thành hoặc bị hủy");
 			}
 
 			// 1. Calculate earliest start time
