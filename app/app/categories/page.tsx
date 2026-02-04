@@ -19,7 +19,9 @@ export default function CategoriesPage() {
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 	const [searchTerm, setSearchTerm] = useState("");
-	const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
+	const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+		null,
+	);
 
 	const { data: categories, isLoading } = useQuery({
 		queryKey: ["categories"],
@@ -48,7 +50,7 @@ export default function CategoriesPage() {
 	};
 
 	const filteredCategories =
-		categories?.filter((category: any) =>
+		categories?.filter((category) =>
 			category.name.toLowerCase().includes(searchTerm.toLowerCase()),
 		) || [];
 
@@ -86,12 +88,10 @@ export default function CategoriesPage() {
 				</div>
 
 				<div className="space-y-4">
-					{/* Filter and Search (nếu muốn thêm filter) */}
 					<div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
 						Tổng số danh mục: {filteredCategories.length}
 					</div>
 
-					{/* Categories Grid */}
 					{isLoading ? (
 						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 							{[...Array(8)].map((_, i) => (
@@ -103,13 +103,12 @@ export default function CategoriesPage() {
 						</div>
 					) : filteredCategories.length > 0 ? (
 						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-							{filteredCategories.map((category: any) => (
+							{filteredCategories.map((category) => (
 								<Card
 									key={category.id}
 									className="overflow-hidden transition-all hover:shadow-md h-full flex flex-col"
 								>
-									<CardContent className="pt-6 pb-2 flex-grow space-y-4">
-										{/* Category Header */}
+									<CardContent className="pt-6 pb-2 grow space-y-4">
 										<div className="flex items-center justify-between">
 											<div className="flex items-center gap-2">
 												<FolderOpen className="h-5 w-5 text-primary" />
@@ -117,23 +116,9 @@ export default function CategoriesPage() {
 													{category.name}
 												</h3>
 											</div>
-											<Badge
-												variant={
-													category.isActive !== false ? "default" : "secondary"
-												}
-												className="text-xs"
-											>
-												{category.isActive !== false ? "Hoạt động" : "Ngừng"}
-											</Badge>
 										</div>
 
-										{/* Description */}
 										<div className="space-y-2">
-											<p className="text-sm text-muted-foreground line-clamp-3">
-												{category.description || "Không có mô tả"}
-											</p>
-
-											{/* Stats */}
 											<div className="flex items-center justify-between pt-2">
 												<div className="flex items-center gap-2">
 													<Package className="h-4 w-4 text-muted-foreground" />
@@ -148,7 +133,6 @@ export default function CategoriesPage() {
 										</div>
 									</CardContent>
 
-									{/* Actions */}
 									<div className="p-4 pt-2 border-t">
 										<div className="flex gap-2">
 											<Button

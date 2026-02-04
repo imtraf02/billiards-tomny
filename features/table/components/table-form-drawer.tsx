@@ -103,7 +103,7 @@ export function TableFormDrawer({
 
 	return (
 		<Drawer open={open} onOpenChange={onOpenChange}>
-			<DrawerContent className="mx-auto flex h-auto max-h-[95vh] max-w-2xl flex-col overflow-hidden rounded-t-xl">
+			<DrawerContent className="mx-auto flex h-auto max-w-2xl flex-col overflow-hidden rounded-t-xl">
 				<DrawerHeader>
 					<DrawerTitle>{isEdit ? "Sửa bàn" : "Thêm bàn mới"}</DrawerTitle>
 					<DrawerDescription>

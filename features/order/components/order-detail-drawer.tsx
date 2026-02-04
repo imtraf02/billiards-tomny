@@ -5,8 +5,6 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
 	CheckCircle2,
-	FileText,
-	GitMerge,
 	Loader2,
 	Minus,
 	MoreHorizontal,
@@ -39,12 +37,14 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type {
+	OrderItem,
+	OrderStatus,
+	Product,
+} from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 import { cn } from "@/lib/utils";
-import type {
-	BatchUpdateOrderItemsInput,
-	UpdateOrderInput,
-} from "@/shared/schemas/order";
+import type { BatchUpdateOrderItemsInput } from "@/shared/schemas/order";
 
 interface OrderDetailDrawerProps {
 	open: boolean;
@@ -52,15 +52,47 @@ interface OrderDetailDrawerProps {
 	orderId: string | null;
 }
 
+type LocalOrderItem = OrderItem & { product: Product };
+
+const STATUS_CONFIG = {
+	PENDING: {
+		icon: Loader2,
+		className: "text-yellow-600 animate-spin",
+		label: "Chờ xử lý",
+	},
+	PREPARING: {
+		icon: Package,
+		className: "text-blue-600",
+		label: "Đang chuẩn bị",
+	},
+	DELIVERED: {
+		icon: Truck,
+		className: "text-purple-600",
+		label: "Đã giao",
+	},
+	COMPLETED: {
+		icon: CheckCircle2,
+		className: "text-green-600",
+		label: "Hoàn thành",
+	},
+	CANCELLED: {
+		icon: XCircle,
+		className: "text-red-600",
+		label: "Đã hủy",
+	},
+} as const;
+
 export function OrderDetailDrawer({
 	open,
 	onOpenChange,
 	orderId,
 }: OrderDetailDrawerProps) {
 	const queryClient = useQueryClient();
-	const [isMerging, setIsMerging] = useState(false);
-	const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
+	const [searchTerm, setSearchTerm] = useState("");
+	const [activeTab, setActiveTab] = useState<"details" | "menu">("details");
+	const [localItems, setLocalItems] = useState<LocalOrderItem[]>([]);
 
+	// Queries
 	const { data: order, isLoading } = useQuery({
 		queryKey: ["orders", orderId],
 		queryFn: async () => {
@@ -76,10 +108,7 @@ export function OrderDetailDrawer({
 		queryKey: ["categories"],
 		queryFn: async () => {
 			const res = await api.products.categories.get();
-			if (res.status === 200) {
-				return res.data;
-			}
-			return [];
+			return res.status === 200 ? res.data : [];
 		},
 		enabled: open,
 	});
@@ -88,33 +117,16 @@ export function OrderDetailDrawer({
 		queryKey: ["products"],
 		queryFn: async () => {
 			const res = await api.products.get();
-			if (res.status === 200) {
-				return res.data;
-			}
-			return [];
+			return res.status === 200 ? res.data : [];
 		},
 		enabled: open,
 	});
 
-	const [searchTerm, setSearchTerm] = useState("");
-	const [activeTab, setActiveTab] = useState<"details" | "menu">("details");
-
-	const filteredProducts = useMemo(() => {
-		if (!productsData) return [];
-		return productsData.filter((product) =>
-			product.name.toLowerCase().includes(searchTerm.toLowerCase()),
-		);
-	}, [productsData, searchTerm]);
-
+	// Mutations
 	const { mutate: updateStatus, isPending: isUpdating } = useMutation({
-		mutationFn: async ({
-			id,
-			data,
-		}: {
-			id: string;
-			data: UpdateOrderInput;
-		}) => {
-			const res = await api.orders({ id }).patch(data);
+		mutationFn: async ({ status }: { status: OrderStatus }) => {
+			if (!orderId) throw new Error("No order ID");
+			const res = await api.orders({ id: orderId }).patch({ status });
 			if (res.error) throw res.error;
 			return res.data;
 		},
@@ -127,27 +139,10 @@ export function OrderDetailDrawer({
 		},
 	});
 
-	const [localItems, setLocalItems] = useState<any[]>([]);
-
-	useEffect(() => {
-		if (order?.orderItems) {
-			setLocalItems(order.orderItems);
-		} else if (!open) {
-			setLocalItems([]);
-			setActiveTab("details");
-			setSearchTerm("");
-		}
-	}, [order, open]);
-
 	const { mutate: batchUpdateItems, isPending: isUpdatingItems } = useMutation({
-		mutationFn: async ({
-			id,
-			data,
-		}: {
-			id: string;
-			data: BatchUpdateOrderItemsInput;
-		}) => {
-			const res = await api.orders({ id }).items.patch(data);
+		mutationFn: async (data: BatchUpdateOrderItemsInput) => {
+			if (!orderId) throw new Error("No order ID");
+			const res = await api.orders({ id: orderId }).items.patch(data);
 			if (res.error) throw res.error;
 			return res.data;
 		},
@@ -158,68 +153,51 @@ export function OrderDetailDrawer({
 			queryClient.invalidateQueries({ queryKey: ["products"] });
 			toast.success("Cập nhật đơn hàng thành công");
 		},
-		onError: (error: any) => {
+		onError: (error: Error) => {
 			toast.error(error.message || "Cập nhật thất bại");
 		},
 	});
 
-	const { mutate: mergeBookings, isPending: isMergingBookings } = useMutation({
-		mutationFn: async ({
-			targetId,
-			sourceId,
-		}: {
-			targetId: string;
-			sourceId: string;
-		}) => {
-			const res = await api.bookings({ id: targetId }).merge.post({
-				sourceBookingId: sourceId,
-			});
-			if (res.error) throw res.error;
-			return res.data;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["orders"] });
-			queryClient.invalidateQueries({ queryKey: ["bookings"] });
-			queryClient.invalidateQueries({ queryKey: ["tables"] });
-			toast.success("Gộp bill thành công");
-			onOpenChange(false);
-			setIsMerging(false);
-			setSelectedTargetId(null);
-		},
-		onError: (error: any) => {
-			toast.error(error.message || "Gộp bill thất bại");
-		},
-	});
+	// Computed values
+	const filteredProducts = useMemo(() => {
+		if (!productsData) return [];
+		return productsData.filter((product) =>
+			product.name.toLowerCase().includes(searchTerm.toLowerCase()),
+		);
+	}, [productsData, searchTerm]);
 
-	const { data: activeBookings } = useQuery({
-		queryKey: ["bookings", { status: "PENDING" }],
-		queryFn: async () => {
-			const res = await api.bookings.get({
-				query: {
-					status: "PENDING",
-					limit: 100,
-					page: 1,
-				},
-			});
-			if (res.error) throw res.error;
-			return res.data;
-		},
-		enabled: open && isMerging,
-	});
+	const hasChanges = useMemo(() => {
+		if (!order) return false;
+		if (localItems.length !== order.orderItems.length) return true;
+		return localItems.some((item) => {
+			const original = order.orderItems.find((i) => i.id === item.id);
+			return !original || item.quantity !== original.quantity;
+		});
+	}, [order, localItems]);
 
-	const otherActiveBookings = useMemo(() => {
-		if (!activeBookings?.data || !order?.bookingId) return [];
-		return activeBookings.data.filter((b) => b.id !== order.bookingId);
-	}, [activeBookings, order?.bookingId]);
+	const totalAmount = useMemo(() => {
+		return localItems.reduce(
+			(sum, item) => sum + item.priceSnapshot * item.quantity,
+			0,
+		);
+	}, [localItems]);
 
-	const hasChanges =
-		order &&
-		(localItems.length !== order.orderItems.length ||
-			localItems.some((item) => {
-				const original = order.orderItems.find((i: any) => i.id === item.id);
-				return !original || item.quantity !== original.quantity;
-			}));
+	const isOrderEditable = useMemo(() => {
+		return order?.status !== "CANCELLED" && order?.status !== "COMPLETED";
+	}, [order?.status]);
 
+	// Effects
+	useEffect(() => {
+		if (order?.orderItems) {
+			setLocalItems(order.orderItems);
+		} else if (!open) {
+			setLocalItems([]);
+			setActiveTab("details");
+			setSearchTerm("");
+		}
+	}, [order, open]);
+
+	// Handlers
 	const handleSaveChanges = () => {
 		if (!orderId) return;
 
@@ -231,7 +209,7 @@ export function OrderDetailDrawer({
 			quantity: item.quantity,
 		}));
 
-		// Also handle removed items
+		// Handle removed items
 		const currentIds = new Set(
 			localItems
 				.filter((i) => i.id && !i.id.toString().startsWith("new-"))
@@ -247,14 +225,10 @@ export function OrderDetailDrawer({
 			}
 		});
 
-		batchUpdateItems({ id: orderId, data: { items: itemsToUpdate } });
+		batchUpdateItems({ items: itemsToUpdate });
 	};
 
-	const removeLocalItem = (itemId: string) => {
-		setLocalItems((prev) => prev.filter((item) => item.id !== itemId));
-	};
-
-	const handleSelectProduct = (product: any) => {
+	const handleSelectProduct = (product: Product) => {
 		setLocalItems((prev) => {
 			const existing = prev.find((item) => item.productId === product.id);
 			if (existing) {
@@ -268,11 +242,13 @@ export function OrderDetailDrawer({
 				...prev,
 				{
 					id: `new-${Date.now()}`,
+					orderId,
 					productId: product.id,
 					product: product,
 					quantity: 1,
+					costSnapshot: null,
 					priceSnapshot: product.price,
-				},
+				} as LocalOrderItem,
 			];
 		});
 		toast.success(`Đã thêm ${product.name}`);
@@ -288,50 +264,65 @@ export function OrderDetailDrawer({
 		);
 	};
 
-	const handleMerge = () => {
-		if (!order?.bookingId || !selectedTargetId) return;
-		mergeBookings({ targetId: selectedTargetId, sourceId: order.bookingId });
+	const removeLocalItem = (itemId: string) => {
+		setLocalItems((prev) => prev.filter((item) => item.id !== itemId));
 	};
 
-	const handleUpdateStatus = (
-		status: "PENDING" | "PREPARING" | "DELIVERED" | "COMPLETED" | "CANCELLED",
-	) => {
-		if (!orderId) return;
-		updateStatus({ id: orderId, data: { status } });
+	const getRemainingStock = (product: Product) => {
+		const inLocal = localItems.find((i) => i.productId === product.id);
+		const originalQty =
+			order?.orderItems?.find((i) => i.productId === product.id)?.quantity || 0;
+		return product.currentStock + originalQty - (inLocal?.quantity || 0);
 	};
 
-	const getStatusIcon = (status: string) => {
-		switch (status) {
-			case "PENDING":
-				return <Loader2 className="h-4 w-4 animate-spin text-yellow-600" />;
-			case "PREPARING":
-				return <Package className="h-4 w-4 text-blue-600" />;
-			case "DELIVERED":
-				return <Truck className="h-4 w-4 text-purple-600" />;
-			case "COMPLETED":
-				return <CheckCircle2 className="h-4 w-4 text-green-600" />;
-			case "CANCELLED":
-				return <XCircle className="h-4 w-4 text-red-600" />;
-			default:
-				return null;
-		}
+	const StatusIcon = ({ status }: { status: OrderStatus }) => {
+		const config = STATUS_CONFIG[status];
+		const Icon = config.icon;
+		return <Icon className={cn("h-4 w-4", config.className)} />;
 	};
 
-	const getStatusText = (status: string) => {
-		switch (status) {
-			case "PENDING":
-				return "Chờ xử lý";
-			case "PREPARING":
-				return "Đang chuẩn bị";
-			case "DELIVERED":
-				return "Đã giao";
-			case "COMPLETED":
-				return "Hoàn thành";
-			case "CANCELLED":
-				return "Đã hủy";
-			default:
-				return status;
-		}
+	const ProductCard = ({ product }: { product: Product }) => {
+		const inLocal = localItems.find((i) => i.productId === product.id);
+		const originalQty =
+			order?.orderItems?.find((i) => i.productId === product.id)?.quantity || 0;
+		const remainingStock = getRemainingStock(product);
+		const isOutOfStock = product.currentStock === 0 && originalQty === 0;
+
+		return (
+			<button
+				type="button"
+				className="flex flex-col p-3 border rounded-xl hover:border-primary hover:shadow-sm transition-all bg-card text-left disabled:opacity-50"
+				onClick={() => handleSelectProduct(product)}
+				disabled={isOutOfStock || remainingStock <= 0}
+			>
+				<div className="flex justify-between items-start gap-2 mb-2">
+					<h4 className="font-medium text-sm leading-tight line-clamp-2 pr-4">
+						{product.name}
+					</h4>
+					{inLocal && (
+						<Badge className="shrink-0 h-5 px-1.5 text-[10px]">
+							{inLocal.quantity}
+						</Badge>
+					)}
+				</div>
+
+				<div className="mt-auto flex items-end justify-between gap-2">
+					<div className="space-y-0.5">
+						<p className="text-sm font-bold text-primary">
+							{new Intl.NumberFormat("vi-VN").format(product.price)} đ
+						</p>
+						<p className="text-[10px] text-muted-foreground">
+							{isOutOfStock || remainingStock <= 0
+								? "Hết hàng"
+								: `Còn ${remainingStock} ${product.unit}`}
+						</p>
+					</div>
+					<div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shadow-sm shrink-0">
+						<Plus className="h-4 w-4" />
+					</div>
+				</div>
+			</button>
+		);
 	};
 
 	return (
@@ -342,7 +333,7 @@ export function OrderDetailDrawer({
 						{order && (
 							<Badge
 								variant="outline"
-								className="font-mono uppercase"
+								className="font-mono uppercase cursor-pointer"
 								onClick={() => {
 									navigator.clipboard.writeText(order.id);
 									toast.success("Đã sao chép ID đơn hàng");
@@ -354,78 +345,51 @@ export function OrderDetailDrawer({
 						{order && (
 							<div className="flex items-center gap-2">
 								<div className="flex items-center gap-1.5 px-2 py-1 bg-muted rounded-md text-xs font-medium">
-									{getStatusIcon(order.status)}
-									{getStatusText(order.status)}
+									<StatusIcon status={order.status} />
+									{STATUS_CONFIG[order.status].label}
 								</div>
-								<DropdownMenu>
-									<DropdownMenuTrigger asChild>
-										<Button
-											size="icon"
-											variant="ghost"
-											className={cn(
-												order.status === "CANCELLED" ||
-													order.status === "COMPLETED"
-													? "hidden"
-													: "size-7",
-											)}
-											disabled={
-												isUpdating ||
-												order.status === "CANCELLED" ||
-												order.status === "COMPLETED"
-											}
-										>
-											<MoreHorizontal className="h-4 w-4" />
-										</Button>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end">
-										<DropdownMenuItem
-											disabled={
-												order.status === "CANCELLED" ||
-												order.status === "COMPLETED"
-											}
-											onClick={() => handleUpdateStatus("PENDING")}
-										>
-											Chờ xử lý
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											disabled={
-												order.status === "CANCELLED" ||
-												order.status === "COMPLETED"
-											}
-											onClick={() => handleUpdateStatus("PREPARING")}
-										>
-											Đang chuẩn bị
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											disabled={
-												order.status === "CANCELLED" ||
-												order.status === "COMPLETED"
-											}
-											onClick={() => handleUpdateStatus("DELIVERED")}
-										>
-											Đã giao
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											disabled={
-												order.status === "CANCELLED" ||
-												order.status === "COMPLETED"
-											}
-											onClick={() => handleUpdateStatus("COMPLETED")}
-										>
-											Hoàn thành
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											disabled={
-												order.status === "CANCELLED" ||
-												order.status === "COMPLETED"
-											}
-											className="text-destructive focus:text-destructive"
-											onClick={() => handleUpdateStatus("CANCELLED")}
-										>
-											Hủy đơn hàng
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
+								{isOrderEditable && (
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
+											<Button
+												size="icon"
+												variant="ghost"
+												className="size-7"
+												disabled={isUpdating}
+											>
+												<MoreHorizontal className="h-4 w-4" />
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent align="end">
+											<DropdownMenuItem
+												onClick={() => updateStatus({ status: "PENDING" })}
+											>
+												Chờ xử lý
+											</DropdownMenuItem>
+											<DropdownMenuItem
+												onClick={() => updateStatus({ status: "PREPARING" })}
+											>
+												Đang chuẩn bị
+											</DropdownMenuItem>
+											<DropdownMenuItem
+												onClick={() => updateStatus({ status: "DELIVERED" })}
+											>
+												Đã giao
+											</DropdownMenuItem>
+											<DropdownMenuItem
+												onClick={() => updateStatus({ status: "COMPLETED" })}
+											>
+												Hoàn thành
+											</DropdownMenuItem>
+											<DropdownMenuItem
+												className="text-destructive focus:text-destructive"
+												onClick={() => updateStatus({ status: "CANCELLED" })}
+											>
+												Hủy đơn hàng
+											</DropdownMenuItem>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								)}
 							</div>
 						)}
 					</div>
@@ -440,7 +404,7 @@ export function OrderDetailDrawer({
 
 				<Tabs
 					value={activeTab}
-					onValueChange={(v) => setActiveTab(v as any)}
+					onValueChange={(v) => setActiveTab(v as "details" | "menu")}
 					className="flex-1 flex flex-col overflow-hidden"
 				>
 					<div className="px-4 sm:px-6 mb-2 shrink-0">
@@ -460,26 +424,15 @@ export function OrderDetailDrawer({
 							</div>
 						) : order ? (
 							<>
-								<div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 space-y-6">
+								<div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 space-y-4">
 									<div className="grid grid-cols-2 gap-4 text-sm">
 										<div>
 											<p className="text-muted-foreground">Bàn / Phiên chơi</p>
 											<p className="font-medium">
-												{(order as any).booking?.bookingTables
-													?.map((bt: any) => bt.table?.name)
+												{order.booking?.bookingTables
+													?.map((bt) => bt.table?.name)
 													.join(", ") || "Khách lẻ"}
 											</p>
-											{order.bookingId && (
-												<Button
-													variant="link"
-													size="sm"
-													className="h-auto p-0 text-primary flex items-center gap-1 mt-1"
-													onClick={() => setIsMerging(true)}
-												>
-													<GitMerge className="h-3 w-3" />
-													Gộp bill...
-												</Button>
-											)}
 										</div>
 										<div className="text-right">
 											<p className="text-muted-foreground">Thời gian</p>
@@ -487,9 +440,7 @@ export function OrderDetailDrawer({
 												{format(
 													new Date(order.createdAt),
 													"HH:mm - dd/MM/yyyy",
-													{
-														locale: vi,
-													},
+													{ locale: vi },
 												)}
 											</p>
 										</div>
@@ -498,98 +449,89 @@ export function OrderDetailDrawer({
 									<Separator />
 
 									<div className="space-y-3">
-										<p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-											<FileText className="h-3 w-3" />
-											Danh sách món
-										</p>
-										<div className="space-y-4">
-											{localItems.length === 0 ? (
-												<div className="py-12 text-center text-muted-foreground italic bg-muted/20 rounded-lg">
-													Chưa có món nào được chọn. Hãy qua tab Thực đơn để
-													thêm món.
-												</div>
-											) : (
-												localItems.map((item: any) => (
-													<div
-														key={item.id}
-														className="flex justify-between items-start gap-4 p-2 rounded-lg hover:bg-muted/30 transition-colors"
-													>
-														<div className="flex-1">
-															<p className="font-medium line-clamp-1">
-																{item.product.name}
-															</p>
-															<p className="text-xs text-muted-foreground">
-																{new Intl.NumberFormat("vi-VN").format(
-																	item.priceSnapshot,
-																)}{" "}
-																đ x {item.quantity}
-															</p>
-														</div>
-														<div className="flex flex-col items-end gap-2">
-															<div className="flex items-center gap-2">
-																<p className="font-semibold whitespace-nowrap">
-																	{new Intl.NumberFormat("vi-VN").format(
-																		item.priceSnapshot * item.quantity,
-																	)}{" "}
-																	đ
-																</p>
-																{order.status !== "CANCELLED" &&
-																	order.status !== "COMPLETED" && (
-																		<Button
-																			variant="ghost"
-																			size="icon"
-																			className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
-																			onClick={() => removeLocalItem(item.id)}
-																		>
-																			<Trash2 className="h-3.5 w-3.5" />
-																		</Button>
-																	)}
-															</div>
-															{order.status !== "CANCELLED" &&
-																order.status !== "COMPLETED" && (
-																	<div className="flex items-center gap-1">
-																		<Button
-																			variant="outline"
-																			size="icon"
-																			className="h-7 w-7 rounded-full"
-																			disabled={
-																				isUpdatingItems || item.quantity <= 1
-																			}
-																			onClick={() =>
-																				updateLocalQuantity(item.id, -1)
-																			}
-																		>
-																			<Minus className="h-3 w-3" />
-																		</Button>
-																		<span className="w-8 text-center text-sm font-medium">
-																			{item.quantity}
-																		</span>
-																		<Button
-																			variant="outline"
-																			size="icon"
-																			className="h-7 w-7 rounded-full"
-																			disabled={
-																				isUpdatingItems ||
-																				item.quantity >=
-																					item.product.currentStock +
-																						((order as any).orderItems.find(
-																							(i: any) =>
-																								i.productId === item.productId,
-																						)?.quantity || 0)
-																			}
-																			onClick={() =>
-																				updateLocalQuantity(item.id, 1)
-																			}
-																		>
-																			<Plus className="h-3 w-3" />
-																		</Button>
-																	</div>
-																)}
-														</div>
+										{localItems.length === 0 ? (
+											<div className="py-12 text-center text-muted-foreground italic bg-muted/20 rounded-lg">
+												Chưa có món nào được chọn. Hãy qua tab Thực đơn để thêm
+												món.
+											</div>
+										) : (
+											localItems.map((item) => (
+												<div
+													key={item.id}
+													className="flex justify-between items-start gap-4 p-2 rounded-lg hover:bg-muted/30 transition-colors"
+												>
+													<div className="flex-1">
+														<p className="font-medium line-clamp-1">
+															{item.product.name}
+														</p>
+														<p className="text-xs text-muted-foreground">
+															{new Intl.NumberFormat("vi-VN").format(
+																item.priceSnapshot,
+															)}{" "}
+															đ x {item.quantity}
+														</p>
 													</div>
-												))
-											)}
-										</div>
+													<div className="flex flex-col items-end gap-2">
+														<div className="flex items-center gap-2">
+															<p className="font-semibold whitespace-nowrap">
+																{new Intl.NumberFormat("vi-VN").format(
+																	item.priceSnapshot * item.quantity,
+																)}{" "}
+																đ
+															</p>
+															{isOrderEditable && (
+																<Button
+																	variant="ghost"
+																	size="icon"
+																	className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+																	onClick={() => removeLocalItem(item.id)}
+																>
+																	<Trash2 className="h-3.5 w-3.5" />
+																</Button>
+															)}
+														</div>
+														{isOrderEditable && (
+															<div className="flex items-center gap-1">
+																<Button
+																	variant="outline"
+																	size="icon"
+																	className="h-7 w-7 rounded-full"
+																	disabled={
+																		isUpdatingItems || item.quantity <= 1
+																	}
+																	onClick={() =>
+																		updateLocalQuantity(item.id, -1)
+																	}
+																>
+																	<Minus className="h-3 w-3" />
+																</Button>
+																<span className="w-8 text-center text-sm font-medium">
+																	{item.quantity}
+																</span>
+																<Button
+																	variant="outline"
+																	size="icon"
+																	className="h-7 w-7 rounded-full"
+																	disabled={
+																		isUpdatingItems ||
+																		item.quantity >=
+																			item.product.currentStock +
+																				(order.orderItems.find(
+																					(i) => i.productId === item.productId,
+																				)?.quantity || 0)
+																	}
+																	onClick={() =>
+																		updateLocalQuantity(item.id, 1)
+																	}
+																>
+																	<Plus className="h-3 w-3" />
+																</Button>
+															</div>
+														)}
+													</div>
+												</div>
+											))
+										)}
 									</div>
 								</div>
 
@@ -599,14 +541,7 @@ export function OrderDetailDrawer({
 											Tổng cộng:
 										</span>
 										<span className="text-xl font-black text-primary">
-											{new Intl.NumberFormat("vi-VN").format(
-												localItems.reduce(
-													(sum, item) =>
-														sum + item.priceSnapshot * item.quantity,
-													0,
-												),
-											)}{" "}
-											đ
+											{new Intl.NumberFormat("vi-VN").format(totalAmount)} đ
 										</span>
 									</div>
 									{hasChanges && (
@@ -687,61 +622,9 @@ export function OrderDetailDrawer({
 														Không tìm thấy sản phẩm
 													</p>
 												) : (
-													filteredProducts.map((product) => {
-														const inLocal = localItems.find(
-															(i) => i.productId === product.id,
-														);
-														const originalQty =
-															(order as any)?.orderItems?.find(
-																(i: any) => i.productId === product.id,
-															)?.quantity || 0;
-														const remainingStock =
-															product.currentStock +
-															originalQty -
-															(inLocal?.quantity || 0);
-														const isOutOfStock =
-															product.currentStock === 0 && originalQty === 0;
-
-														return (
-															<button
-																key={product.id}
-																type="button"
-																className="flex flex-col p-3 border rounded-xl hover:border-primary hover:shadow-sm transition-all bg-card text-left disabled:opacity-50"
-																onClick={() => handleSelectProduct(product)}
-																disabled={isOutOfStock || remainingStock <= 0}
-															>
-																<div className="flex justify-between items-start gap-2 mb-2">
-																	<h4 className="font-medium text-sm leading-tight line-clamp-2 pr-4">
-																		{product.name}
-																	</h4>
-																	{inLocal && (
-																		<Badge className="shrink-0 h-5 px-1.5 text-[10px]">
-																			{inLocal.quantity}
-																		</Badge>
-																	)}
-																</div>
-
-																<div className="mt-auto flex items-end justify-between gap-2">
-																	<div className="space-y-0.5">
-																		<p className="text-sm font-bold text-primary">
-																			{new Intl.NumberFormat("vi-VN").format(
-																				product.price,
-																			)}{" "}
-																			đ
-																		</p>
-																		<p className="text-[10px] text-muted-foreground">
-																			{isOutOfStock || remainingStock <= 0
-																				? "Hết hàng"
-																				: `Còn ${remainingStock} ${product.unit}`}
-																		</p>
-																	</div>
-																	<div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shadow-sm shrink-0">
-																		<Plus className="h-4 w-4" />
-																	</div>
-																</div>
-															</button>
-														);
-													})
+													filteredProducts.map((product) => (
+														<ProductCard key={product.id} product={product} />
+													))
 												)}
 											</div>
 										</ScrollArea>
@@ -757,64 +640,9 @@ export function OrderDetailDrawer({
 												<div className="grid grid-cols-2 gap-2 pr-4 pb-4">
 													{filteredProducts
 														.filter((p) => p.categoryId === cat.id)
-														.map((product) => {
-															const inLocal = localItems.find(
-																(i) => i.productId === product.id,
-															);
-															const originalQty =
-																(order as any)?.orderItems?.find(
-																	(i: any) => i.productId === product.id,
-																)?.quantity || 0;
-															const remainingStock =
-																product.currentStock +
-																originalQty -
-																(inLocal?.quantity || 0);
-
-															return (
-																<button
-																	key={product.id}
-																	type="button"
-																	className="flex flex-col p-3 border rounded-xl hover:border-primary hover:shadow-sm transition-all bg-card text-left disabled:opacity-50"
-																	onClick={() => handleSelectProduct(product)}
-																	disabled={
-																		(product.currentStock === 0 &&
-																			originalQty === 0) ||
-																		remainingStock <= 0
-																	}
-																>
-																	<div className="flex justify-between items-start gap-2 mb-2">
-																		<h4 className="font-medium text-sm leading-tight line-clamp-2 pr-4">
-																			{product.name}
-																		</h4>
-																		{inLocal && (
-																			<Badge className="shrink-0 h-5 px-1.5 text-[10px]">
-																				{inLocal.quantity}
-																			</Badge>
-																		)}
-																	</div>
-																	<div className="mt-auto flex items-end justify-between gap-2">
-																		<div className="space-y-0.5">
-																			<p className="text-sm font-bold text-primary">
-																				{new Intl.NumberFormat("vi-VN").format(
-																					product.price,
-																				)}{" "}
-																				đ
-																			</p>
-																			<p className="text-[10px] text-muted-foreground">
-																				{(product.currentStock === 0 &&
-																					originalQty === 0) ||
-																				remainingStock <= 0
-																					? "Hết hàng"
-																					: `Còn ${remainingStock} ${product.unit}`}
-																			</p>
-																		</div>
-																		<div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shadow-sm shrink-0">
-																			<Plus className="h-4 w-4" />
-																		</div>
-																	</div>
-																</button>
-															);
-														})}
+														.map((product) => (
+															<ProductCard key={product.id} product={product} />
+														))}
 												</div>
 											</ScrollArea>
 										</TabsContent>
@@ -835,120 +663,6 @@ export function OrderDetailDrawer({
 					</TabsContent>
 				</Tabs>
 			</DrawerContent>
-
-			<Drawer open={isMerging} onOpenChange={setIsMerging}>
-				<DrawerContent className="mx-auto max-w-md h-[70vh] flex flex-col">
-					<DrawerHeader>
-						<DrawerTitle>Chọn bàn muốn gộp vào</DrawerTitle>
-						<DrawerDescription>
-							Tất cả các món và giờ chơi của bàn hiện tại sẽ được chuyển sang
-							bàn được chọn.
-						</DrawerDescription>
-					</DrawerHeader>
-
-					<div className="flex-1 overflow-hidden flex flex-col px-4 pb-4">
-						<ScrollArea className="flex-1 border rounded-lg p-2">
-							{otherActiveBookings.length === 0 ? (
-								<p className="text-center py-8 text-sm text-muted-foreground">
-									Không có bàn nào khác đang hoạt động.
-								</p>
-							) : (
-								<div className="space-y-2">
-									{otherActiveBookings.map((b) => {
-										const bookingTotal = (b.orders || []).reduce(
-											(acc: number, o: any) => acc + Number(o.totalAmount || 0),
-											0,
-										);
-										const allItems = (b.orders || []).flatMap(
-											(o: any) => o.orderItems || [],
-										);
-
-										return (
-											<button
-												key={b.id}
-												type="button"
-												className={cn(
-													"w-full text-left p-3 rounded-lg border transition-all hover:bg-muted font-normal",
-													selectedTargetId === b.id &&
-														"border-primary bg-primary/5 ring-1 ring-primary",
-												)}
-												onClick={() => setSelectedTargetId(b.id)}
-											>
-												<div className="flex justify-between items-start">
-													<div className="space-y-1">
-														<p className="font-bold text-sm">
-															{b.bookingTables
-																.map((bt: any) => bt.table.name)
-																.join(", ")}
-														</p>
-														<p className="text-[10px] text-muted-foreground flex items-center gap-1">
-															<Clock className="h-3 w-3" />
-															{format(new Date(b.startTime), "HH:mm, dd/MM")}
-														</p>
-													</div>
-													<div className="text-right space-y-1">
-														<p className="font-bold text-sm text-primary">
-															{new Intl.NumberFormat("vi-VN").format(
-																bookingTotal,
-															)}{" "}
-															đ
-														</p>
-														<Badge
-															variant="secondary"
-															className="text-[10px] h-4"
-														>
-															{b.orders?.length || 0} đơn
-														</Badge>
-													</div>
-												</div>
-
-												{allItems.length > 0 && (
-													<div className="mt-2 flex flex-wrap gap-1">
-														{allItems.slice(0, 3).map((item: any) => (
-															<Badge
-																key={item.id}
-																variant="outline"
-																className="text-[10px] py-0 h-4 font-normal bg-muted/20"
-															>
-																{item.product?.name} x{item.quantity}
-															</Badge>
-														))}
-														{allItems.length > 3 && (
-															<span className="text-[10px] text-muted-foreground">
-																...
-															</span>
-														)}
-													</div>
-												)}
-											</button>
-										);
-									})}
-								</div>
-							)}
-						</ScrollArea>
-
-						<div className="mt-4 flex flex-col gap-2">
-							<Button
-								className="w-full"
-								disabled={!selectedTargetId || isMergingBookings}
-								onClick={handleMerge}
-							>
-								{isMergingBookings && (
-									<Loader2 className="h-4 w-4 animate-spin mr-2" />
-								)}
-								Xác nhận gộp bill
-							</Button>
-							<Button
-								variant="ghost"
-								className="w-full"
-								onClick={() => setIsMerging(false)}
-							>
-								Hủy
-							</Button>
-						</div>
-					</div>
-				</DrawerContent>
-			</Drawer>
 		</Drawer>
 	);
 }

@@ -114,7 +114,7 @@ export const TableCard = memo(
 				queryClient.invalidateQueries({ queryKey: ["bookings"] });
 				toast.success("Bắt đầu phiên chơi");
 			},
-			onError: (error: any) => {
+			onError: (error) => {
 				toast.error(
 					"Không thể bắt đầu phiên chơi: " +
 						(error.value?.message || "Lỗi không xác định"),

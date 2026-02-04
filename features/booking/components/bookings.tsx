@@ -18,6 +18,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { BookingStatus } from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 import type { GetBookingsQuery } from "@/shared/schemas/booking";
 import { BookingCard } from "./booking-card";
@@ -26,7 +27,7 @@ import { BookingDetailDrawer } from "./booking-detail-drawer";
 
 export function Bookings() {
 	const [page, setPage] = useState(1);
-	const [status, setStatus] = useState<string>("ALL");
+	const [status, setStatus] = useState<BookingStatus | "ALL">("ALL");
 	const [dateRange, setDateRange] = useState<string>("TODAY");
 	const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
 		null,
@@ -56,7 +57,7 @@ export function Bookings() {
 		}
 
 		return {
-			status: status !== "ALL" ? (status as any) : undefined,
+			status: status !== "ALL" ? status : undefined,
 			startDate: startDate?.toISOString(),
 			endDate: endDate?.toISOString(),
 			page,
@@ -114,7 +115,7 @@ export function Bookings() {
 						<Select
 							value={status}
 							onValueChange={(v) => {
-								setStatus(v);
+								setStatus(v as BookingStatus | "ALL");
 								setPage(1);
 							}}
 						>
@@ -123,9 +124,11 @@ export function Bookings() {
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-								<SelectItem value="COMPLETED">Đã hoàn thành</SelectItem>
-								<SelectItem value="PENDING">Đang chờ</SelectItem>
-								<SelectItem value="CANCELLED">Đã hủy</SelectItem>
+								<SelectItem value={BookingStatus.COMPLETED}>
+									Đã hoàn thành
+								</SelectItem>
+								<SelectItem value={BookingStatus.PENDING}>Đang chờ</SelectItem>
+								<SelectItem value={BookingStatus.CANCELLED}>Đã hủy</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>

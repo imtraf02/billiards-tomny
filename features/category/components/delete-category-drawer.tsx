@@ -40,7 +40,7 @@ export function DeleteCategoryDrawer({
 			toast.success("Đã xóa danh mục");
 			onOpenChange(false);
 		},
-		onError: (error: any) => {
+		onError: (error) => {
 			toast.error(
 				"Xóa danh mục thất bại: " +
 					(error.value?.message || "Lỗi không xác định"),
@@ -56,7 +56,7 @@ export function DeleteCategoryDrawer({
 
 	return (
 		<Drawer open={open} onOpenChange={onOpenChange}>
-			<DrawerContent className="h-[auto] max-h-[95vh] sm:max-w-md mx-auto rounded-t-xl">
+			<DrawerContent className="h-[auto] sm:max-w-md mx-auto rounded-t-xl">
 				<DrawerHeader>
 					<DrawerTitle>Bạn có chắc chắn muốn xóa?</DrawerTitle>
 					<DrawerDescription>

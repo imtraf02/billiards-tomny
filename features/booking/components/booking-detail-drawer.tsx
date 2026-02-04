@@ -79,7 +79,7 @@ export function BookingDetailDrawer({
 			setIsConfirmOpen(false);
 			onOpenChange(false);
 		},
-		onError: (error: any) => {
+		onError: (error) => {
 			toast.error(error.message || "Thanh toán thất bại");
 		},
 	});
@@ -100,7 +100,7 @@ export function BookingDetailDrawer({
 		// Calculate for PENDING
 		let timeCost = 0;
 		if (booking.bookingTables) {
-			booking.bookingTables.forEach((bt: any) => {
+			booking.bookingTables.forEach((bt) => {
 				const end = bt.endTime ? new Date(bt.endTime) : currentTime;
 				const start = new Date(bt.startTime);
 				const diff = end.getTime() - start.getTime();
@@ -112,7 +112,7 @@ export function BookingDetailDrawer({
 
 		const services =
 			booking.orders?.reduce(
-				(acc: number, o: any) => acc + Number(o.totalAmount || 0),
+				(acc: number, o) => acc + Number(o.totalAmount || 0),
 				0,
 			) || 0;
 
@@ -151,7 +151,7 @@ export function BookingDetailDrawer({
 		booking?.status === "PENDING" ? liveTotal : booking?.totalAmount || 0;
 
 	// Helper to calculate cost for a specific table
-	const calculateTableCost = (bt: any) => {
+	const calculateTableCost = (bt) => {
 		const end = bt.endTime ? new Date(bt.endTime) : currentTime;
 		const start = new Date(bt.startTime);
 		const diff = end.getTime() - start.getTime();
@@ -161,7 +161,7 @@ export function BookingDetailDrawer({
 	};
 
 	// Helper to calculate duration for display
-	const calculateDuration = (bt: any) => {
+	const calculateDuration = (bt) => {
 		const end = bt.endTime ? new Date(bt.endTime) : currentTime;
 		const start = new Date(bt.startTime);
 		const diff = end.getTime() - start.getTime();
@@ -173,7 +173,7 @@ export function BookingDetailDrawer({
 
 	return (
 		<Drawer open={open} onOpenChange={onOpenChange}>
-			<DrawerContent className="max-h-[95vh] mx-auto rounded-t-xl overflow-hidden flex flex-col">
+			<DrawerContent className="mx-auto rounded-t-xl overflow-hidden flex flex-col">
 				<DrawerHeader>
 					<DrawerTitle className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
@@ -238,7 +238,7 @@ export function BookingDetailDrawer({
 									<Clock className="h-4 w-4" /> Chi tiết thời gian & Bàn
 								</h3>
 								<div className="space-y-2">
-									{booking.bookingTables.map((bt: any) => {
+									{booking.bookingTables.map((bt) => {
 										const tableCost = calculateTableCost(bt);
 										const duration = calculateDuration(bt);
 
@@ -310,8 +310,8 @@ export function BookingDetailDrawer({
 											</thead>
 											<tbody>
 												{booking.orders
-													.flatMap((o: any) => o.orderItems)
-													.map((item: any) => (
+													.flatMap((o) => o.orderItems)
+													.map((item) => (
 														<tr key={item.id} className="border-t">
 															<td className="py-2 px-3">{item.product.name}</td>
 															<td className="py-2 px-3 text-center">

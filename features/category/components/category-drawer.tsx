@@ -20,6 +20,7 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import type { Category } from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 import {
 	type CreateCategoryInput,
@@ -30,7 +31,7 @@ import {
 interface CategoryDrawerProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	category: any | null; // null for creating, object for editing
+	category: Category | null; // null for creating, object for editing
 }
 
 export function CategoryDrawer({
@@ -106,7 +107,7 @@ export function CategoryDrawer({
 
 	return (
 		<Drawer open={open} onOpenChange={onOpenChange}>
-			<DrawerContent className="h-[auto] max-h-[95vh] sm:max-w-md mx-auto rounded-t-xl">
+			<DrawerContent className="mx-auto rounded-t-xl">
 				<DrawerHeader>
 					<DrawerTitle>
 						{isEditing ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}

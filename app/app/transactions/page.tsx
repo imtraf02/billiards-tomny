@@ -18,8 +18,10 @@ import { useGetTransactions } from "@/features/transaction/hooks/use-transaction
 import type { GetTransactionsQuery } from "@/shared/schemas/transaction";
 
 export default function TransactionsPage() {
-	const [type, setType] = useState<string>("all");
-	const [paymentMethod, setPaymentMethod] = useState<string>("all");
+	const [type, setType] = useState<GetTransactionsQuery["type"] | "all">("all");
+	const [paymentMethod, setPaymentMethod] = useState<
+		GetTransactionsQuery["paymentMethod"] | "all"
+	>("all");
 	const [page, setPage] = useState(1);
 
 	const query: Partial<GetTransactionsQuery> = {
@@ -28,11 +30,11 @@ export default function TransactionsPage() {
 	};
 
 	if (type !== "all") {
-		query.type = type as any;
+		query.type = type;
 	}
 
 	if (paymentMethod !== "all") {
-		query.paymentMethod = paymentMethod as any;
+		query.paymentMethod = paymentMethod;
 	}
 
 	const { data, isLoading } = useGetTransactions(query);
@@ -57,7 +59,12 @@ export default function TransactionsPage() {
 
 				{/* Filters */}
 				<div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
-					<Select value={type} onValueChange={setType}>
+					<Select
+						value={type}
+						onValueChange={(value) =>
+							setType(value as GetTransactionsQuery["type"] | "all")
+						}
+					>
 						<SelectTrigger>
 							<SelectValue placeholder="Loại giao dịch" />
 						</SelectTrigger>
@@ -72,7 +79,14 @@ export default function TransactionsPage() {
 						</SelectContent>
 					</Select>
 
-					<Select value={paymentMethod} onValueChange={setPaymentMethod}>
+					<Select
+						value={paymentMethod}
+						onValueChange={(value) =>
+							setPaymentMethod(
+								value as GetTransactionsQuery["paymentMethod"] | "all",
+							)
+						}
+					>
 						<SelectTrigger>
 							<SelectValue placeholder="Phương thức thanh toán" />
 						</SelectTrigger>

@@ -55,7 +55,7 @@ export function InventoryLogsDrawer({
 					</Button>
 				)}
 			</DrawerTrigger>
-			<DrawerContent className="h-[auto] max-h-[95vh] sm:max-w-lg mx-auto rounded-t-xl overflow-hidden flex flex-col">
+			<DrawerContent className="h-[auto] sm:max-w-lg mx-auto rounded-t-xl overflow-hidden flex flex-col">
 				<DrawerHeader>
 					<DrawerTitle>Lịch sử kho</DrawerTitle>
 					<DrawerDescription>
