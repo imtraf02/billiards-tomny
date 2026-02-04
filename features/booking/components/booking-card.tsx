@@ -47,7 +47,7 @@ const statusColors: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-	PENDING: "Đang chơi",
+	PENDING: "Đang chờ",
 	COMPLETED: "Đã hoàn thành",
 	CANCELLED: "Đã hủy",
 };

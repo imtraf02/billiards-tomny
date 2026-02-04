@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
@@ -12,8 +12,11 @@ import {
 	Receipt,
 	User,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Drawer,
 	DrawerContent,
@@ -21,7 +24,6 @@ import {
 	DrawerHeader,
 	DrawerTitle,
 } from "@/components/ui/drawer";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/lib/eden";
 
@@ -36,6 +38,16 @@ export function BookingDetailDrawer({
 	onOpenChange,
 	bookingId,
 }: BookingDetailDrawerProps) {
+	const queryClient = useQueryClient();
+	const [currentTime, setCurrentTime] = useState(new Date());
+	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+	useEffect(() => {
+		if (!open) return;
+		const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+		return () => clearInterval(interval);
+	}, [open]);
+
 	const { data: booking, isLoading } = useQuery({
 		queryKey: ["bookings", bookingId],
 		queryFn: async () => {
@@ -48,6 +60,68 @@ export function BookingDetailDrawer({
 		},
 		enabled: !!bookingId && open,
 	});
+
+	const { mutate: completeBooking, isPending: isCompleting } = useMutation({
+		mutationFn: async () => {
+			if (!bookingId) return;
+			const res = await api.bookings({ id: bookingId }).complete.post({
+				paymentMethod: "CASH",
+				endTime: new Date(),
+			});
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["bookings"] });
+			queryClient.invalidateQueries({ queryKey: ["booking", bookingId] });
+			queryClient.invalidateQueries({ queryKey: ["tables"] });
+			toast.success("Thanh toán thành công!");
+			setIsConfirmOpen(false);
+			onOpenChange(false);
+		},
+		onError: (error: any) => {
+			toast.error(error.message || "Thanh toán thất bại");
+		},
+	});
+
+	// Calculate live total
+	const { liveTotal, serviceTotal, timeTotal } = useMemo(() => {
+		if (!booking) return { liveTotal: 0, serviceTotal: 0, timeTotal: 0 };
+
+		// If completed, use stored values
+		if (booking.status === "COMPLETED") {
+			return {
+				liveTotal: booking.totalAmount,
+				serviceTotal: 0, // Backend doesn't separate strictly in payload unless recalculated
+				timeTotal: 0,
+			};
+		}
+
+		// Calculate for PENDING
+		let timeCost = 0;
+		if (booking.bookingTables) {
+			booking.bookingTables.forEach((bt: any) => {
+				const end = bt.endTime ? new Date(bt.endTime) : currentTime;
+				const start = new Date(bt.startTime);
+				const diff = end.getTime() - start.getTime();
+				const cost =
+					Math.ceil(((diff / 3600000) * bt.priceSnapshot) / 1000) * 1000;
+				timeCost += cost;
+			});
+		}
+
+		const services =
+			booking.orders?.reduce(
+				(acc: number, o: any) => acc + Number(o.totalAmount || 0),
+				0,
+			) || 0;
+
+		return {
+			liveTotal: timeCost + services,
+			serviceTotal: services,
+			timeTotal: timeCost,
+		};
+	}, [booking, currentTime]);
 
 	if (!bookingId) return null;
 
@@ -71,6 +145,30 @@ export function BookingDetailDrawer({
 		TRANSFER: "Chuyển khoản",
 		MOMO: "MoMo",
 		ZALOPAY: "ZaloPay",
+	};
+
+	const displayTotal =
+		booking?.status === "PENDING" ? liveTotal : booking?.totalAmount || 0;
+
+	// Helper to calculate cost for a specific table
+	const calculateTableCost = (bt: any) => {
+		const end = bt.endTime ? new Date(bt.endTime) : currentTime;
+		const start = new Date(bt.startTime);
+		const diff = end.getTime() - start.getTime();
+		const hours = diff / (1000 * 60 * 60);
+		// Round up to nearest 1000
+		return Math.ceil((hours * bt.priceSnapshot) / 1000) * 1000;
+	};
+
+	// Helper to calculate duration for display
+	const calculateDuration = (bt: any) => {
+		const end = bt.endTime ? new Date(bt.endTime) : currentTime;
+		const start = new Date(bt.startTime);
+		const diff = end.getTime() - start.getTime();
+
+		const hours = Math.floor(diff / (1000 * 60 * 60));
+		const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+		return `${hours}h ${minutes}p`;
 	};
 
 	return (
@@ -110,8 +208,8 @@ export function BookingDetailDrawer({
 						Đang tải thông tin...
 					</div>
 				) : booking ? (
-					<ScrollArea className="flex-1 pr-4">
-						<div className="space-y-6 py-4">
+					<>
+						<div className="flex-1 overflow-y-auto p-4 space-y-6">
 							{/* General Info */}
 							<div className="grid grid-cols-2 gap-4 text-sm">
 								<div className="space-y-1">
@@ -140,33 +238,52 @@ export function BookingDetailDrawer({
 									<Clock className="h-4 w-4" /> Chi tiết thời gian & Bàn
 								</h3>
 								<div className="space-y-2">
-									{booking.bookingTables.map((bt) => (
-										<div
-											key={bt.id}
-											className="flex flex-col p-3 bg-muted/50 rounded-lg border"
-										>
-											<div className="flex justify-between font-medium mb-1">
-												<span>Bàn: {bt.table.name}</span>
-												<span className="text-primary">
-													{new Intl.NumberFormat("vi-VN").format(
-														bt.priceSnapshot,
-													)}{" "}
-													đ/giờ
-												</span>
+									{booking.bookingTables.map((bt: any) => {
+										const tableCost = calculateTableCost(bt);
+										const duration = calculateDuration(bt);
+
+										return (
+											<div
+												key={bt.id}
+												className="flex flex-col p-3 bg-muted/50 rounded-lg border"
+											>
+												<div className="flex justify-between font-medium mb-1">
+													<span>Bàn: {bt.table.name}</span>
+													<div className="text-right">
+														<span className="block text-primary font-bold">
+															{new Intl.NumberFormat("vi-VN").format(tableCost)}{" "}
+															đ
+														</span>
+														<span className="text-xs text-muted-foreground font-normal">
+															{new Intl.NumberFormat("vi-VN").format(
+																bt.priceSnapshot,
+															)}{" "}
+															đ/giờ
+														</span>
+													</div>
+												</div>
+												<div className="text-xs text-muted-foreground flex justify-between items-center mt-1">
+													<div className="flex gap-3">
+														<span>
+															Bắt đầu: {format(new Date(bt.startTime), "HH:mm")}
+														</span>
+														<span>
+															Kết thúc:{" "}
+															{bt.endTime
+																? format(new Date(bt.endTime), "HH:mm")
+																: "---"}
+														</span>
+													</div>
+													<Badge
+														variant="secondary"
+														className="h-5 px-1.5 text-[10px]"
+													>
+														{duration}
+													</Badge>
+												</div>
 											</div>
-											<div className="text-xs text-muted-foreground flex justify-between">
-												<span>
-													Bắt đầu: {format(new Date(bt.startTime), "HH:mm")}
-												</span>
-												<span>
-													Kết thúc:{" "}
-													{bt.endTime
-														? format(new Date(bt.endTime), "HH:mm")
-														: "---"}
-												</span>
-											</div>
-										</div>
-									))}
+										);
+									})}
 								</div>
 							</div>
 
@@ -224,8 +341,7 @@ export function BookingDetailDrawer({
 								<div className="flex justify-between text-sm">
 									<span className="text-muted-foreground">Tổng cộng:</span>
 									<span className="font-bold text-lg text-primary">
-										{new Intl.NumberFormat("vi-VN").format(booking.totalAmount)}{" "}
-										đ
+										{new Intl.NumberFormat("vi-VN").format(displayTotal)} đ
 									</span>
 								</div>
 								{booking.transaction && (
@@ -257,13 +373,66 @@ export function BookingDetailDrawer({
 								</div>
 							)}
 						</div>
-					</ScrollArea>
+
+						{!["COMPLETED", "CANCELLED"].includes(booking.status) && (
+							<div className="p-4 border-t flex justify-end gap-2 bg-background shadow-lg z-10 sticky bottom-0">
+								<Button variant="outline" onClick={() => onOpenChange(false)}>
+									Đóng
+								</Button>
+								<Button
+									onClick={() => setIsConfirmOpen(true)}
+									className="bg-green-600 hover:bg-green-700 text-white"
+								>
+									<Receipt className="mr-2 h-4 w-4" />
+									Thanh toán
+								</Button>
+							</div>
+						)}
+					</>
 				) : (
 					<div className="py-12 text-center text-red-500">
 						Không tìm thấy thông tin phiên chơi này.
 					</div>
 				)}
 			</DrawerContent>
+
+			<ConfirmDialog
+				open={isConfirmOpen}
+				onOpenChange={setIsConfirmOpen}
+				title="Xác nhận thanh toán"
+				desc={
+					<div className="space-y-2 py-2">
+						<p>
+							Bạn có chắc chắn muốn thanh toán Booking{" "}
+							<strong>#{bookingId}</strong>?
+						</p>
+						<div className="bg-muted p-3 rounded-lg space-y-1 text-sm">
+							<div className="flex justify-between">
+								<span className="text-muted-foreground">Tiền giờ:</span>
+								<span>
+									{new Intl.NumberFormat("vi-VN").format(timeTotal)} đ
+								</span>
+							</div>
+							<div className="flex justify-between">
+								<span className="text-muted-foreground">Dịch vụ:</span>
+								<span>
+									{new Intl.NumberFormat("vi-VN").format(serviceTotal)} đ
+								</span>
+							</div>
+							<Separator className="my-1" />
+							<div className="flex justify-between font-bold text-primary">
+								<span>Tổng cộng:</span>
+								<span>
+									{new Intl.NumberFormat("vi-VN").format(displayTotal)} đ
+								</span>
+							</div>
+						</div>
+					</div>
+				}
+				confirmText="Thanh toán ngay"
+				handleConfirm={() => completeBooking()}
+				isLoading={isCompleting}
+			/>
 		</Drawer>
 	);
 }

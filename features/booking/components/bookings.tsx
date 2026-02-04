@@ -124,7 +124,7 @@ export function Bookings() {
 							<SelectContent>
 								<SelectItem value="ALL">Tất cả trạng thái</SelectItem>
 								<SelectItem value="COMPLETED">Đã hoàn thành</SelectItem>
-								<SelectItem value="PENDING">Đang chơi</SelectItem>
+								<SelectItem value="PENDING">Đang chờ</SelectItem>
 								<SelectItem value="CANCELLED">Đã hủy</SelectItem>
 							</SelectContent>
 						</Select>

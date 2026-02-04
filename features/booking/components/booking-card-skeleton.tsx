@@ -6,23 +6,24 @@ import {
 	CardFooter,
 	CardHeader,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function BookingCardSkeleton() {
 	return (
 		<Card className="overflow-hidden animate-pulse">
 			<CardHeader className="space-y-2">
-				<div className="h-4 bg-gray-200 rounded w-3/4"></div>
-				<div className="h-3 bg-gray-200 rounded w-1/2"></div>
+				<Skeleton className="h-4 rounded w-3/4"></Skeleton>
+				<Skeleton className="h-3 rounded w-1/2"></Skeleton>
 			</CardHeader>
 			<CardContent className="space-y-3">
-				<div className="h-3 bg-gray-200 rounded"></div>
-				<div className="h-3 bg-gray-200 rounded"></div>
-				<div className="h-3 bg-gray-200 rounded"></div>
-				<div className="h-3 bg-gray-200 rounded"></div>
-				<div className="h-3 bg-gray-200 rounded"></div>
+				<Skeleton className="h-3 rounded"></Skeleton>
+				<Skeleton className="h-3 rounded"></Skeleton>
+				<Skeleton className="h-3 rounded"></Skeleton>
+				<Skeleton className="h-3 rounded"></Skeleton>
+				<Skeleton className="h-3 rounded"></Skeleton>
 			</CardContent>
 			<CardFooter>
-				<div className="h-9 bg-gray-200 rounded w-full"></div>
+				<Skeleton className="h-9 rounded w-full"></Skeleton>
 			</CardFooter>
 		</Card>
 	);
