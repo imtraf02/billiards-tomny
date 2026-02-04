@@ -36,10 +36,7 @@ export function FinanceChart({ data, title }: FinanceChartProps) {
 							tickFormatter={(str) => format(new Date(str), "dd/MM")}
 							fontSize={12}
 						/>
-						<YAxis
-							fontSize={12}
-							tickFormatter={(val) => `${val / 1000}k`}
-						/>
+						<YAxis fontSize={12} tickFormatter={(val) => `${val / 1000}k`} />
 						<Tooltip
 							labelFormatter={(label) =>
 								format(new Date(label as string), "dd/MM/yyyy")

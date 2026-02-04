@@ -126,9 +126,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
 									<TableCell className="text-right font-semibold">
 										<span
 											className={
-												t.type === "REVENUE"
-													? "text-green-600"
-													: "text-red-600"
+												t.type === "REVENUE" ? "text-green-600" : "text-red-600"
 											}
 										>
 											{t.type === "REVENUE" ? "+" : "-"}
@@ -143,8 +141,8 @@ export function TransactionList({ transactions }: TransactionListProps) {
 			</div>
 			{filteredTransactions.length > 0 && (
 				<div className="p-4 border-t text-sm text-muted-foreground text-center">
-					Hiển thị {filteredTransactions.length} /{" "}
-					{transactions.length} giao dịch
+					Hiển thị {filteredTransactions.length} / {transactions.length} giao
+					dịch
 				</div>
 			)}
 		</div>

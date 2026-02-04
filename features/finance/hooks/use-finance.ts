@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/eden";
 import type {
 	FinanceAnalyticsResponse,
 	GetFinanceAnalyticsQuery,
 } from "@/shared/schemas/finance";
-import { api } from "@/lib/eden";
 
 export function useFinanceAnalytics(query: GetFinanceAnalyticsQuery) {
 	return useQuery({

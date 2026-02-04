@@ -30,7 +30,7 @@ export function ExpenseBreakdownComponent({ data }: ExpenseBreakdownProps) {
 	return (
 		<div className="rounded-xl border bg-card p-6">
 			<h3 className="text-lg font-semibold mb-4">Phân tích chi phí</h3>
-			
+
 			{data.total === 0 ? (
 				<div className="flex items-center justify-center h-64 text-muted-foreground">
 					Chưa có chi phí trong khoảng thời gian này
@@ -45,7 +45,9 @@ export function ExpenseBreakdownComponent({ data }: ExpenseBreakdownProps) {
 									cx="50%"
 									cy="50%"
 									labelLine={false}
-									label={(entry) => `${((entry.value / data.total) * 100).toFixed(1)}%`}
+									label={(entry) =>
+										`${((entry.value / data.total) * 100).toFixed(1)}%`
+									}
 									outerRadius={80}
 									fill="#8884d8"
 									dataKey="value"
@@ -54,9 +56,7 @@ export function ExpenseBreakdownComponent({ data }: ExpenseBreakdownProps) {
 										<Cell key={`cell-${index}`} fill={entry.color} />
 									))}
 								</Pie>
-								<Tooltip
-									formatter={(value: number) => formatCurrency(value)}
-								/>
+								<Tooltip formatter={(value: number) => formatCurrency(value)} />
 								<Legend />
 							</PieChart>
 						</ResponsiveContainer>
