@@ -9,12 +9,14 @@ import {
 	Copy,
 	History,
 	Package,
+	Printer,
 	Receipt,
 	User,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { InvoicePrint } from "@/components/invoice-print";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +43,7 @@ export function BookingDetailDrawer({
 	const queryClient = useQueryClient();
 	const [currentTime, setCurrentTime] = useState(new Date());
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+	const [showPrintInvoice, setShowPrintInvoice] = useState(false);
 
 	useEffect(() => {
 		if (!open) return;
@@ -71,13 +74,29 @@ export function BookingDetailDrawer({
 			if (res.error) throw res.error;
 			return res.data;
 		},
-		onSuccess: () => {
+		onSuccess: (updatedBooking) => {
+			if (updatedBooking) {
+				queryClient.setQueryData(["bookings", bookingId], updatedBooking);
+				queryClient.setQueryData(["bookings"], (old: any) => {
+					if (!old?.data) return old;
+					return {
+						...old,
+						data: old.data.map((b: any) =>
+							b.id === bookingId ? updatedBooking : b,
+						),
+					};
+				});
+			}
 			queryClient.invalidateQueries({ queryKey: ["bookings"] });
-			queryClient.invalidateQueries({ queryKey: ["booking", bookingId] });
 			queryClient.invalidateQueries({ queryKey: ["tables"] });
-			toast.success("Thanh toán thành công!");
+			toast.success("Thanh toán thành công!", {
+				duration: 2000,
+				action: {
+					label: "In hóa đơn",
+					onClick: () => setShowPrintInvoice(true),
+				},
+			});
 			setIsConfirmOpen(false);
-			onOpenChange(false);
 		},
 		onError: (error) => {
 			toast.error(error.message || "Thanh toán thất bại");
@@ -88,22 +107,17 @@ export function BookingDetailDrawer({
 	const { liveTotal, serviceTotal, timeTotal } = useMemo(() => {
 		if (!booking) return { liveTotal: 0, serviceTotal: 0, timeTotal: 0 };
 
-		// If completed, use stored values
-		if (booking.status === "COMPLETED") {
-			return {
-				liveTotal: booking.totalAmount,
-				serviceTotal: 0, // Backend doesn't separate strictly in payload unless recalculated
-				timeTotal: 0,
-			};
-		}
-
-		// Calculate for PENDING
+		// Calculate for both PENDING and COMPLETED
 		let timeCost = 0;
 		if (booking.bookingTables) {
-			booking.bookingTables.forEach((bt) => {
-				const end = bt.endTime ? new Date(bt.endTime) : currentTime;
+			booking.bookingTables.forEach((bt: any) => {
+				const end = bt.endTime
+					? new Date(bt.endTime)
+					: booking.status === "COMPLETED" && booking.endTime
+						? new Date(booking.endTime)
+						: currentTime;
 				const start = new Date(bt.startTime);
-				const diff = end.getTime() - start.getTime();
+				const diff = Math.max(0, end.getTime() - start.getTime());
 				const cost =
 					Math.ceil(((diff / 3600000) * bt.priceSnapshot) / 1000) * 1000;
 				timeCost += cost;
@@ -111,13 +125,13 @@ export function BookingDetailDrawer({
 		}
 
 		const services =
-			booking.orders?.reduce(
-				(acc: number, o) => acc + Number(o.totalAmount || 0),
-				0,
-			) || 0;
+			booking.orders
+				?.filter((o) => o.status !== "CANCELLED")
+				.reduce((acc: number, o) => acc + Number(o.totalAmount || 0), 0) || 0;
 
 		return {
-			liveTotal: timeCost + services,
+			liveTotal:
+				booking.status === "COMPLETED" ? booking.totalAmount : timeCost + services,
 			serviceTotal: services,
 			timeTotal: timeCost,
 		};
@@ -151,7 +165,7 @@ export function BookingDetailDrawer({
 		booking?.status === "PENDING" ? liveTotal : booking?.totalAmount || 0;
 
 	// Helper to calculate cost for a specific table
-	const calculateTableCost = (bt) => {
+	const calculateTableCost = (bt: any) => {
 		const end = bt.endTime ? new Date(bt.endTime) : currentTime;
 		const start = new Date(bt.startTime);
 		const diff = end.getTime() - start.getTime();
@@ -161,7 +175,7 @@ export function BookingDetailDrawer({
 	};
 
 	// Helper to calculate duration for display
-	const calculateDuration = (bt) => {
+	const calculateDuration = (bt: any) => {
 		const end = bt.endTime ? new Date(bt.endTime) : currentTime;
 		const start = new Date(bt.startTime);
 		const diff = end.getTime() - start.getTime();
@@ -292,7 +306,9 @@ export function BookingDetailDrawer({
 								<h3 className="text-sm font-semibold flex items-center gap-1">
 									<Package className="h-4 w-4" /> Đồ uống & Dịch vụ
 								</h3>
-								{booking.orders && booking.orders.length > 0 ? (
+								{booking.orders &&
+								booking.orders.filter((o) => o.status !== "CANCELLED").length >
+									0 ? (
 									<div className="space-y-2 border rounded-lg overflow-hidden">
 										<table className="w-full text-sm border-collapse">
 											<thead className="bg-muted">
@@ -310,6 +326,7 @@ export function BookingDetailDrawer({
 											</thead>
 											<tbody>
 												{booking.orders
+													.filter((o) => o.status !== "CANCELLED")
 													.flatMap((o) => o.orderItems)
 													.map((item) => (
 														<tr key={item.id} className="border-t">
@@ -339,13 +356,36 @@ export function BookingDetailDrawer({
 							{/* Summary */}
 							<div className="space-y-2 bg-primary/5 p-4 rounded-lg">
 								<div className="flex justify-between text-sm">
-									<span className="text-muted-foreground">Tổng cộng:</span>
-									<span className="font-bold text-lg text-primary">
+									<span className="text-muted-foreground">Tiền giờ:</span>
+									<span className="font-medium">
+										{new Intl.NumberFormat("vi-VN").format(timeTotal)} đ
+									</span>
+								</div>
+								<div className="flex justify-between text-sm">
+									<span className="text-muted-foreground">Tiền dịch vụ:</span>
+									<span className="font-medium">
+										{new Intl.NumberFormat("vi-VN").format(serviceTotal)} đ
+									</span>
+								</div>
+								<Separator className="my-1 opacity-50" />
+								<div className="flex justify-between text-base font-bold">
+									<span className="text-primary">Tổng cộng:</span>
+									<span className="text-primary">
 										{new Intl.NumberFormat("vi-VN").format(displayTotal)} đ
 									</span>
 								</div>
+								{booking.status === "COMPLETED" && booking.endTime && (
+									<div className="flex justify-between text-sm py-1 border-t mt-1">
+										<span className="text-muted-foreground italic">
+											Thời gian kết thúc:
+										</span>
+										<span className="font-medium text-muted-foreground">
+											{format(new Date(booking.endTime), "HH:mm, dd/MM/yyyy")}
+										</span>
+									</div>
+								)}
 								{booking.transaction && (
-									<div className="flex justify-between text-xs text-muted-foreground border-t pt-2">
+									<div className="flex justify-between text-xs text-muted-foreground border-t pt-2 mt-2">
 										<span className="flex items-center gap-1">
 											<Receipt className="h-3 w-3" />
 											Thanh toán:{" "}
@@ -356,6 +396,7 @@ export function BookingDetailDrawer({
 											{format(
 												new Date(booking.transaction.createdAt),
 												"HH:mm, dd/MM/yyyy",
+												{ locale: vi },
 											)}
 										</span>
 									</div>
@@ -387,6 +428,33 @@ export function BookingDetailDrawer({
 									Thanh toán
 								</Button>
 							</div>
+						)}
+
+						{booking.status === "COMPLETED" && (
+							<div className="p-4 border-t flex justify-end gap-2 bg-background shadow-lg z-10 sticky bottom-0">
+								<Button variant="outline" onClick={() => onOpenChange(false)}>
+									Đóng
+								</Button>
+								<Button
+									onClick={() => setShowPrintInvoice(true)}
+									className="bg-blue-600 hover:bg-blue-700 text-white"
+								>
+									<Printer className="mr-2 h-4 w-4" />
+									In hóa đơn
+								</Button>
+							</div>
+						)}
+
+						{showPrintInvoice && booking && (
+							<InvoicePrint
+								data={{
+									booking,
+									totalAmount: displayTotal,
+									timeTotal,
+									serviceTotal,
+								}}
+								onPrintComplete={() => setShowPrintInvoice(false)}
+							/>
 						)}
 					</>
 				) : (

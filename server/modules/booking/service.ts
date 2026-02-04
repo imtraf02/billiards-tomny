@@ -364,6 +364,30 @@ export abstract class BookingService {
 					endTime,
 					totalAmount,
 				},
+				include: {
+					bookingTables: {
+						include: {
+							table: true,
+						},
+					},
+					orders: {
+						include: {
+							orderItems: {
+								include: {
+									product: true,
+								},
+							},
+						},
+					},
+					user: {
+						select: {
+							id: true,
+							name: true,
+							email: true,
+						},
+					},
+					transaction: true,
+				},
 			});
 		});
 	}

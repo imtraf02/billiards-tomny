@@ -3,10 +3,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Clock, GitMerge, Loader2, Plus, Receipt, XCircle } from "lucide-react";
+import {
+	Clock,
+	GitMerge,
+	Loader2,
+	Plus,
+	Printer,
+	Receipt,
+	XCircle,
+} from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { InvoicePrint } from "@/components/invoice-print";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +26,6 @@ import {
 	DrawerHeader,
 	DrawerTitle,
 } from "@/components/ui/drawer";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import type {
 	Order,
@@ -178,6 +186,7 @@ export function TableSessionDrawer({
 	const [currentTime, setCurrentTime] = useState(new Date());
 	const [isMerging, setIsMerging] = useState(false);
 	const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
+	const [showPrintInvoice, setShowPrintInvoice] = useState(false);
 
 	useEffect(() => {
 		if (!open) return;
@@ -211,18 +220,30 @@ export function TableSessionDrawer({
 			if (res.error) throw res.error;
 			return res.data;
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["tables"] });
+		onSuccess: (updatedBooking) => {
+			if (updatedBooking) {
+				queryClient.setQueryData(["booking", activeBooking?.id], updatedBooking);
+				queryClient.setQueryData(["bookings"], (old: any) => {
+					if (!old?.data) return old;
+					return {
+						...old,
+						data: old.data.map((b: any) =>
+							b.id === activeBooking?.id ? updatedBooking : b,
+						),
+					};
+				});
+			}
 			queryClient.invalidateQueries({ queryKey: ["bookings"] });
-			queryClient.invalidateQueries({
-				queryKey: ["booking", initialBookingData?.id],
+			queryClient.invalidateQueries({ queryKey: ["tables"] });
+			setShowConfirmCheckout(false);
+
+			toast.success("Thanh toán thành công!", {
+				duration: 2000,
+				action: {
+					label: "In hóa đơn",
+					onClick: () => setShowPrintInvoice(true),
+				},
 			});
-
-			onOpenChange(false);
-
-			setTimeout(() => {
-				toast.success("Thanh toán thành công!");
-			}, 100);
 		},
 		onError: (error) => {
 			toast.error("Thanh toán thất bại: " + error.message);
@@ -315,10 +336,12 @@ export function TableSessionDrawer({
 
 	const serviceTotal = useMemo(() => {
 		if (!activeBooking?.orders) return 0;
-		return activeBooking.orders.reduce(
-			(acc: number, order) => acc + Number(order.totalAmount || 0),
-			0,
-		);
+		return activeBooking.orders
+			.filter((order) => order.status !== "CANCELLED")
+			.reduce(
+				(acc: number, order) => acc + Number(order.totalAmount || 0),
+				0,
+			);
 	}, [activeBooking]);
 
 	const currentBookingTable = useMemo(() => {
@@ -331,9 +354,13 @@ export function TableSessionDrawer({
 		let allTablesCost = 0;
 		if (activeBooking?.bookingTables) {
 			activeBooking.bookingTables.forEach((bt) => {
-				const end = bt.endTime ? new Date(bt.endTime) : currentTime;
+				const end = bt.endTime
+					? new Date(bt.endTime)
+					: activeBooking.status === "COMPLETED" && activeBooking.endTime
+						? new Date(activeBooking.endTime)
+						: currentTime;
 				const start = new Date(bt.startTime);
-				const diff = end.getTime() - start.getTime();
+				const diff = Math.max(0, end.getTime() - start.getTime());
 				const cost =
 					Math.ceil(((diff / 3600000) * bt.priceSnapshot) / 1000) * 1000;
 				allTablesCost += cost;
@@ -341,7 +368,10 @@ export function TableSessionDrawer({
 		}
 
 		return {
-			totalAmount: allTablesCost + serviceTotal,
+			totalAmount:
+				activeBooking?.status === "COMPLETED"
+					? activeBooking.totalAmount
+					: allTablesCost + serviceTotal,
 			totalHourlyCost: allTablesCost,
 		};
 	}, [activeBooking, currentTime, serviceTotal]);
@@ -416,16 +446,41 @@ export function TableSessionDrawer({
 						<Badge
 							variant="outline"
 							className={cn(
-								currentBookingTable?.endTime
-									? "bg-gray-100 text-gray-600 border-gray-200"
-									: "bg-red-50 text-red-600 border-red-200",
+								activeBooking?.status === "COMPLETED"
+									? "bg-green-100 text-green-700 border-green-200"
+									: currentBookingTable?.endTime
+										? "bg-gray-100 text-gray-600 border-gray-200"
+										: "bg-red-50 text-red-600 border-red-200",
 							)}
 						>
-							{currentBookingTable?.endTime ? "Đã ngừng" : "Đang chơi"}
+							{activeBooking?.status === "COMPLETED"
+								? "Đã thanh toán"
+								: currentBookingTable?.endTime
+									? "Đã ngừng"
+									: "Đang chơi"}
 						</Badge>
 					</DrawerTitle>
-					<DrawerDescription>
-						Quản lý đồ uống và thanh toán cho bàn này.
+					<DrawerDescription className="flex flex-col">
+						{activeBooking?.status === "COMPLETED" ? (
+							<>
+								<span>
+									Phiên chơi #{activeBooking.id.slice(0, 8).toUpperCase()} đã hoàn
+									thành
+								</span>
+								{activeBooking.endTime && (
+									<span className="text-xs opacity-80 mt-1">
+										Kết thúc:{" "}
+										{format(
+											new Date(activeBooking.endTime),
+											"HH:mm, dd/MM/yyyy",
+											{ locale: vi },
+										)}
+									</span>
+								)}
+							</>
+						) : (
+							"Quản lý đồ uống và thanh toán cho bàn này."
+						)}
 					</DrawerDescription>
 				</DrawerHeader>
 
@@ -540,7 +595,9 @@ export function TableSessionDrawer({
 							</div>
 
 							<OrdersList
-								orders={activeBooking.orders || []}
+								orders={
+									activeBooking.orders?.filter((o) => o.status !== "CANCELLED") || []
+								}
 								onCancelOrder={handleCancelOrder}
 								isUpdatingOrder={isUpdatingOrder}
 							/>
@@ -588,26 +645,38 @@ export function TableSessionDrawer({
 						Đóng
 					</Button>
 
-					{isMultiTable && !currentBookingTable?.endTime && (
+					{activeBooking?.status === "COMPLETED" ? (
 						<Button
-							variant="secondary"
-							disabled={isStopping}
-							onClick={handleStopTable}
-							className="flex-1 sm:flex-none text-orange-700 bg-orange-100 hover:bg-orange-200"
+							onClick={() => setShowPrintInvoice(true)}
+							className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-none"
 						>
-							<Clock className="mr-2 h-4 w-4" />
-							Ngừng bàn này
+							<Printer className="mr-2 h-4 w-4" />
+							In hóa đơn
 						</Button>
-					)}
+					) : (
+						<>
+							{isMultiTable && !currentBookingTable?.endTime && (
+								<Button
+									variant="secondary"
+									disabled={isStopping}
+									onClick={handleStopTable}
+									className="flex-1 sm:flex-none text-orange-700 bg-orange-100 hover:bg-orange-200"
+								>
+									<Clock className="mr-2 h-4 w-4" />
+									Ngừng bàn này
+								</Button>
+							)}
 
-					<Button
-						disabled={!activeBooking || isCompleting}
-						onClick={handleCheckout}
-						className="flex-2 bg-green-600 text-white hover:bg-green-700 sm:flex-none"
-					>
-						<Receipt className="mr-2 h-4 w-4" />
-						Thanh toán
-					</Button>
+							<Button
+								disabled={!activeBooking || isCompleting}
+								onClick={handleCheckout}
+								className="flex-2 bg-green-600 text-white hover:bg-green-700 sm:flex-none"
+							>
+								<Receipt className="mr-2 h-4 w-4" />
+								Thanh toán
+							</Button>
+						</>
+					)}
 				</DrawerFooter>
 			</DrawerContent>
 
@@ -786,6 +855,18 @@ export function TableSessionDrawer({
 					</div>
 				</DrawerContent>
 			</Drawer>
+
+			{showPrintInvoice && activeBooking && (
+				<InvoicePrint
+					data={{
+						booking: activeBooking,
+						totalAmount,
+						timeTotal: totalHourlyCost,
+						serviceTotal,
+					}}
+					onPrintComplete={() => setShowPrintInvoice(false)}
+				/>
+			)}
 		</Drawer>
 	);
 }
