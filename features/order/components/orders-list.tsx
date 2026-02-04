@@ -30,7 +30,7 @@ import type {
 	OrderStatus,
 	Product,
 	Table,
-} from "@/generated/prisma/client";
+} from "@/generated/prisma/browser";
 
 type OrderWithRelations = Order & {
 	user: {

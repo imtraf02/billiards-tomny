@@ -281,58 +281,48 @@ export abstract class BookingService {
 				},
 			});
 
-			// 0. Safety check: If already completed, just return
 			if (booking.status === "COMPLETED") {
 				return booking;
 			}
 
-			// 1. Process Table Session and calculate Table Total
 			let tableTotal = 0;
-			const endTime = data.endTime || new Date();
+			const endTime = data.endTime ?? new Date();
 
 			for (const bt of booking.bookingTables) {
-				const effectiveEndTime = bt.endTime || endTime;
+				const effectiveEndTime = bt.endTime ?? endTime;
+
+				// Nếu bàn chưa kết thúc → đóng bàn
 				if (!bt.endTime) {
-					// Update booking table end time
 					await tx.bookingTable.update({
 						where: { id: bt.id },
 						data: { endTime: effectiveEndTime },
 					});
-					// Reset table status
+
 					await tx.table.update({
 						where: { id: bt.tableId },
 						data: { status: "AVAILABLE" },
 					});
 				}
 
-				const start = bt.startTime.getTime();
-				const end = effectiveEndTime.getTime();
-				const durationHours = (end - start) / (1000 * 60 * 60);
-				// Làm tròn lên hàng nghìn: 31.203 => 32.000
+				const startMs = bt.startTime.getTime();
+				const endMs = effectiveEndTime.getTime();
+				const durationHours = (endMs - startMs) / (1000 * 60 * 60);
+
+				// Làm tròn lên 1.000
 				tableTotal +=
 					Math.ceil((durationHours * bt.priceSnapshot) / 1000) * 1000;
 			}
 
-			// 2. Process Orders, calculate Order Total, update Order Status, and update Inventory
 			let orderTotal = 0;
 
 			for (const order of booking.orders) {
-				console.log(
-					`[BookingService.complete] Processing order ${order.id} (status: ${order.status})`,
-				);
-				// Only add to total if NOT cancelled or already completed (paid)
-				if (order.status === "CANCELLED" || order.status === "COMPLETED") {
+				if (order.status === "CANCELLED") {
 					continue;
 				}
 
-				orderTotal += Number(order.totalAmount);
+				if (order.status !== "COMPLETED") {
+					orderTotal += Number(order.totalAmount);
 
-				// Process status for PENDING/PREPARING/DELIVERED orders
-				if (order.status !== "COMPLETED" && order.status !== "CANCELLED") {
-					// Update order status using OrderService for consistency
-					console.log(
-						`[BookingService.complete] Updating order ${order.id} status to COMPLETED`,
-					);
 					await OrderService.update(
 						order.id,
 						{ status: "COMPLETED" },
@@ -344,7 +334,9 @@ export abstract class BookingService {
 
 			const totalAmount = tableTotal + orderTotal;
 
-			// 3. Create or update financial transaction record
+			/**
+			 * 3. Tạo / cập nhật transaction
+			 */
 			if (booking.transaction) {
 				await tx.transaction.update({
 					where: { id: booking.transaction.id },
@@ -368,7 +360,9 @@ export abstract class BookingService {
 				});
 			}
 
-			// 4. Update booking final status and totals
+			/**
+			 * 4. Cập nhật booking → COMPLETED
+			 */
 			return await tx.booking.update({
 				where: { id },
 				data: {

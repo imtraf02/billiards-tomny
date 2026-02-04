@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/hooks/use-auth";
-import type { Product } from "@/generated/prisma/client";
+import type { Product } from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 import type { CreateOrderInput } from "@/shared/schemas/order";
 

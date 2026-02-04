@@ -12,7 +12,7 @@ import {
 	DrawerTitle,
 	DrawerTrigger,
 } from "@/components/ui/drawer";
-import type { Product } from "@/generated/prisma/client";
+import type { Product } from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 import { cn } from "@/lib/utils";
 

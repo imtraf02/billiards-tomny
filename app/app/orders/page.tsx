@@ -27,7 +27,7 @@ import {
 import { CreateOrderDrawer } from "@/features/order/components/create-order-drawer";
 import { OrderDetailDrawer } from "@/features/order/components/order-detail-drawer";
 import { OrdersList } from "@/features/order/components/orders-list";
-import type { OrderStatus } from "@/generated/prisma/enums";
+import type { OrderStatus } from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 import type { GetOrdersQuery } from "@/shared/schemas/order";
 

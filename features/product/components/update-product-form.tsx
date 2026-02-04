@@ -27,7 +27,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { Product } from "@/generated/prisma/client";
+import type { Product } from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 import {
 	type UpdateProductInput,

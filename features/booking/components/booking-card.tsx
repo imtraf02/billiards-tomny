@@ -27,7 +27,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Booking, BookingTable } from "@/generated/prisma/client";
+import type { Booking, BookingTable } from "@/generated/prisma/browser";
 
 interface BookingCardProps {
 	booking: Booking & {

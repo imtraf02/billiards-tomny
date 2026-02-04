@@ -14,7 +14,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { OrderDrawer } from "@/features/order/components/order-drawer";
-import type { Table, TableStatus, TableType } from "@/generated/prisma/client";
+import type { Table, TableStatus, TableType } from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 import { TableCard } from "./table-card";
 import { TableFormDrawer } from "./table-form-drawer";

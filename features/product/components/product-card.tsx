@@ -27,7 +27,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Product } from "@/generated/prisma/client";
+import type { Product } from "@/generated/prisma/browser";
 import { InventoryLogsDrawer } from "./inventory-logs-drawer";
 
 interface ProductWithCategory extends Product {

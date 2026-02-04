@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CategoryDrawer } from "@/features/category/components/category-drawer";
 import { DeleteCategoryDrawer } from "@/features/category/components/delete-category-drawer";
+import type { Category } from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 
 export default function CategoriesPage() {
@@ -36,12 +37,12 @@ export default function CategoriesPage() {
 		setIsDialogOpen(true);
 	};
 
-	const handleEditCategory = (category: any) => {
+	const handleEditCategory = (category: Category) => {
 		setSelectedCategory(category);
 		setIsDialogOpen(true);
 	};
 
-	const handleDeleteCategory = (category: any) => {
+	const handleDeleteCategory = (category: Category) => {
 		setSelectedCategory(category);
 		setIsDeleteDialogOpen(true);
 	};

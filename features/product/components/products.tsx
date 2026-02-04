@@ -12,7 +12,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { Product } from "@/generated/prisma/client";
+import type { Product } from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 import { CreateProductForm } from "./create-product-form";
 import { InventoryForm } from "./inventory-form";

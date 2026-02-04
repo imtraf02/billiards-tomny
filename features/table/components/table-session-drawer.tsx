@@ -24,7 +24,7 @@ import type {
 	OrderItem as OrderItemType,
 	Product,
 	Table,
-} from "@/generated/prisma/client";
+} from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 import { cn } from "@/lib/utils";
 import type { CompleteBookingInput } from "@/shared/schemas/booking";

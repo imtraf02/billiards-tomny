@@ -27,7 +27,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { Table, TableStatus, TableType } from "@/generated/prisma/client";
+import type { Table, TableStatus, TableType } from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 
 interface TableFormDrawerProps {

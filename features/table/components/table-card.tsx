@@ -27,7 +27,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Table } from "@/generated/prisma/client";
+import type { Table } from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 import type { CreateBookingInput } from "@/shared/schemas/booking";
 
