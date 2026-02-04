@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { ArrowDownToLine, ArrowUpFromLine, History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,9 +12,8 @@ import {
 	DrawerTitle,
 	DrawerTrigger,
 } from "@/components/ui/drawer";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/eden";
 import type { Product } from "@/generated/prisma/client";
+import { api } from "@/lib/eden";
 import { cn } from "@/lib/utils";
 
 interface InventoryLogsDrawerProps {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,6 @@ import {
 	DrawerHeader,
 	DrawerTitle,
 } from "@/components/ui/drawer";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/eden";
 
 interface DeleteCategoryDrawerProps {
@@ -41,7 +41,10 @@ export function DeleteCategoryDrawer({
 			onOpenChange(false);
 		},
 		onError: (error: any) => {
-			toast.error("Xóa danh mục thất bại: " + (error.value?.message || "Lỗi không xác định"));
+			toast.error(
+				"Xóa danh mục thất bại: " +
+					(error.value?.message || "Lỗi không xác định"),
+			);
 		},
 	});
 

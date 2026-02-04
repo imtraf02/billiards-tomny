@@ -26,7 +26,8 @@ export function InventoryCard({ log }: InventoryCardProps) {
 	const isImport = log.type === "IN";
 	const profit = isImport
 		? 0
-		: (log.priceSnapshot || 0) * log.quantity - (log.costSnapshot || 0) * log.quantity;
+		: (log.priceSnapshot || 0) * log.quantity -
+			(log.costSnapshot || 0) * log.quantity;
 	const revenue = isImport
 		? (log.costSnapshot || 0) * log.quantity
 		: (log.priceSnapshot || 0) * log.quantity;
@@ -36,7 +37,7 @@ export function InventoryCard({ log }: InventoryCardProps) {
 			className={cn(
 				"group relative overflow-hidden transition-all duration-200",
 				"hover:shadow-md",
-				"border-border bg-card"
+				"border-border bg-card",
 			)}
 		>
 			<CardContent className="pt-6 pb-4">
@@ -49,7 +50,7 @@ export function InventoryCard({ log }: InventoryCardProps) {
 								"transition-colors duration-200",
 								isImport
 									? "bg-green-50 text-green-600 border border-green-100"
-									: "bg-red-50 text-red-600 border border-red-100"
+									: "bg-red-50 text-red-600 border border-red-100",
 							)}
 						>
 							{isImport ? (
@@ -74,7 +75,7 @@ export function InventoryCard({ log }: InventoryCardProps) {
 							"font-mono text-xs px-2 py-1",
 							isImport
 								? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
-								: "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+								: "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
 						)}
 					>
 						{isImport ? "+" : "-"}
@@ -101,7 +102,7 @@ export function InventoryCard({ log }: InventoryCardProps) {
 							<p
 								className={cn(
 									"text-base font-semibold",
-									isImport ? "text-green-600" : "text-red-600"
+									isImport ? "text-green-600" : "text-red-600",
 								)}
 							>
 								{log.stockAfter}
@@ -164,7 +165,7 @@ export function InventoryCard({ log }: InventoryCardProps) {
 								<p
 									className={cn(
 										"text-sm font-semibold",
-										profit > 0 ? "text-green-600" : "text-red-600"
+										profit > 0 ? "text-green-600" : "text-red-600",
 									)}
 								>
 									{new Intl.NumberFormat("vi-VN").format(profit)} đ
@@ -199,9 +200,7 @@ export function InventoryCard({ log }: InventoryCardProps) {
 							<p className="text-xs font-medium text-muted-foreground mb-1">
 								Ghi chú
 							</p>
-							<p className="text-xs text-card-foreground/80">
-								"{log.note}"
-							</p>
+							<p className="text-xs text-card-foreground/80">"{log.note}"</p>
 						</div>
 					)}
 				</div>

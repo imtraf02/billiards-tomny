@@ -3,9 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Clock, Plus, Receipt, XCircle } from "lucide-react";
+import { Clock, Loader2, Plus, Receipt, XCircle } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,10 +18,10 @@ import {
 	DrawerTitle,
 } from "@/components/ui/drawer";
 import { Separator } from "@/components/ui/separator";
-import { api } from "@/lib/eden";
-import { type CompleteBookingInput } from "@/shared/schemas/booking";
-import { type UpdateOrderInput } from "@/shared/schemas/order";
 import type { Table } from "@/generated/prisma/client";
+import { api } from "@/lib/eden";
+import type { CompleteBookingInput } from "@/shared/schemas/booking";
+import type { UpdateOrderInput } from "@/shared/schemas/order";
 
 interface TableSessionDrawerProps {
 	open: boolean;
@@ -134,7 +135,7 @@ const OrdersList = memo(
 		}
 
 		return (
-			<div className="max-h-52 overflow-y-auto space-y-3">
+			<div className="max-h-[40vh] sm:max-h-64 overflow-y-auto space-y-3 pr-1 -mr-1">
 				{orders.map((order) => (
 					<OrderItem
 						key={order.id}
@@ -157,10 +158,19 @@ export function TableSessionDrawer({
 	onOpenOrder,
 }: TableSessionDrawerProps) {
 	const queryClient = useQueryClient();
+	const [showConfirmCheckout, setShowConfirmCheckout] = useState(false);
+	const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
+	const [currentTime, setCurrentTime] = useState(new Date());
+
+	useEffect(() => {
+		if (!open) return;
+		const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+		return () => clearInterval(interval);
+	}, [open]);
 
 	const shouldFetch = open && !!table;
 
-	const { data: bookingsData } = useQuery({
+	const { data: bookingsData, isLoading: isLoadingBookings } = useQuery({
 		queryKey: [
 			"bookings",
 			{
@@ -189,7 +199,7 @@ export function TableSessionDrawer({
 	});
 
 	const activeBookingBasic = bookingsData?.data?.[0];
-	const { data: activeBooking } = useQuery({
+	const { data: activeBooking, isLoading: isLoadingActiveBooking } = useQuery({
 		queryKey: ["bookings", activeBookingBasic?.id],
 		queryFn: async () => {
 			if (!activeBookingBasic?.id) return null;
@@ -207,7 +217,10 @@ export function TableSessionDrawer({
 		mutationFn: async ({
 			id,
 			data,
-		}: { id: string; data: CompleteBookingInput }) => {
+		}: {
+			id: string;
+			data: CompleteBookingInput;
+		}) => {
 			const res = await api.bookings({ id }).complete.post(data);
 			if (res.error) throw res.error;
 			return res.data;
@@ -228,7 +241,13 @@ export function TableSessionDrawer({
 	});
 
 	const { mutate: updateOrder, isPending: isUpdatingOrder } = useMutation({
-		mutationFn: async ({ id, data }: { id: string; data: UpdateOrderInput }) => {
+		mutationFn: async ({
+			id,
+			data,
+		}: {
+			id: string;
+			data: UpdateOrderInput;
+		}) => {
 			const res = await api.orders({ id }).patch(data);
 			if (res.error) throw res.error;
 			return res.data;
@@ -249,58 +268,50 @@ export function TableSessionDrawer({
 
 	const hourlyCost = useMemo(() => {
 		if (!activeBooking?.startTime || !table?.hourlyRate) return 0;
-		const now = new Date();
 		const start = new Date(activeBooking.startTime);
-		const diff = now.getTime() - start.getTime();
-		return Math.ceil((diff / 3600000) * table.hourlyRate);
-	}, [activeBooking?.startTime, table?.hourlyRate]);
+		const diff = currentTime.getTime() - start.getTime();
+		const rawCost = (diff / 3600000) * table.hourlyRate;
+		// Làm tròn lên hàng nghìn: 31.203 => 32.000
+		return Math.ceil(rawCost / 1000) * 1000;
+	}, [activeBooking?.startTime, table?.hourlyRate, currentTime]);
 
 	const totalAmount = useMemo(() => {
 		return hourlyCost + serviceTotal;
 	}, [hourlyCost, serviceTotal]);
 
-	const handleCancelOrder = useCallback(
-		(orderId: string) => {
-			if (confirm("Bạn có chắc chắn muốn hủy đơn hàng này?")) {
-				updateOrder({
-					id: orderId,
-					data: { status: "CANCELLED" as any },
-				});
-			}
-		},
-		[updateOrder],
-	);
+	const handleCancelOrder = useCallback((orderId: string) => {
+		setOrderToCancel(orderId);
+	}, []);
+
+	const confirmCancelOrder = useCallback(() => {
+		if (orderToCancel) {
+			updateOrder({
+				id: orderToCancel,
+				data: { status: "CANCELLED" as any },
+			});
+			setOrderToCancel(null);
+		}
+	}, [orderToCancel, updateOrder]);
 
 	const handleCheckout = useCallback(() => {
 		if (!activeBooking) return;
+		setShowConfirmCheckout(true);
+	}, [activeBooking]);
 
-		const confirmMessage =
-			`Xác nhận thanh toán cho bàn ${table?.name}?\n\n` +
-			`• Tiền giờ: ${new Intl.NumberFormat("vi-VN").format(hourlyCost)} đ\n` +
-			`• Tiền dịch vụ: ${new Intl.NumberFormat("vi-VN").format(serviceTotal)} đ\n` +
-			`• Tổng cộng: ${new Intl.NumberFormat("vi-VN").format(totalAmount)} đ\n\n` +
-			`Bạn có chắc chắn muốn thanh toán và kết thúc phiên chơi?`;
+	const confirmCheckout = useCallback(() => {
+		if (!activeBooking) return;
 
-		if (confirm(confirmMessage)) {
-			onOpenChange(false);
+		setShowConfirmCheckout(false);
+		onOpenChange(false);
 
-			completeBooking({
-				id: activeBooking.id,
-				data: {
-					paymentMethod: "CASH",
-					endTime: new Date(),
-				},
-			});
-		}
-	}, [
-		activeBooking,
-		table?.name,
-		hourlyCost,
-		serviceTotal,
-		totalAmount,
-		completeBooking,
-		onOpenChange,
-	]);
+		completeBooking({
+			id: activeBooking.id,
+			data: {
+				paymentMethod: "CASH",
+				endTime: new Date(),
+			},
+		});
+	}, [activeBooking, completeBooking, onOpenChange]);
 
 	const handleOpenOrder = useCallback(() => {
 		if (activeBooking?.id) {
@@ -312,7 +323,7 @@ export function TableSessionDrawer({
 
 	return (
 		<Drawer open={open} onOpenChange={onOpenChange}>
-			<DrawerContent className="h-auto max-h-[95vh] mx-auto rounded-t-xl overflow-hidden flex flex-col">
+			<DrawerContent className="mx-auto flex h-auto max-h-[95vh] max-w-2xl flex-col overflow-hidden rounded-t-xl">
 				<DrawerHeader>
 					<DrawerTitle className="flex items-center justify-between">
 						<span>Chi tiết phiên chơi: {table.name}</span>
@@ -328,13 +339,25 @@ export function TableSessionDrawer({
 					</DrawerDescription>
 				</DrawerHeader>
 
-				{!activeBooking ? (
-					<div className="py-8 text-center text-red-500">
-						Không tìm thấy thông tin phiên chơi.
+				{isLoadingBookings || (activeBookingBasic && isLoadingActiveBooking) ? (
+					<div className="flex flex-col items-center justify-center space-y-2 py-12">
+						<Loader2 className="h-8 w-8 animate-spin text-primary" />
+						<p className="text-sm text-muted-foreground">
+							Đang tải thông tin...
+						</p>
+					</div>
+				) : !activeBooking ? (
+					<div className="py-12 text-center">
+						<p className="text-destructive font-medium">
+							Không tìm thấy thông tin phiên chơi.
+						</p>
+						<p className="text-xs text-muted-foreground mt-1">
+							Vui lòng kiểm tra lại trạng thái bàn.
+						</p>
 					</div>
 				) : (
-					<div className="space-y-6 py-4">
-						<div className="grid grid-cols-2 gap-4">
+					<div className="space-y-6 overflow-y-auto px-4 py-4 sm:px-6">
+						<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
 							<div className="space-y-1">
 								<span className="text-xs text-muted-foreground uppercase font-semibold">
 									Bắt đầu
@@ -407,20 +430,73 @@ export function TableSessionDrawer({
 					</div>
 				)}
 
-				<DrawerFooter className="flex sm:justify-between gap-2">
-					<Button variant="ghost" onClick={() => onOpenChange(false)}>
+				<DrawerFooter className="flex gap-2 sm:justify-between">
+					<Button
+						variant="ghost"
+						onClick={() => onOpenChange(false)}
+						className="flex-1 sm:flex-none"
+					>
 						Đóng
 					</Button>
 					<Button
 						disabled={!activeBooking || isCompleting}
 						onClick={handleCheckout}
-						className="bg-green-600 hover:bg-green-700 text-white"
+						className="flex-[2] bg-green-600 text-white hover:bg-green-700 sm:flex-none"
 					>
 						<Receipt className="mr-2 h-4 w-4" />
 						Thanh toán
 					</Button>
 				</DrawerFooter>
 			</DrawerContent>
+
+			<ConfirmDialog
+				open={showConfirmCheckout}
+				onOpenChange={setShowConfirmCheckout}
+				title="Xác nhận thanh toán"
+				desc={
+					<div className="space-y-2 py-2">
+						<p>
+							Bạn có chắc chắn muốn thanh toán cho bàn{" "}
+							<strong>{table.name}</strong>?
+						</p>
+						<div className="bg-muted p-3 rounded-lg space-y-1 text-sm">
+							<div className="flex justify-between">
+								<span>Tiền giờ:</span>
+								<span>
+									{new Intl.NumberFormat("vi-VN").format(hourlyCost)} đ
+								</span>
+							</div>
+							<div className="flex justify-between">
+								<span>Tiền dịch vụ:</span>
+								<span>
+									{new Intl.NumberFormat("vi-VN").format(serviceTotal)} đ
+								</span>
+							</div>
+							<Separator className="my-1" />
+							<div className="flex justify-between font-bold text-primary">
+								<span>Tổng cộng:</span>
+								<span>
+									{new Intl.NumberFormat("vi-VN").format(totalAmount)} đ
+								</span>
+							</div>
+						</div>
+					</div>
+				}
+				confirmText="Thanh toán"
+				handleConfirm={confirmCheckout}
+				isLoading={isCompleting}
+			/>
+
+			<ConfirmDialog
+				open={!!orderToCancel}
+				onOpenChange={(open) => !open && setOrderToCancel(null)}
+				title="Hủy đơn hàng"
+				desc="Bạn có chắc chắn muốn hủy đơn hàng này? Thao tác này không thể hoàn tác."
+				confirmText="Hủy đơn"
+				destructive
+				handleConfirm={confirmCancelOrder}
+				isLoading={isUpdatingOrder}
+			/>
 		</Drawer>
 	);
 }

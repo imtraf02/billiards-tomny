@@ -21,26 +21,22 @@ export abstract class DashboardService {
 			.reduce((sum, t) => sum + t.amount, 0);
 
 		// 2. Bookings, Orders & Inventory
-		const [
-			totalBookings,
-			totalOrders,
-			activeBookings,
-			lowStockProductsRaw,
-		] = await Promise.all([
-			prisma.booking.count(),
-			prisma.order.count(),
-			prisma.booking.count({
-				where: {
-					status: {
-						in: ["PENDING", "CONFIRMED"],
+		const [totalBookings, totalOrders, activeBookings, lowStockProductsRaw] =
+			await Promise.all([
+				prisma.booking.count(),
+				prisma.order.count(),
+				prisma.booking.count({
+					where: {
+						status: {
+							in: ["PENDING", "CONFIRMED"],
+						},
 					},
-				},
-			}),
-			prisma.product.findMany({
-				where: { isAvailable: true },
-				select: { currentStock: true, minStock: true },
-			}),
-		]);
+				}),
+				prisma.product.findMany({
+					where: { isAvailable: true },
+					select: { currentStock: true, minStock: true },
+				}),
+			]);
 
 		const lowStockProducts = lowStockProductsRaw.filter(
 			(p) => p.currentStock <= p.minStock,

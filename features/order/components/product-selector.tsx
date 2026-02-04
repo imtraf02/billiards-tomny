@@ -1,14 +1,14 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/eden";
 import type { Product } from "@/generated/prisma/client";
+import { api } from "@/lib/eden";
 import { cn } from "@/lib/utils";
 
 interface ProductSelectorProps {

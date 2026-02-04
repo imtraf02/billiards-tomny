@@ -8,6 +8,7 @@ import type {
 	GetBookingsQuery,
 	UpdateBookingInput,
 } from "@/shared/schemas/booking";
+import { OrderService } from "../order/service";
 
 export abstract class BookingService {
 	static async create(data: CreateBookingInput) {
@@ -91,7 +92,12 @@ export abstract class BookingService {
 							table: true,
 						},
 					},
-					user: true,
+					user: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
 				},
 				skip,
 				take: query.limit,
@@ -128,13 +134,50 @@ export abstract class BookingService {
 						},
 					},
 				},
-				user: true,
+				user: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
 				transaction: true,
 			},
 		});
 	}
 
-	static async update(id: string, data: UpdateBookingInput) {
+	static async update(
+		id: string,
+		data: UpdateBookingInput,
+		executorId?: string,
+	) {
+		if (data.status === "CANCELLED") {
+			return await prisma.$transaction(async (tx) => {
+				const booking = await tx.booking.findUniqueOrThrow({
+					where: { id },
+					include: { orders: true },
+				});
+
+				if (booking.status !== "CANCELLED") {
+					// Cancel all orders associated with this booking
+					for (const order of booking.orders) {
+						if (order.status !== "CANCELLED") {
+							await OrderService.update(
+								order.id,
+								{ status: "CANCELLED" },
+								executorId || "system",
+								tx,
+							);
+						}
+					}
+				}
+
+				return await tx.booking.update({
+					where: { id },
+					data,
+				});
+			});
+		}
+
 		return await prisma.booking.update({
 			where: { id },
 			data,
@@ -227,7 +270,9 @@ export abstract class BookingService {
 				const start = bt.startTime.getTime();
 				const end = effectiveEndTime.getTime();
 				const durationHours = (end - start) / (1000 * 60 * 60);
-				tableTotal += Math.ceil(durationHours * bt.priceSnapshot);
+				// Làm tròn lên hàng nghìn: 31.203 => 32.000
+				tableTotal +=
+					Math.ceil((durationHours * bt.priceSnapshot) / 1000) * 1000;
 			}
 
 			// 2. Process Orders, calculate Order Total, update Order Status, and update Inventory
@@ -252,14 +297,16 @@ export abstract class BookingService {
 					(order.status as string) !== "COMPLETED" &&
 					(order.status as string) !== "CANCELLED"
 				) {
-					// Update order status
+					// Update order status using OrderService for consistency
 					console.log(
 						`[BookingService.complete] Updating order ${order.id} status to COMPLETED`,
 					);
-					await tx.order.update({
-						where: { id: order.id },
-						data: { status: "COMPLETED" as any },
-					});
+					await OrderService.update(
+						order.id,
+						{ status: "COMPLETED" as any },
+						executorId,
+						tx,
+					);
 				}
 			}
 

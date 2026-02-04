@@ -1,7 +1,8 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Minus, Plus, Search, ShoppingCart, X } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,9 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/eden";
-import { type CreateOrderInput } from "@/shared/schemas/order";
+import type { CreateOrderInput } from "@/shared/schemas/order";
 
 interface OrderDrawerProps {
 	open: boolean;
@@ -42,6 +42,15 @@ export function OrderDrawer({
 	const [activeMainTab, setActiveMainTab] = useState<"menu" | "cart">("menu");
 	const [searchTerm, setSearchTerm] = useState("");
 	const [cart, setCart] = useState<Record<string, CartItem>>({});
+
+	// Reset cart when drawer opens
+	useEffect(() => {
+		if (open) {
+			setCart({});
+			setSearchTerm("");
+			setActiveMainTab("menu");
+		}
+	}, [open]);
 
 	const queryClient = useQueryClient();
 

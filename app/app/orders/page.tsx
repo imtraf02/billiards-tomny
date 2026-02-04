@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { endOfDay, startOfDay, startOfWeek, subDays } from "date-fns";
 import {
 	Calendar as CalendarIcon,
@@ -26,9 +27,8 @@ import {
 import { CreateOrderDrawer } from "@/features/order/components/create-order-drawer";
 import { OrderDetailDrawer } from "@/features/order/components/order-detail-drawer";
 import { OrdersList } from "@/features/order/components/orders-list";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/eden";
 import type { OrderStatus } from "@/generated/prisma/enums";
+import { api } from "@/lib/eden";
 import type { GetOrdersQuery } from "@/shared/schemas/order";
 
 export default function OrdersPage() {

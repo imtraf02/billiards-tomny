@@ -9,11 +9,62 @@ import type {
 } from "@/shared/schemas/order";
 
 export abstract class OrderService {
-	static async create(data: CreateOrderInput, executorId: string) {
+	private static async adjustStock(
+		tx: Prisma.TransactionClient,
+		productId: string,
+		quantity: number,
+		type: "IN" | "OUT",
+		reason: string,
+		note: string,
+		userId: string,
+		priceSnapshot?: number,
+	) {
+		const product = await tx.product.findUniqueOrThrow({
+			where: { id: productId },
+		});
+
+		const stockBefore = product.currentStock;
+		const stockAfter =
+			type === "IN" ? stockBefore + quantity : stockBefore - quantity;
+
+		if (type === "OUT" && stockAfter < 0) {
+			throw new BadRequestError(
+				`Sản phẩm "${product.name}" không đủ tồn kho (còn ${stockBefore})`,
+			);
+		}
+
+		await tx.product.update({
+			where: { id: product.id },
+			data: { currentStock: stockAfter },
+		});
+
+		await tx.inventoryLog.create({
+			data: {
+				productId: product.id,
+				quantity,
+				type,
+				reason,
+				stockBefore,
+				stockAfter,
+				note,
+				userId,
+				costSnapshot: product.cost,
+				priceSnapshot,
+			},
+		});
+	}
+
+	static async create(
+		data: CreateOrderInput,
+		executorId: string,
+		tx?: Prisma.TransactionClient,
+	) {
+		const db = tx || prisma;
+
 		// 1. Fetch products and calculate prices
 		const itemsWithPrice = await Promise.all(
 			data.items.map(async (item) => {
-				const product = await prisma.product.findUniqueOrThrow({
+				const product = await db.product.findUniqueOrThrow({
 					where: { id: item.productId },
 				});
 
@@ -35,7 +86,7 @@ export abstract class OrderService {
 
 		// 3. Find existing PENDING order if bookingId is provided
 		if (data.bookingId) {
-			const existingOrder = await prisma.order.findFirst({
+			const existingOrder = await db.order.findFirst({
 				where: {
 					bookingId: data.bookingId,
 					status: "PENDING",
@@ -46,58 +97,33 @@ export abstract class OrderService {
 			});
 
 			if (existingOrder) {
-				return await prisma.$transaction(async (tx) => {
+				const executeUpdate = async (t: Prisma.TransactionClient) => {
 					// Update order items and deduct inventory
 					for (const newItem of itemsWithPrice) {
-						// 1. Check stock
-						const product = await tx.product.findUniqueOrThrow({
-							where: { id: newItem.productId },
-						});
-
-						if (product.currentStock < newItem.quantity) {
-							throw new BadRequestError(
-								`Sản phẩm "${product.name}" không đủ tồn kho (còn ${product.currentStock})`,
-							);
-						}
-
-						// 2. Deduct stock
-						const stockBefore = product.currentStock;
-						const stockAfter = stockBefore - newItem.quantity;
-
-						await tx.product.update({
-							where: { id: product.id },
-							data: { currentStock: stockAfter },
-						});
-
-						// 3. Log inventory
-						await tx.inventoryLog.create({
-							data: {
-								productId: product.id,
-								quantity: newItem.quantity,
-								type: "OUT",
-								reason: "sale",
-								stockBefore,
-								stockAfter,
-								note: `Bán hàng cho booking ${data.bookingId} (cập nhật đơn hàng)`,
-								userId: executorId,
-								costSnapshot: newItem.costSnapshot ?? product.cost,
-								priceSnapshot: newItem.priceSnapshot,
-							},
-						});
+						await OrderService.adjustStock(
+							t,
+							newItem.productId,
+							newItem.quantity,
+							"OUT",
+							"sale",
+							`Bán thêm món cho booking ${data.bookingId}`,
+							executorId,
+							newItem.priceSnapshot,
+						);
 
 						const existingItem = existingOrder.orderItems.find(
 							(item) => item.productId === newItem.productId,
 						);
 
 						if (existingItem) {
-							await tx.orderItem.update({
+							await t.orderItem.update({
 								where: { id: existingItem.id },
 								data: {
 									quantity: { increment: newItem.quantity },
 								},
 							});
 						} else {
-							await tx.orderItem.create({
+							await t.orderItem.create({
 								data: {
 									orderId: existingOrder.id,
 									productId: newItem.productId,
@@ -110,7 +136,7 @@ export abstract class OrderService {
 					}
 
 					// Update total amount
-					return await tx.order.update({
+					return await t.order.update({
 						where: { id: existingOrder.id },
 						data: {
 							totalAmount: { increment: totalAmount },
@@ -123,49 +149,31 @@ export abstract class OrderService {
 							},
 						},
 					});
-				});
+				};
+
+				return tx
+					? await executeUpdate(tx)
+					: await prisma.$transaction(executeUpdate);
 			}
 		}
 
 		// 4. Create new order if no existing pending order
-		return await prisma.$transaction(async (tx) => {
+		const executeCreate = async (t: Prisma.TransactionClient) => {
 			// Deduct inventory for all items
 			for (const item of itemsWithPrice) {
-				const product = await tx.product.findUniqueOrThrow({
-					where: { id: item.productId },
-				});
-
-				if (product.currentStock < item.quantity) {
-					throw new BadRequestError(
-						`Sản phẩm "${product.name}" không đủ tồn kho (còn ${product.currentStock})`,
-					);
-				}
-
-				const stockBefore = product.currentStock;
-				const stockAfter = stockBefore - item.quantity;
-
-				await tx.product.update({
-					where: { id: product.id },
-					data: { currentStock: stockAfter },
-				});
-
-				await tx.inventoryLog.create({
-					data: {
-						productId: product.id,
-						quantity: item.quantity,
-						type: "OUT",
-						reason: "sale",
-						stockBefore,
-						stockAfter,
-						note: `Bán hàng cho booking ${data.bookingId}`,
-						userId: executorId,
-						costSnapshot: product.cost,
-						priceSnapshot: item.priceSnapshot,
-					},
-				});
+				await OrderService.adjustStock(
+					t,
+					item.productId,
+					item.quantity,
+					"OUT",
+					"sale",
+					`Bán hàng cho booking ${data.bookingId || "Khách lẻ"}`,
+					executorId,
+					item.priceSnapshot,
+				);
 			}
 
-			return await tx.order.create({
+			return await t.order.create({
 				data: {
 					bookingId: data.bookingId,
 					userId: data.userId,
@@ -183,7 +191,11 @@ export abstract class OrderService {
 					},
 				},
 			});
-		});
+		};
+
+		return tx
+			? await executeCreate(tx)
+			: await prisma.$transaction(executeCreate);
 	}
 
 	static async getAll(query: GetOrdersQuery) {
@@ -264,7 +276,12 @@ export abstract class OrderService {
 						product: true,
 					},
 				},
-				user: true,
+				user: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
 				booking: {
 					include: {
 						bookingTables: {
@@ -278,63 +295,183 @@ export abstract class OrderService {
 		});
 	}
 
-	static async update(id: string, data: UpdateOrderInput, executorId: string) {
-		const order = await prisma.order.findUniqueOrThrow({
+	static async update(
+		id: string,
+		data: UpdateOrderInput,
+		executorId: string,
+		tx?: Prisma.TransactionClient,
+	) {
+		const db = tx || prisma;
+		const order = await db.order.findUniqueOrThrow({
 			where: { id },
 			include: { orderItems: true },
 		});
 
-		// Handle inventory restoration if cancelled
+		// 1. Handle inventory restoration if status changes TO CANCELLED
 		if (data.status === "CANCELLED" && order.status !== "CANCELLED") {
-			return await prisma.$transaction(async (tx) => {
+			const executeCancel = async (t: Prisma.TransactionClient) => {
 				for (const item of order.orderItems) {
-					const product = await tx.product.findUniqueOrThrow({
-						where: { id: item.productId },
-					});
-
-					const stockBefore = product.currentStock;
-					const stockAfter = stockBefore + item.quantity;
-
-					await tx.product.update({
-						where: { id: product.id },
-						data: { currentStock: stockAfter },
-					});
-
-					await tx.inventoryLog.create({
-						data: {
-							productId: product.id,
-							quantity: item.quantity,
-							type: "IN",
-							reason: "restock",
-							stockBefore,
-							stockAfter,
-							note: `Hoàn kho do hủy đơn hàng ${id}`,
-							userId: executorId,
-							costSnapshot: product.cost,
-							priceSnapshot: item.priceSnapshot,
-						},
-					});
+					await OrderService.adjustStock(
+						t,
+						item.productId,
+						item.quantity,
+						"IN",
+						"restock",
+						`Hoàn kho do hủy đơn hàng ${id}`,
+						executorId,
+						item.priceSnapshot,
+					);
 				}
 
-				return await tx.order.update({
+				return await t.order.update({
 					where: { id },
 					data,
 				});
-			});
+			};
+
+			return tx
+				? await executeCancel(tx)
+				: await prisma.$transaction(executeCancel);
 		}
 
-		return await prisma.order.update({
+		// 2. Handle inventory deduction if status changes FROM CANCELLED
+		if (data.status !== "CANCELLED" && order.status === "CANCELLED") {
+			const executeRestore = async (t: Prisma.TransactionClient) => {
+				for (const item of order.orderItems) {
+					await OrderService.adjustStock(
+						t,
+						item.productId,
+						item.quantity,
+						"OUT",
+						"sale",
+						`Trừ kho do phục hồi đơn hàng ${id}`,
+						executorId,
+						item.priceSnapshot,
+					);
+				}
+
+				return await t.order.update({
+					where: { id },
+					data,
+				});
+			};
+
+			return tx
+				? await executeRestore(tx)
+				: await prisma.$transaction(executeRestore);
+		}
+
+		// 3. Normal status update
+		return await db.order.update({
 			where: { id },
 			data,
 		});
 	}
 
-	static async updateItem(itemId: string, data: UpdateOrderItemInput) {
-		// Recalculate order total if quantity changes (simplified)
-		// In real app, might need transaction to update order total atomically
-		return await prisma.orderItem.update({
-			where: { id: itemId },
-			data,
+	static async updateItem(
+		itemId: string,
+		data: UpdateOrderItemInput,
+		executorId: string,
+		tx?: Prisma.TransactionClient,
+	) {
+		const executeUpdateItem = async (t: Prisma.TransactionClient) => {
+			const item = await t.orderItem.findUniqueOrThrow({
+				where: { id: itemId },
+				include: { order: true },
+			});
+
+			const diff = data.quantity - item.quantity;
+
+			if (diff > 0) {
+				// Deduct more stock
+				await OrderService.adjustStock(
+					t,
+					item.productId,
+					diff,
+					"OUT",
+					"sale",
+					`Cập nhật số lượng (+${diff}) đơn hàng ${item.orderId}`,
+					executorId,
+					item.priceSnapshot,
+				);
+			} else if (diff < 0) {
+				// Restore stock
+				await OrderService.adjustStock(
+					t,
+					item.productId,
+					Math.abs(diff),
+					"IN",
+					"restock",
+					`Cập nhật số lượng (${diff}) đơn hàng ${item.orderId}`,
+					executorId,
+					item.priceSnapshot,
+				);
+			}
+
+			// Update item quantity
+			const updatedItem = await t.orderItem.update({
+				where: { id: itemId },
+				data: { quantity: data.quantity },
+			});
+
+			// Recalculate order total
+			const allItems = await t.orderItem.findMany({
+				where: { orderId: item.orderId },
+			});
+
+			const newTotal = allItems.reduce(
+				(sum, i) => sum + i.priceSnapshot * i.quantity,
+				0,
+			);
+
+			await t.order.update({
+				where: { id: item.orderId },
+				data: { totalAmount: newTotal },
+			});
+
+			return updatedItem;
+		};
+
+		return tx
+			? await executeUpdateItem(tx)
+			: await prisma.$transaction(executeUpdateItem);
+	}
+
+	static async delete(
+		id: string,
+		executorId: string,
+		tx?: Prisma.TransactionClient,
+	) {
+		const db = tx || prisma;
+		const order = await db.order.findUniqueOrThrow({
+			where: { id },
+			include: { orderItems: true },
 		});
+
+		const executeDelete = async (t: Prisma.TransactionClient) => {
+			// Restore stock only if order wasn't already cancelled
+			if (order.status !== "CANCELLED") {
+				for (const item of order.orderItems) {
+					await OrderService.adjustStock(
+						t,
+						item.productId,
+						item.quantity,
+						"IN",
+						"restock",
+						`Hoàn kho do xóa đơn hàng ${id}`,
+						executorId,
+						item.priceSnapshot,
+					);
+				}
+			}
+
+			return await t.order.delete({
+				where: { id },
+			});
+		};
+
+		return tx
+			? await executeDelete(tx)
+			: await prisma.$transaction(executeDelete);
 	}
 }

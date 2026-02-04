@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import {
 	endOfDay,
 	endOfMonth,
@@ -29,12 +30,6 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/eden";
-import {
-	type GetInventoryAnalysisQuery,
-	type InventoryProductAnalysis,
-} from "@/shared/schemas/product";
 import { Header } from "@/components/layout/header";
 import { Main } from "@/components/layout/main";
 import { ModeSwitcher } from "@/components/mode-switcher";
@@ -57,6 +52,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { api } from "@/lib/eden";
+import type {
+	GetInventoryAnalysisQuery,
+	InventoryProductAnalysis,
+} from "@/shared/schemas/product";
 
 type SortBy = "income" | "profit" | "soldQuantity" | "importedQuantity";
 

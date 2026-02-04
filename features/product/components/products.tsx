@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search as SearchIcon } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,9 +12,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/eden";
 import type { Product } from "@/generated/prisma/client";
+import { api } from "@/lib/eden";
 import { CreateProductForm } from "./create-product-form";
 import { InventoryForm } from "./inventory-form";
 import { ProductCard } from "./product-card";

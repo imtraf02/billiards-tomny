@@ -53,8 +53,8 @@ export const booking = new Elysia({ prefix: "/bookings" })
 	)
 	.patch(
 		"/:id",
-		async ({ params: { id }, body }) => {
-			return await BookingService.update(id, body);
+		async ({ params: { id }, body, user }) => {
+			return await BookingService.update(id, body, user.id);
 		},
 		{
 			body: updateBookingSchema,

@@ -1,8 +1,18 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Calendar, Clock, History, Package, Receipt, User } from "lucide-react";
+import {
+	Calendar,
+	Clock,
+	Copy,
+	History,
+	Package,
+	Receipt,
+	User,
+} from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import {
 	Drawer,
@@ -13,7 +23,6 @@ import {
 } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/eden";
 
 interface BookingDetailDrawerProps {
@@ -66,7 +75,7 @@ export function BookingDetailDrawer({
 
 	return (
 		<Drawer open={open} onOpenChange={onOpenChange}>
-			<DrawerContent className="h-[auto] max-h-[95vh] sm:max-w-xl mx-auto rounded-t-xl overflow-hidden flex flex-col">
+			<DrawerContent className="max-h-[95vh] mx-auto rounded-t-xl overflow-hidden flex flex-col">
 				<DrawerHeader>
 					<DrawerTitle className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
@@ -79,8 +88,20 @@ export function BookingDetailDrawer({
 							</Badge>
 						)}
 					</DrawerTitle>
-					<DrawerDescription>
-						Mã phiên: {bookingId.split("-")[0].toUpperCase()}
+					<DrawerDescription className="flex items-center gap-2">
+						Mã phiên: {bookingId}
+						{booking && (
+							<Badge
+								variant="ghost"
+								className="h-5 px-1 bg-muted hover:bg-muted/80 cursor-pointer"
+								onClick={() => {
+									navigator.clipboard.writeText(booking.id);
+									toast.success("Đã sao chép ID phiên chơi");
+								}}
+							>
+								<Copy className="h-3 w-3" />
+							</Badge>
+						)}
 					</DrawerDescription>
 				</DrawerHeader>
 
@@ -103,7 +124,7 @@ export function BookingDetailDrawer({
 								</div>
 								<div className="space-y-1 text-right">
 									<span className="text-muted-foreground flex items-center gap-1 justify-end">
-										<User className="h-3.5 w-3.5" /> Nhân viên:
+										<User className="size-4" /> Khách hàng
 									</span>
 									<p className="font-medium">
 										{booking.user?.name || "Khách vãng lai"}
@@ -119,7 +140,7 @@ export function BookingDetailDrawer({
 									<Clock className="h-4 w-4" /> Chi tiết thời gian & Bàn
 								</h3>
 								<div className="space-y-2">
-									{booking.bookingTables.map((bt: any) => (
+									{booking.bookingTables.map((bt) => (
 										<div
 											key={bt.id}
 											className="flex flex-col p-3 bg-muted/50 rounded-lg border"

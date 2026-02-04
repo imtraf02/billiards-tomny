@@ -41,7 +41,10 @@ export function RecentActivity({ bookings, orders }: RecentActivityProps) {
 						</p>
 					) : (
 						activities.map((item, index) => (
-							<div key={`${item.type}-${item.id}`} className="flex items-center">
+							<div
+								key={`${item.type}-${item.id}`}
+								className="flex items-center"
+							>
 								<Avatar className="h-9 w-9">
 									<AvatarFallback
 										className={

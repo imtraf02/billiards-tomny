@@ -161,8 +161,10 @@ async function main() {
 			for (const product of products) {
 				const importQuantity = 30 + Math.floor(Math.random() * 20);
 				const cost = product.cost || 8000;
-				
-				const currentProduct = await prisma.product.findUnique({ where: { id: product.id } });
+
+				const currentProduct = await prisma.product.findUnique({
+					where: { id: product.id },
+				});
 				const stockBefore = currentProduct?.currentStock || 0;
 				const stockAfter = stockBefore + importQuantity;
 
@@ -186,7 +188,7 @@ async function main() {
 					where: { id: product.id },
 					data: { currentStock: stockAfter },
 				});
-				
+
 				await prisma.transaction.create({
 					data: {
 						type: TransactionType.PURCHASE,
@@ -204,7 +206,10 @@ async function main() {
 		const numOrders = 3 + Math.floor(Math.random() * 8);
 		for (let j = 0; j < numOrders; j++) {
 			const orderTime = new Date(targetDate);
-			orderTime.setHours(14 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 60));
+			orderTime.setHours(
+				14 + Math.floor(Math.random() * 8),
+				Math.floor(Math.random() * 60),
+			);
 
 			const numItems = 1 + Math.floor(Math.random() * 2);
 			let totalAmount = 0;
@@ -216,12 +221,14 @@ async function main() {
 				const price = product.price;
 				const cost = product.cost || 0;
 
-				const currentProduct = await prisma.product.findUnique({ where: { id: product.id } });
+				const currentProduct = await prisma.product.findUnique({
+					where: { id: product.id },
+				});
 				const stockBefore = currentProduct?.currentStock || 0;
-				
+
 				if (stockBefore >= quantity) {
 					const stockAfter = stockBefore - quantity;
-					
+
 					await prisma.product.update({
 						where: { id: product.id },
 						data: { currentStock: stockAfter },

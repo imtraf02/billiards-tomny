@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
 	Clock,
+	Copy,
 	CreditCard,
 	Eye,
 	Package,
@@ -12,9 +13,15 @@ import {
 	UserIcon,
 } from "lucide-react";
 import { useMemo } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardFooter,
+	CardHeader,
+} from "@/components/ui/card";
 import type {
 	Booking,
 	BookingTable,
@@ -121,30 +128,31 @@ export function OrdersList({ orders, onViewDetail }: OrdersListProps) {
 				return (
 					<Card
 						key={order.id}
-						className="overflow-hidden transition-all hover:shadow-md h-full flex flex-col"
+						className="relative overflow-hidden transition-all hover:shadow-md h-full flex flex-col group"
 					>
-						<CardContent className="pt-6 pb-2 grow">
-							{/* Header */}
-							<div className="flex items-center justify-between mb-4">
-								<div className="flex items-center gap-2">
-									<CreditCard className="h-5 w-5 text-primary" />
-									<div>
-										<h3 className="text-lg font-bold line-clamp-1">
-											#{order.id}
-										</h3>
-									</div>
-								</div>
-								{getStatusBadge(order.status)}
-							</div>
+						<div className="absolute top-2 right-2">
+							{getStatusBadge(order.status)}
+						</div>
+						<CardContent>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={(e) => {
+									e.stopPropagation();
+									navigator.clipboard.writeText(order.id);
 
-							{/* Order Info */}
+									toast.success("Đã sao chép ID đơn hàng");
+								}}
+							>
+								#{order.id}
+							</Button>
 							<div className="space-y-3 mb-4">
 								<div className="flex items-center gap-3">
 									<div className="bg-muted p-2 rounded-lg">
 										<UserIcon className="h-4 w-4" />
 									</div>
 									<div className="flex-1">
-										<p className="text-sm text-muted-foreground">Khách hàng</p>
+										<p className="text-sm text-muted-foreground">Người tạo</p>
 										<p className="font-medium">
 											{order.user?.name || "Nhân viên"}
 										</p>

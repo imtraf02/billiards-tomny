@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	Clock,
 	Eye,
@@ -9,6 +10,8 @@ import {
 	Trash2,
 } from "lucide-react";
 import { memo, useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,11 +27,9 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { type CreateBookingInput } from "@/shared/schemas/booking";
 import type { Table } from "@/generated/prisma/client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/eden";
-import { toast } from "sonner";
+import type { CreateBookingInput } from "@/shared/schemas/booking";
 
 interface TableCardProps {
 	table: Table;
@@ -97,6 +98,7 @@ export const TableCard = memo(
 		onViewSession,
 	}: TableCardProps) {
 		const queryClient = useQueryClient();
+		const [showConfirmStart, setShowConfirmStart] = useState(false);
 
 		const { mutate: createBooking, isPending: isStarting } = useMutation({
 			mutationFn: async (data: CreateBookingInput) => {
@@ -110,20 +112,28 @@ export const TableCard = memo(
 				toast.success("Bắt đầu phiên chơi");
 			},
 			onError: (error: any) => {
-				toast.error("Không thể bắt đầu phiên chơi: " + (error.value?.message || "Lỗi không xác định"));
+				toast.error(
+					"Không thể bắt đầu phiên chơi: " +
+						(error.value?.message || "Lỗi không xác định"),
+				);
 			},
 		});
 
 		const handleAction = useCallback(() => {
 			if (table.status === "AVAILABLE") {
-				createBooking({
-					tableIds: [table.id],
-					startTime: new Date(),
-				});
+				setShowConfirmStart(true);
 			} else if (table.status === "OCCUPIED" && onViewSession) {
 				onViewSession(table);
 			}
-		}, [table.status, table.id, createBooking, onViewSession]);
+		}, [table, onViewSession]);
+
+		const confirmStartSession = useCallback(() => {
+			createBooking({
+				tableIds: [table.id],
+				startTime: new Date(),
+			});
+			setShowConfirmStart(false);
+		}, [table.id, createBooking]);
 
 		const handleEdit = useCallback(() => {
 			onEdit(table);
@@ -204,6 +214,16 @@ export const TableCard = memo(
 						)}
 					</Button>
 				</CardFooter>
+
+				<ConfirmDialog
+					open={showConfirmStart}
+					onOpenChange={setShowConfirmStart}
+					title="Bắt đầu phiên chơi"
+					desc={`Bạn có chắc chắn muốn bắt đầu phiên chơi cho bàn ${table.name}?`}
+					confirmText="Bắt đầu"
+					handleConfirm={confirmStartSession}
+					isLoading={isStarting}
+				/>
 			</Card>
 		);
 	},
@@ -212,6 +232,9 @@ export const TableCard = memo(
 		return (
 			prevProps.table.id === nextProps.table.id &&
 			prevProps.table.status === nextProps.table.status &&
+			prevProps.table.name === nextProps.table.name &&
+			prevProps.table.type === nextProps.table.type &&
+			prevProps.table.hourlyRate === nextProps.table.hourlyRate &&
 			prevProps.activeBooking?.id === nextProps.activeBooking?.id &&
 			prevProps.activeBooking?.startTime === nextProps.activeBooking?.startTime
 		);

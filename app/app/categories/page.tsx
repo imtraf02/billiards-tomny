@@ -1,18 +1,18 @@
 "use client";
 
-import { Plus, Search as SearchIcon, FolderOpen, Package } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { FolderOpen, Package, Plus, Search as SearchIcon } from "lucide-react";
 import { useState } from "react";
 import { Header } from "@/components/layout/header";
 import { Main } from "@/components/layout/main";
 import { ModeSwitcher } from "@/components/mode-switcher";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { CategoryDrawer } from "@/features/category/components/category-drawer";
 import { DeleteCategoryDrawer } from "@/features/category/components/delete-category-drawer";
-import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/eden";
-import { Badge } from "@/components/ui/badge";
 
 export default function CategoriesPage() {
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -46,9 +46,10 @@ export default function CategoriesPage() {
 		setIsDeleteDialogOpen(true);
 	};
 
-	const filteredCategories = categories?.filter((category: any) =>
-		category.name.toLowerCase().includes(searchTerm.toLowerCase())
-	) || [];
+	const filteredCategories =
+		categories?.filter((category: any) =>
+			category.name.toLowerCase().includes(searchTerm.toLowerCase()),
+		) || [];
 
 	return (
 		<>
@@ -116,7 +117,9 @@ export default function CategoriesPage() {
 												</h3>
 											</div>
 											<Badge
-												variant={category.isActive !== false ? "default" : "secondary"}
+												variant={
+													category.isActive !== false ? "default" : "secondary"
+												}
 												className="text-xs"
 											>
 												{category.isActive !== false ? "Hoạt động" : "Ngừng"}
@@ -133,7 +136,9 @@ export default function CategoriesPage() {
 											<div className="flex items-center justify-between pt-2">
 												<div className="flex items-center gap-2">
 													<Package className="h-4 w-4 text-muted-foreground" />
-													<span className="text-sm text-muted-foreground">Sản phẩm:</span>
+													<span className="text-sm text-muted-foreground">
+														Sản phẩm:
+													</span>
 												</div>
 												<span className="text-sm font-bold text-primary">
 													{category._count?.products || 0}
@@ -141,7 +146,7 @@ export default function CategoriesPage() {
 											</div>
 										</div>
 									</CardContent>
-									
+
 									{/* Actions */}
 									<div className="p-4 pt-2 border-t">
 										<div className="flex gap-2">
@@ -169,12 +174,11 @@ export default function CategoriesPage() {
 					) : (
 						<div className="flex h-52 flex-col items-center justify-center rounded-lg border border-dashed text-center">
 							<FolderOpen className="h-12 w-12 text-muted-foreground opacity-20 mb-4" />
-							<p className="text-muted-foreground">Không tìm thấy danh mục nào.</p>
+							<p className="text-muted-foreground">
+								Không tìm thấy danh mục nào.
+							</p>
 							{searchTerm && (
-								<Button
-									variant="link"
-									onClick={() => setSearchTerm("")}
-								>
+								<Button variant="link" onClick={() => setSearchTerm("")}>
 									Xóa tìm kiếm
 								</Button>
 							)}

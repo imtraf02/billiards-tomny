@@ -1,9 +1,9 @@
 "use client";
 
+import { Header } from "@/components/layout/header";
 import { Main } from "@/components/layout/main";
 import { ModeSwitcher } from "@/components/mode-switcher";
 import { Search } from "@/components/search";
-import { Header } from "@/components/layout/header";
 import { RecentActivity } from "@/features/dashboard/components/recent-activity";
 import { RevenueChart } from "@/features/dashboard/components/revenue-chart";
 import { StatsCards } from "@/features/dashboard/components/stats-cards";
@@ -19,10 +19,10 @@ export default function DashboardPage() {
 	return (
 		<>
 			<Header>
-        {/* Placeholder for top nav or title if needed */}
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold">Tổng Quan</h1>
-        </div>
+				{/* Placeholder for top nav or title if needed */}
+				<div className="flex items-center gap-4">
+					<h1 className="text-xl font-bold">Tổng Quan</h1>
+				</div>
 				<div className="ms-auto flex items-center space-x-4">
 					<Search />
 					<ModeSwitcher />
@@ -45,22 +45,22 @@ export default function DashboardPage() {
 
 					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
 						<div className="col-span-4">
-              {metrics?.revenueByDay ? (
-                <RevenueChart data={metrics.revenueByDay} />
-              ) : (
-                 <div className="h-[300px] rounded-xl bg-muted animate-pulse" />
-              )}
-            </div>
+							{metrics?.revenueByDay ? (
+								<RevenueChart data={metrics.revenueByDay} />
+							) : (
+								<div className="h-76 rounded-xl bg-muted animate-pulse" />
+							)}
+						</div>
 						<div className="col-span-3">
-              {recent ? (
-                <RecentActivity
-                  bookings={recent.recentBookings}
-                  orders={recent.recentOrders}
-                />
-              ) : (
-                 <div className="h-[300px] rounded-xl bg-muted animate-pulse" />
-              )}
-            </div>
+							{recent ? (
+								<RecentActivity
+									bookings={recent.recentBookings}
+									orders={recent.recentOrders}
+								/>
+							) : (
+								<div className="h-76 rounded-xl bg-muted animate-pulse" />
+							)}
+						</div>
 					</div>
 				</div>
 			</Main>

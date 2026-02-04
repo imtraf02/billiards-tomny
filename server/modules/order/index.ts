@@ -64,11 +64,23 @@ export const order = new Elysia({ prefix: "/orders" })
 	)
 	.patch(
 		"/items/:id",
-		async ({ params: { id }, body }) => {
-			return await OrderService.updateItem(id, body);
+		async ({ params: { id }, body, user }) => {
+			return await OrderService.updateItem(id, body, user.id);
 		},
 		{
 			body: updateOrderItemSchema,
+			authorized: [Role.ADMIN, Role.STAFF],
+			detail: {
+				tags: ["Orders"],
+			},
+		},
+	)
+	.delete(
+		"/:id",
+		async ({ params: { id }, user }) => {
+			return await OrderService.delete(id, user.id);
+		},
+		{
 			authorized: [Role.ADMIN, Role.STAFF],
 			detail: {
 				tags: ["Orders"],

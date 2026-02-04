@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -19,9 +20,12 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/eden";
-import { createCategorySchema, type CreateCategoryInput, type UpdateCategoryInput } from "@/shared/schemas/product";
+import {
+	type CreateCategoryInput,
+	createCategorySchema,
+	type UpdateCategoryInput,
+} from "@/shared/schemas/product";
 
 interface CategoryDrawerProps {
 	open: boolean;
@@ -53,7 +57,13 @@ export function CategoryDrawer({
 	});
 
 	const { mutate: updateCategory, isPending: isUpdating } = useMutation({
-		mutationFn: async ({ id, data }: { id: string; data: UpdateCategoryInput }) => {
+		mutationFn: async ({
+			id,
+			data,
+		}: {
+			id: string;
+			data: UpdateCategoryInput;
+		}) => {
 			const res = await api.products.categories({ id }).put(data);
 			if (res.error) throw res.error;
 			return res.data;

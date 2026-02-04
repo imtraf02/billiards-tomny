@@ -27,10 +27,16 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Booking } from "@/generated/prisma/client";
+import type { Booking, BookingTable } from "@/generated/prisma/client";
 
 interface BookingCardProps {
-	booking: Booking;
+	booking: Booking & {
+		user: {
+			id: string;
+			name: string;
+		} | null;
+		bookingTables: BookingTable[];
+	};
 	onViewDetail: (id: string) => void;
 }
 
@@ -87,7 +93,7 @@ function BookingCard({ booking, onViewDetail }: BookingCardProps) {
 		<Card className="overflow-hidden transition-all hover:shadow-md">
 			<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 				<CardTitle className="text-lg font-bold line-clamp-1">
-					#{booking.id.slice(-8).toUpperCase()}
+					#{booking.id}
 				</CardTitle>
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
@@ -133,7 +139,7 @@ function BookingCard({ booking, onViewDetail }: BookingCardProps) {
 							<span className="text-sm text-muted-foreground">Khách hàng:</span>
 						</div>
 						<span className="text-sm font-medium">
-							{booking.customerName || "Khách vãng lai"}
+							{booking.user?.name || "Khách vãng lai"}
 						</span>
 					</div>
 
@@ -176,17 +182,21 @@ function BookingCard({ booking, onViewDetail }: BookingCardProps) {
 						<span className="text-sm font-medium">{getDuration()}</span>
 					</div>
 
-					<div className="flex items-center justify-between pt-2 border-t">
-						<span className="text-sm font-semibold text-muted-foreground">
-							Tổng tiền:
-						</span>
-						<span className="text-lg font-bold text-primary">
-							{new Intl.NumberFormat("vi-VN", {
-								style: "currency",
-								currency: "VND",
-							}).format(booking.totalAmount || 0)}
-						</span>
-					</div>
+					{
+						<div className="flex items-center justify-between pt-2 border-t">
+							<span className="text-sm font-semibold text-muted-foreground">
+								Tổng tiền:
+							</span>
+							<span className="text-lg font-bold text-primary">
+								{booking.endTime
+									? new Intl.NumberFormat("vi-VN", {
+											style: "currency",
+											currency: "VND",
+										}).format(booking.totalAmount)
+									: "Chưa xác định"}
+							</span>
+						</div>
+					}
 				</div>
 			</CardContent>
 			<CardFooter className="pt-2">

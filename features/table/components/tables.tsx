@@ -1,24 +1,24 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Search as SearchIcon } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 } from "@/components/ui/select";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { OrderDrawer } from "@/features/order/components/order-drawer";
+import type { Table, TableStatus, TableType } from "@/generated/prisma/client";
 import { api } from "@/lib/eden";
-import { Table, TableStatus, TableType } from "@/generated/prisma/client";
-import { Plus, Search as SearchIcon } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
 import { TableCard } from "./table-card";
 import { TableFormDrawer } from "./table-form-drawer";
 import { TableSessionDrawer } from "./table-session-drawer";
-import { toast } from "sonner";
 
 export function Tables() {
 	const [searchTerm, setSearchTerm] = useState("");
@@ -38,7 +38,8 @@ export function Tables() {
 			{
 				search: searchTerm || undefined,
 				type: typeFilter !== "ALL" ? (typeFilter as TableType) : undefined,
-				status: statusFilter !== "ALL" ? (statusFilter as TableStatus) : undefined,
+				status:
+					statusFilter !== "ALL" ? (statusFilter as TableStatus) : undefined,
 			},
 		],
 		queryFn: async () => {
@@ -46,7 +47,8 @@ export function Tables() {
 				query: {
 					search: searchTerm || undefined,
 					type: typeFilter !== "ALL" ? (typeFilter as TableType) : undefined,
-					status: statusFilter !== "ALL" ? (statusFilter as TableStatus) : undefined,
+					status:
+						statusFilter !== "ALL" ? (statusFilter as TableStatus) : undefined,
 				},
 			});
 			if (res.status === 200) {
@@ -69,7 +71,10 @@ export function Tables() {
 			if (res.status === 200) {
 				return res.data;
 			}
-			return { data: [], meta: { total: 0, page: 1, limit: 100, totalPages: 0 } };
+			return {
+				data: [],
+				meta: { total: 0, page: 1, limit: 100, totalPages: 0 },
+			};
 		},
 	});
 
@@ -153,8 +158,8 @@ export function Tables() {
 						<SelectContent>
 							<SelectItem value="ALL">Tất cả loại</SelectItem>
 							<SelectItem value="POOL">Bida lỗ (POOL)</SelectItem>
-<SelectItem value="CAROM">Bida phăng (CAROM)</SelectItem>
-<SelectItem value="SNOOKER">Bida Snooker (SNOOKER)</SelectItem>
+							<SelectItem value="CAROM">Bida phăng (CAROM)</SelectItem>
+							<SelectItem value="SNOOKER">Bida Snooker (SNOOKER)</SelectItem>
 						</SelectContent>
 					</Select>
 					<Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -162,11 +167,11 @@ export function Tables() {
 							<SelectValue placeholder="Trạng thái" />
 						</SelectTrigger>
 						<SelectContent>
-						<SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-<SelectItem value="AVAILABLE">Trống</SelectItem>
-<SelectItem value="OCCUPIED">Đang sử dụng</SelectItem>
-<SelectItem value="RESERVED">Đã đặt trước</SelectItem>
-<SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
+							<SelectItem value="ALL">Tất cả trạng thái</SelectItem>
+							<SelectItem value="AVAILABLE">Trống</SelectItem>
+							<SelectItem value="OCCUPIED">Đang sử dụng</SelectItem>
+							<SelectItem value="RESERVED">Đã đặt trước</SelectItem>
+							<SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
@@ -179,10 +184,7 @@ export function Tables() {
 			{isLoading ? (
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 					{[...Array(8)].map((_, i) => (
-						<div
-							key={i}
-							className="h-52 animate-pulse rounded-lg bg-muted"
-						/>
+						<div key={i} className="h-52 animate-pulse rounded-lg bg-muted" />
 					))}
 				</div>
 			) : filteredTables && filteredTables.length > 0 ? (

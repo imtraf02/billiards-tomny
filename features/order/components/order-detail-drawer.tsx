@@ -1,14 +1,19 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
 	CheckCircle2,
+	Copy,
 	FileText,
 	Loader2,
+	Minus,
 	MoreHorizontal,
 	Package,
+	Plus,
 	Receipt,
+	Trash2,
 	Truck,
 	XCircle,
 } from "lucide-react";
@@ -28,11 +33,12 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/eden";
-import { type UpdateOrderInput } from "@/shared/schemas/order";
+import type {
+	UpdateOrderInput,
+	UpdateOrderItemInput,
+} from "@/shared/schemas/order";
 
 interface OrderDetailDrawerProps {
 	open: boolean;
@@ -59,7 +65,13 @@ export function OrderDetailDrawer({
 	});
 
 	const { mutate: updateStatus, isPending: isUpdating } = useMutation({
-		mutationFn: async ({ id, data }: { id: string; data: UpdateOrderInput }) => {
+		mutationFn: async ({
+			id,
+			data,
+		}: {
+			id: string;
+			data: UpdateOrderInput;
+		}) => {
 			const res = await api.orders({ id }).patch(data);
 			if (res.error) throw res.error;
 			return res.data;
@@ -68,7 +80,53 @@ export function OrderDetailDrawer({
 			queryClient.invalidateQueries({ queryKey: ["orders"] });
 			queryClient.invalidateQueries({ queryKey: ["bookings"] });
 			queryClient.invalidateQueries({ queryKey: ["tables"] });
+			queryClient.invalidateQueries({ queryKey: ["products"] });
 			toast.success("Cập nhật trạng thái thành công");
+		},
+	});
+
+	const { mutate: updateItemQuantity, isPending: isUpdatingItem } = useMutation(
+		{
+			mutationFn: async ({
+				itemId,
+				data,
+			}: {
+				itemId: string;
+				data: UpdateOrderItemInput;
+			}) => {
+				const res = await api.orders.items({ id: itemId }).patch(data);
+				if (res.error) throw res.error;
+				return res.data;
+			},
+			onSuccess: () => {
+				queryClient.invalidateQueries({ queryKey: ["orders"] });
+				queryClient.invalidateQueries({ queryKey: ["bookings"] });
+				queryClient.invalidateQueries({ queryKey: ["tables"] });
+				queryClient.invalidateQueries({ queryKey: ["products"] });
+				toast.success("Cập nhật số lượng thành công");
+			},
+			onError: (error: any) => {
+				toast.error(error.message || "Cập nhật thất bại");
+			},
+		},
+	);
+
+	const { mutate: deleteOrder, isPending: isDeleting } = useMutation({
+		mutationFn: async (id: string) => {
+			const res = await api.orders({ id }).delete();
+			if (res.error) throw res.error;
+			return res.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["orders"] });
+			queryClient.invalidateQueries({ queryKey: ["bookings"] });
+			queryClient.invalidateQueries({ queryKey: ["tables"] });
+			queryClient.invalidateQueries({ queryKey: ["products"] });
+			toast.success("Xóa đơn hàng thành công");
+			onOpenChange(false);
+		},
+		onError: (error: any) => {
+			toast.error(error.message || "Xóa đơn hàng thất bại");
 		},
 	});
 
@@ -115,20 +173,26 @@ export function OrderDetailDrawer({
 
 	return (
 		<Drawer open={open} onOpenChange={onOpenChange}>
-			<DrawerContent className="h-[auto] max-h-[95vh] sm:max-w-lg mx-auto rounded-t-xl">
-				<DrawerHeader>
-					<DrawerTitle className="flex items-center gap-2">
-						<Receipt className="h-5 w-5 text-primary" />
-						Chi tiết đơn hàng
-					</DrawerTitle>
-					<DrawerDescription className="text-xs sm:text-sm">
-						Thông tin chi tiết về các món đã chọn và trạng thái phục vụ.
-					</DrawerDescription>
-					<div className="flex items-center justify-between">
+			<DrawerContent className="mx-auto flex h-auto max-h-[95vh] max-w-2xl flex-col overflow-hidden rounded-t-xl shadow-2xl">
+				<DrawerHeader className="px-4 pt-4 sm:px-6">
+					<div className="flex items-center justify-between mt-2">
 						{order && (
-							<Badge variant="outline" className="font-mono uppercase">
-								#{order.id}
-							</Badge>
+							<div className="flex items-center gap-2">
+								<Badge variant="outline" className="font-mono uppercase">
+									#{order.id}
+								</Badge>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-6 w-6"
+									onClick={() => {
+										navigator.clipboard.writeText(order.id);
+										toast.success("Đã sao chép ID đơn hàng");
+									}}
+								>
+									<Copy className="h-3 w-3" />
+								</Button>
+							</div>
 						)}
 						{order && (
 							<div className="flex items-center gap-2">
@@ -174,11 +238,35 @@ export function OrderDetailDrawer({
 										>
 											Hủy đơn hàng
 										</DropdownMenuItem>
+										<Separator className="my-1" />
+										<DropdownMenuItem
+											className="text-destructive focus:text-destructive"
+											onClick={() => {
+												if (
+													window.confirm(
+														"Bạn có chắc chắn muốn xóa đơn hàng này? Thao tác này sẽ hoàn kho toàn bộ sản phẩm.",
+													)
+												) {
+													deleteOrder(order.id);
+												}
+											}}
+											disabled={isDeleting}
+										>
+											<Trash2 className="mr-2 h-4 w-4" />
+											Xóa vĩnh viễn
+										</DropdownMenuItem>
 									</DropdownMenuContent>
 								</DropdownMenu>
 							</div>
 						)}
 					</div>
+					<DrawerTitle className="flex items-center gap-2 text-lg sm:text-xl">
+						<Receipt className="h-5 w-5 text-primary" />
+						Chi tiết đơn hàng
+					</DrawerTitle>
+					<DrawerDescription className="text-xs sm:text-sm">
+						Thông tin chi tiết về các món đã chọn và trạng thái phục vụ.
+					</DrawerDescription>
 				</DrawerHeader>
 
 				{isLoading ? (
@@ -186,7 +274,7 @@ export function OrderDetailDrawer({
 						<Loader2 className="h-8 w-8 animate-spin text-primary" />
 					</div>
 				) : order ? (
-					<div className="mt-4 space-y-4">
+					<div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 space-y-6">
 						<div className="grid grid-cols-2 gap-4 text-sm">
 							<div>
 								<p className="text-muted-foreground">Bàn / Phiên chơi</p>
@@ -213,39 +301,76 @@ export function OrderDetailDrawer({
 								<FileText className="h-3 w-3" />
 								Danh sách món
 							</p>
-							<ScrollArea className="h-[40vh] sm:h-64 pr-4">
-								<div className="space-y-4">
-									{(order as any).orderItems?.map((item: any) => (
-										<div
-											key={item.id}
-											className="flex justify-between items-start gap-4"
-										>
-											<div className="flex-1">
-												<p className="font-medium line-clamp-1">
-													{item.product.name}
-												</p>
-												<p className="text-xs text-muted-foreground">
-													{new Intl.NumberFormat("vi-VN").format(
-														item.priceSnapshot,
-													)}{" "}
-													đ x {item.quantity}
-												</p>
-											</div>
+							<div className="max-h-[40vh] sm:max-h-64 overflow-y-auto space-y-4 pr-2">
+								{(order as any).orderItems?.map((item: any) => (
+									<div
+										key={item.id}
+										className="flex justify-between items-start gap-4"
+									>
+										<div className="flex-1">
+											<p className="font-medium line-clamp-1">
+												{item.product.name}
+											</p>
+											<p className="text-xs text-muted-foreground">
+												{new Intl.NumberFormat("vi-VN").format(
+													item.priceSnapshot,
+												)}{" "}
+												đ x {item.quantity}
+											</p>
+										</div>
+										<div className="flex flex-col items-end gap-2">
 											<p className="font-semibold whitespace-nowrap">
 												{new Intl.NumberFormat("vi-VN").format(
 													item.priceSnapshot * item.quantity,
 												)}{" "}
 												đ
 											</p>
+											<div className="flex items-center gap-1">
+												<Button
+													variant="outline"
+													size="icon"
+													className="h-6 w-6 rounded-full"
+													disabled={isUpdatingItem || item.quantity <= 1}
+													onClick={() =>
+														updateItemQuantity({
+															itemId: item.id,
+															data: { quantity: item.quantity - 1 },
+														})
+													}
+												>
+													<Minus className="h-3 w-3" />
+												</Button>
+												<span className="w-6 text-center text-xs font-medium">
+													{item.quantity}
+												</span>
+												<Button
+													variant="outline"
+													size="icon"
+													className="h-6 w-6 rounded-full"
+													disabled={
+														isUpdatingItem ||
+														item.quantity >=
+															item.product.currentStock + item.quantity
+													}
+													onClick={() =>
+														updateItemQuantity({
+															itemId: item.id,
+															data: { quantity: item.quantity + 1 },
+														})
+													}
+												>
+													<Plus className="h-3 w-3" />
+												</Button>
+											</div>
 										</div>
-									))}
-								</div>
-							</ScrollArea>
+									</div>
+								))}
+							</div>
 						</div>
 
 						<Separator />
 
-						<div className="space-y-2">
+						<div className="space-y-2 pb-6">
 							<div className="flex justify-between items-center text-sm">
 								<span className="text-muted-foreground">Tổng cộng:</span>
 								<span className="text-xl font-black text-primary">

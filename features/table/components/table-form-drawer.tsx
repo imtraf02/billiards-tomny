@@ -1,7 +1,9 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Drawer,
@@ -25,10 +27,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/eden";
-import { toast } from "sonner";
 import type { Table, TableStatus, TableType } from "@/generated/prisma/client";
+import { api } from "@/lib/eden";
 
 interface TableFormDrawerProps {
 	open: boolean;
@@ -103,7 +103,7 @@ export function TableFormDrawer({
 
 	return (
 		<Drawer open={open} onOpenChange={onOpenChange}>
-			<DrawerContent className="h-auto max-h-[95vh] mx-auto rounded-t-xl">
+			<DrawerContent className="mx-auto flex h-auto max-h-[95vh] max-w-2xl flex-col overflow-hidden rounded-t-xl">
 				<DrawerHeader>
 					<DrawerTitle>{isEdit ? "Sửa bàn" : "Thêm bàn mới"}</DrawerTitle>
 					<DrawerDescription>
@@ -116,110 +116,127 @@ export function TableFormDrawer({
 						e.stopPropagation();
 						form.handleSubmit();
 					}}
-					className="grid gap-4 py-4"
+					className="flex flex-col overflow-hidden"
 				>
-					<form.Field
-						name="name"
-						children={(field) => (
-							<Field data-invalid={field.state.meta.errors.length > 0}>
-								<FieldLabel>Tên bàn</FieldLabel>
-								<FieldContent>
-									<Input
-										id={field.name}
-										name={field.name}
-										value={field.state.value}
-										onBlur={field.handleBlur}
-										onChange={(e) => field.handleChange(e.target.value)}
-										placeholder="Ví dụ: Bàn 01"
-									/>
-								</FieldContent>
-								<FieldError errors={field.state.meta.errors} />
-							</Field>
-						)}
-					/>
+					<div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+						<div className="grid gap-6">
+							<form.Field
+								name="name"
+								children={(field) => (
+									<Field data-invalid={field.state.meta.errors.length > 0}>
+										<FieldLabel>Tên bàn</FieldLabel>
+										<FieldContent>
+											<Input
+												id={field.name}
+												name={field.name}
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(e) => field.handleChange(e.target.value)}
+												placeholder="Ví dụ: Bàn 01"
+											/>
+										</FieldContent>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								)}
+							/>
 
-					<form.Field
-						name="type"
-						children={(field) => (
-							<Field data-invalid={field.state.meta.errors.length > 0}>
-								<FieldLabel>Loại bàn</FieldLabel>
-								<FieldContent>
-									<Select
-										value={field.state.value}
-										onValueChange={(val) =>
-											field.handleChange(val as TableType)
-										}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Chọn loại bàn" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="POOL">POOL (Lỗ)</SelectItem>
-											<SelectItem value="CAROM">CAROM (3 Băng)</SelectItem>
-											<SelectItem value="SNOOKER">SNOOKER (1 Băng)</SelectItem>
-										</SelectContent>
-									</Select>
-								</FieldContent>
-								<FieldError errors={field.state.meta.errors} />
-							</Field>
-						)}
-					/>
+							<form.Field
+								name="type"
+								children={(field) => (
+									<Field data-invalid={field.state.meta.errors.length > 0}>
+										<FieldLabel>Loại bàn</FieldLabel>
+										<FieldContent>
+											<Select
+												value={field.state.value}
+												onValueChange={(val) =>
+													field.handleChange(val as TableType)
+												}
+											>
+												<SelectTrigger className="w-full">
+													<SelectValue placeholder="Chọn loại bàn" />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="POOL">Bida lỗ (POOL)</SelectItem>
+													<SelectItem value="CAROM">
+														Bida phăng (CAROM)
+													</SelectItem>
+													<SelectItem value="SNOOKER">
+														Bida Snooker (SNOOKER)
+													</SelectItem>
+												</SelectContent>
+											</Select>
+										</FieldContent>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								)}
+							/>
 
-					<form.Field
-						name="hourlyRate"
-						children={(field) => (
-							<Field data-invalid={field.state.meta.errors.length > 0}>
-								<FieldLabel>Giá theo giờ (VND)</FieldLabel>
-								<FieldContent>
-									<Input
-										type="number"
-										value={field.state.value}
-										onBlur={field.handleBlur}
-										onChange={(e) => field.handleChange(Number(e.target.value))}
-									/>
-								</FieldContent>
-								<FieldError errors={field.state.meta.errors} />
-							</Field>
-						)}
-					/>
+							<form.Field
+								name="hourlyRate"
+								children={(field) => (
+									<Field data-invalid={field.state.meta.errors.length > 0}>
+										<FieldLabel>Giá theo giờ (VND)</FieldLabel>
+										<FieldContent>
+											<Input
+												type="number"
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(e) =>
+													field.handleChange(Number(e.target.value))
+												}
+											/>
+										</FieldContent>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								)}
+							/>
 
-					<form.Field
-						name="status"
-						children={(field) => (
-							<Field data-invalid={field.state.meta.errors.length > 0}>
-								<FieldLabel>Trạng thái</FieldLabel>
-								<FieldContent>
-									<Select
-										value={field.state.value}
-										onValueChange={(val) =>
-											field.handleChange(val as TableStatus)
-										}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Chọn trạng thái" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="AVAILABLE">AVAILABLE</SelectItem>
-											<SelectItem value="OCCUPIED">OCCUPIED</SelectItem>
-											<SelectItem value="RESERVED">RESERVED</SelectItem>
-											<SelectItem value="MAINTENANCE">MAINTENANCE</SelectItem>
-										</SelectContent>
-									</Select>
-								</FieldContent>
-								<FieldError errors={field.state.meta.errors} />
-							</Field>
-						)}
-					/>
+							<form.Field
+								name="status"
+								children={(field) => (
+									<Field data-invalid={field.state.meta.errors.length > 0}>
+										<FieldLabel>Trạng thái</FieldLabel>
+										<FieldContent>
+											<Select
+												value={field.state.value}
+												onValueChange={(val) =>
+													field.handleChange(val as TableStatus)
+												}
+											>
+												<SelectTrigger className="w-full">
+													<SelectValue placeholder="Chọn trạng thái" />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="AVAILABLE">Sẵn sàng</SelectItem>
+													<SelectItem value="OCCUPIED">Đang chơi</SelectItem>
+													<SelectItem value="RESERVED">Đã đặt</SelectItem>
+													<SelectItem value="MAINTENANCE">
+														Đang bảo trì
+													</SelectItem>
+												</SelectContent>
+											</Select>
+										</FieldContent>
+										<FieldError errors={field.state.meta.errors} />
+									</Field>
+								)}
+							/>
+						</div>
+					</div>
 
-					<DrawerFooter>
+					<DrawerFooter className="flex gap-2 sm:justify-between">
 						<Button
 							type="button"
 							variant="outline"
 							onClick={() => onOpenChange(false)}
+							className="flex-1 sm:flex-none"
 						>
 							Hủy
 						</Button>
-						<Button type="submit" disabled={isLoading}>
+						<Button
+							type="submit"
+							disabled={isLoading}
+							className="flex-[2] sm:flex-none"
+						>
 							{isLoading ? "Đang lưu..." : isEdit ? "Cập nhật" : "Tạo mới"}
 						</Button>
 					</DrawerFooter>

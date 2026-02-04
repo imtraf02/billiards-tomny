@@ -1,7 +1,8 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Minus, Plus, Search, ShoppingCart, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,10 +17,9 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/hooks/use-auth";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/eden";
-import { type CreateOrderInput } from "@/shared/schemas/order";
 import type { Product } from "@/generated/prisma/client";
+import { api } from "@/lib/eden";
+import type { CreateOrderInput } from "@/shared/schemas/order";
 
 interface CreateOrderDrawerProps {
 	open: boolean;
@@ -43,6 +43,15 @@ export function CreateOrderDrawer({
 	const [activeMainTab, setActiveMainTab] = useState<"menu" | "cart">("menu");
 	const [searchTerm, setSearchTerm] = useState("");
 	const [cart, setCart] = useState<Record<string, CartItem>>({});
+
+	// Reset cart when drawer opens
+	useEffect(() => {
+		if (open) {
+			setCart({});
+			setSearchTerm("");
+			setActiveMainTab("menu");
+		}
+	}, [open]);
 
 	const queryClient = useQueryClient();
 
@@ -195,13 +204,13 @@ export function CreateOrderDrawer({
 
 	return (
 		<Drawer open={open} onOpenChange={onOpenChange}>
-			<DrawerContent className="h-[95vh] md:h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
-				<DrawerHeader className="px-4 md:px-6 pt-4 md:pt-2 pb-4 border-b">
-					<DrawerTitle className="flex items-center gap-2 text-lg md:text-xl">
-						<ShoppingCart className="h-5 w-5" />
+			<DrawerContent className="mx-auto flex h-[96vh] max-w-7xl flex-col overflow-hidden rounded-t-xl p-0 shadow-2xl">
+				<DrawerHeader className="border-b px-4 pb-4 pt-4 sm:px-6">
+					<DrawerTitle className="flex items-center gap-2 text-lg sm:text-xl">
+						<ShoppingCart className="h-5 w-5 text-primary" />
 						Tạo Đơn Hàng Mới
 					</DrawerTitle>
-					<DrawerDescription className="text-sm">
+					<DrawerDescription className="text-xs sm:text-sm">
 						Chọn các sản phẩm để tạo đơn hàng.
 					</DrawerDescription>
 				</DrawerHeader>
@@ -224,8 +233,11 @@ export function CreateOrderDrawer({
 							)}
 						</TabsTrigger>
 					</TabsList>
-					<TabsContent value="menu" className="flex-1 flex flex-col overflow-hidden mt-0">
-						<div className="flex-1 flex flex-col gap-3 p-4 overflow-hidden">
+					<TabsContent
+						value="menu"
+						className="mt-0 flex flex-1 flex-col overflow-hidden"
+					>
+						<div className="flex flex-1 flex-col gap-3 overflow-hidden p-3 sm:p-4">
 							<div className="relative">
 								<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 								<Input
@@ -258,7 +270,10 @@ export function CreateOrderDrawer({
 									))}
 								</TabsList>
 
-								<TabsContent value="all" className="flex-1 overflow-hidden mt-0">
+								<TabsContent
+									value="all"
+									className="flex-1 overflow-hidden mt-0"
+								>
 									<ScrollArea className="h-full">
 										<div className="grid grid-cols-2 gap-2 pr-2 pb-4">
 											{isLoading ? (
@@ -273,7 +288,8 @@ export function CreateOrderDrawer({
 												products.map((product) => {
 													const inCart = cart[product.id];
 													const isOutOfStock = product.currentStock === 0;
-													const remainingStock = product.currentStock - (inCart?.quantity || 0);
+													const remainingStock =
+														product.currentStock - (inCart?.quantity || 0);
 
 													return (
 														<button
@@ -336,7 +352,8 @@ export function CreateOrderDrawer({
 													.map((product) => {
 														const inCart = cart[product.id];
 														const isOutOfStock = product.currentStock === 0;
-														const remainingStock = product.currentStock - (inCart?.quantity || 0);
+														const remainingStock =
+															product.currentStock - (inCart?.quantity || 0);
 
 														return (
 															<button
@@ -388,39 +405,81 @@ export function CreateOrderDrawer({
 							</Tabs>
 						</div>
 					</TabsContent>
-					<TabsContent value="cart" className="flex-1 flex flex-col overflow-hidden mt-0">
+					<TabsContent
+						value="cart"
+						className="flex-1 flex flex-col overflow-hidden mt-0"
+					>
 						<div className="flex-1 flex flex-col bg-muted/10 overflow-hidden">
 							<ScrollArea className="flex-1 px-4 py-4">
 								{cartItems.length > 0 ? (
 									<div className="space-y-3">
 										{cartItems.map((item) => (
-											<div key={item.id} className="flex flex-col gap-2 p-3 rounded-lg bg-background border">
+											<div
+												key={item.id}
+												className="flex flex-col gap-2 p-3 rounded-lg bg-background border"
+											>
 												<div className="flex justify-between items-start gap-2">
-													<span className="text-sm font-medium flex-1 leading-tight">{item.name}</span>
-													<Button size="icon" variant="ghost" className="h-6 w-6 -mt-1 -mr-1" onClick={() => {
-														setCart(prev => {
-															const newCart = { ...prev };
-															delete newCart[item.id];
-															return newCart;
-														});
-													}}>
+													<span className="text-sm font-medium flex-1 leading-tight">
+														{item.name}
+													</span>
+													<Button
+														size="icon"
+														variant="ghost"
+														className="h-6 w-6 -mt-1 -mr-1"
+														onClick={() => {
+															setCart((prev) => {
+																const newCart = { ...prev };
+																delete newCart[item.id];
+																return newCart;
+															});
+														}}
+													>
 														<X className="h-3 w-3" />
 													</Button>
 												</div>
 												<div className="flex items-center justify-between">
 													<div className="flex items-center gap-2">
-														<Button size="icon" variant="outline" className="h-7 w-7 rounded-full" onClick={() => removeFromCart(item.id)}>
+														<Button
+															size="icon"
+															variant="outline"
+															className="h-7 w-7 rounded-full"
+															onClick={() => removeFromCart(item.id)}
+														>
 															<Minus className="h-3 w-3" />
 														</Button>
-														<Input type="number" min="1" max={item.maxStock} value={item.quantity} onChange={(e) => updateQuantity(item.id, e.target.value)}
+														<Input
+															type="number"
+															min="1"
+															max={item.maxStock}
+															value={item.quantity}
+															onChange={(e) =>
+																updateQuantity(item.id, e.target.value)
+															}
 															className="h-7 w-12 text-center text-xs p-0"
 														/>
-														<Button size="icon" variant="outline" className="h-7 w-7 rounded-full" onClick={() => addToCart({ id: item.id, name: item.name, price: item.price, currentStock: item.maxStock, unit: item.unit } as Product)} disabled={item.quantity >= item.maxStock}>
+														<Button
+															size="icon"
+															variant="outline"
+															className="h-7 w-7 rounded-full"
+															onClick={() =>
+																addToCart({
+																	id: item.id,
+																	name: item.name,
+																	price: item.price,
+																	currentStock: item.maxStock,
+																	unit: item.unit,
+																} as Product)
+															}
+															disabled={item.quantity >= item.maxStock}
+														>
 															<Plus className="h-3 w-3" />
 														</Button>
 													</div>
 													<span className="text-sm font-bold text-primary">
-														{new Intl.NumberFormat("vi-VN").format(item.price * item.quantity)} đ
+														{new Intl.NumberFormat("vi-VN").format(
+															item.price * item.quantity,
+														)}{" "}
+														đ
 													</span>
 												</div>
 											</div>
@@ -433,22 +492,32 @@ export function CreateOrderDrawer({
 									</div>
 								)}
 							</ScrollArea>
-							<div className="p-4 bg-background border-t space-y-3">
+							<div className="border-t bg-background p-3 sm:p-4 space-y-3">
 								<div className="flex justify-between items-center">
-									<span className="text-sm font-medium text-muted-foreground">Tổng cộng:</span>
-									<span className="text-lg font-bold text-primary">{new Intl.NumberFormat("vi-VN").format(totalAmount)} đ</span>
+									<span className="text-sm font-medium text-muted-foreground">
+										Tổng cộng:
+									</span>
+									<span className="text-lg font-bold text-primary">
+										{new Intl.NumberFormat("vi-VN").format(totalAmount)} đ
+									</span>
 								</div>
-								<Button className="w-full h-11" disabled={cartItems.length === 0 || isPending} onClick={handleOrder}>
-									{isPending ? "Đang xử lý..." : `Tạo đơn hàng (${cartItems.length})`}
+								<Button
+									className="w-full h-11"
+									disabled={cartItems.length === 0 || isPending}
+									onClick={handleOrder}
+								>
+									{isPending
+										? "Đang xử lý..."
+										: `Tạo đơn hàng (${cartItems.length})`}
 								</Button>
 							</div>
 						</div>
 					</TabsContent>
 				</Tabs>
 
-				<div className="flex-1 hidden lg:flex flex-row gap-0 overflow-hidden">
+				<div className="hidden flex-1 flex-row lg:flex overflow-hidden">
 					{/* Product Selection Side */}
-					<div className="flex-1 flex flex-col gap-3 md:gap-4 p-4 md:p-6 lg:border-r overflow-hidden">
+					<div className="flex flex-1 flex-col gap-4 overflow-hidden p-4 sm:p-6 lg:border-r">
 						<div className="relative">
 							<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 							<Input
@@ -559,46 +628,46 @@ export function CreateOrderDrawer({
 														product.currentStock - (inCart?.quantity || 0);
 
 													return (
-															<button
-																key={product.id}
-																type="button"
-																className="flex flex-col p-3 md:p-4 border rounded-xl hover:border-primary hover:shadow-sm transition-all bg-card text-left disabled:opacity-50"
-																onClick={() => addToCart(product)}
-																disabled={isOutOfStock || remainingStock <= 0}
-															>
-																<div className="flex justify-between items-start gap-2 mb-2">
-																	<h4 className="font-medium text-sm md:text-base leading-tight line-clamp-2">
-																		{product.name}
-																	</h4>
-																	{inCart && (
-																		<Badge className="shrink-0 h-5 px-2 text-xs">
-																			{inCart.quantity}
-																		</Badge>
-																	)}
+														<button
+															key={product.id}
+															type="button"
+															className="flex flex-col p-3 md:p-4 border rounded-xl hover:border-primary hover:shadow-sm transition-all bg-card text-left disabled:opacity-50"
+															onClick={() => addToCart(product)}
+															disabled={isOutOfStock || remainingStock <= 0}
+														>
+															<div className="flex justify-between items-start gap-2 mb-2">
+																<h4 className="font-medium text-sm md:text-base leading-tight line-clamp-2">
+																	{product.name}
+																</h4>
+																{inCart && (
+																	<Badge className="shrink-0 h-5 px-2 text-xs">
+																		{inCart.quantity}
+																	</Badge>
+																)}
+															</div>
+
+															<div className="mt-auto flex items-end justify-between gap-2">
+																<div className="space-y-0.5">
+																	<p className="text-sm md:text-base font-bold text-primary">
+																		{new Intl.NumberFormat("vi-VN").format(
+																			product.price,
+																		)}{" "}
+																		đ
+																	</p>
+																	<p className="text-[10px] md:text-xs text-muted-foreground">
+																		{isOutOfStock || remainingStock <= 0
+																			? "Hết hàng"
+																			: `Còn ${remainingStock} ${product.unit}`}
+																	</p>
 																</div>
 
-																<div className="mt-auto flex items-end justify-between gap-2">
-																	<div className="space-y-0.5">
-																		<p className="text-sm md:text-base font-bold text-primary">
-																			{new Intl.NumberFormat("vi-VN").format(
-																				product.price,
-																			)}{" "}
-																			đ
-																		</p>
-																		<p className="text-[10px] md:text-xs text-muted-foreground">
-																			{isOutOfStock || remainingStock <= 0
-																				? "Hết hàng"
-																				: `Còn ${remainingStock} ${product.unit}`}
-																		</p>
+																{!isOutOfStock && remainingStock > 0 && (
+																	<div className="h-8 md:h-9 w-8 md:w-9 rounded-full bg-secondary flex items-center justify-center shadow-sm shrink-0">
+																		<Plus className="h-4 md:h-5 w-4 md:w-5" />
 																	</div>
-
-																	{!isOutOfStock && remainingStock > 0 && (
-																		<div className="h-8 md:h-9 w-8 md:w-9 rounded-full bg-secondary flex items-center justify-center shadow-sm shrink-0">
-																			<Plus className="h-4 md:h-5 w-4 md:w-5" />
-																		</div>
-																	)}
-																</div>
-															</button>
+																)}
+															</div>
+														</button>
 													);
 												})}
 										</div>

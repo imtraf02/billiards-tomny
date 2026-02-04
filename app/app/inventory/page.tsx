@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import {
 	endOfDay,
 	endOfMonth,
@@ -32,9 +33,8 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InventoryList } from "@/features/inventory/components/inventory-list";
-import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/eden";
-import { type GetInventoryLogsQuery } from "@/shared/schemas/product";
+import type { GetInventoryLogsQuery } from "@/shared/schemas/product";
 
 type TypeFilter = "ALL" | "IN" | "OUT";
 
@@ -53,7 +53,10 @@ export default function InventoryPage() {
 	);
 	const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
-	const skeletonIds = useMemo(() => Array.from({ length: 6 }, () => crypto.randomUUID()), []);
+	const skeletonIds = useMemo(
+		() => Array.from({ length: 6 }, () => crypto.randomUUID()),
+		[],
+	);
 
 	// Calculate date range based on filter or custom range
 	const getDateRangeQuery = () => {
@@ -197,7 +200,10 @@ export default function InventoryPage() {
 					{/* Filters */}
 					<div className="flex items-center gap-2 flex-wrap">
 						<Filter className="h-4 w-4 text-muted-foreground" />
-						<Select value={type} onValueChange={(value) => setType(value as TypeFilter)}>
+						<Select
+							value={type}
+							onValueChange={(value) => setType(value as TypeFilter)}
+						>
 							<SelectTrigger className="w-48">
 								<SelectValue placeholder="Loại giao dịch" />
 							</SelectTrigger>
