@@ -90,7 +90,7 @@ export function BookingDetailDrawer({
 			queryClient.invalidateQueries({ queryKey: ["bookings"] });
 			queryClient.invalidateQueries({ queryKey: ["tables"] });
 			toast.success("Thanh toán thành công!", {
-				duration: 2000,
+				duration: 5000,
 				action: {
 					label: "In hóa đơn",
 					onClick: () => setShowPrintInvoice(true),
@@ -131,7 +131,9 @@ export function BookingDetailDrawer({
 
 		return {
 			liveTotal:
-				booking.status === "COMPLETED" ? booking.totalAmount : timeCost + services,
+				booking.status === "COMPLETED"
+					? booking.totalAmount
+					: timeCost + services,
 			serviceTotal: services,
 			timeTotal: timeCost,
 		};

@@ -27,19 +27,44 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Table } from "@/generated/prisma/browser";
+import type { BookingTable, Table } from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
 import type { CreateBookingInput } from "@/shared/schemas/booking";
 
 interface TableCardProps {
-	table: Table;
+	table: Table & {
+		bookingTables: (BookingTable & {
+			booking: {
+				id: string;
+				startTime: Date;
+			};
+		})[];
+	};
 	activeBooking?: {
 		id: string;
 		startTime: Date;
 	} | null;
-	onEdit: (table: Table) => void;
+	onEdit: (
+		table: Table & {
+			bookingTables: (BookingTable & {
+				booking: {
+					id: string;
+					startTime: Date;
+				};
+			})[];
+		},
+	) => void;
 	onDelete: (id: string) => void;
-	onViewSession?: (table: Table) => void;
+	onViewSession?: (
+		table: Table & {
+			bookingTables: (BookingTable & {
+				booking: {
+					id: string;
+					startTime: Date;
+				};
+			})[];
+		},
+	) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -90,8 +115,6 @@ const TableTimer = memo(({ startTime }: { startTime: Date }) => {
 	);
 });
 
-TableTimer.displayName = "TableTimer";
-
 export const TableCard = memo(
 	function TableCard({
 		table,
@@ -115,10 +138,8 @@ export const TableCard = memo(
 				toast.success("Bắt đầu phiên chơi");
 			},
 			onError: (error) => {
-				toast.error(
-					"Không thể bắt đầu phiên chơi: " +
-						(error.value?.message || "Lỗi không xác định"),
-				);
+				console.error(error);
+				toast.error("Không thể bắt đầu phiên chơi: ");
 			},
 		});
 

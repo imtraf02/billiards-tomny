@@ -1,8 +1,6 @@
-import type { Prisma } from "@/generated/prisma/client";
 import prisma from "@/lib/db";
 import type {
 	CreateTableInput,
-	GetTablesQuery,
 	UpdateTableInput,
 } from "@/shared/schemas/table";
 
@@ -13,26 +11,9 @@ export abstract class TableService {
 		});
 	}
 
-	static async getAll(query: GetTablesQuery = {}) {
-		const where: Prisma.TableWhereInput = {};
-
-		if (query.search) {
-			where.name = { contains: query.search, mode: "insensitive" };
-		}
-
-		if (query.type) {
-			where.type = query.type;
-		}
-
-		if (query.status) {
-			where.status = query.status;
-		}
-
+	static async getAll() {
 		return await prisma.table.findMany({
-			where,
-			orderBy: {
-				name: "asc",
-			},
+			orderBy: { name: "asc" },
 			include: {
 				bookingTables: {
 					where: {

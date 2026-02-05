@@ -1,11 +1,7 @@
 import { Elysia } from "elysia";
 import { Role } from "@/generated/prisma/client";
 import { authorization } from "@/server/plugins/authorization";
-import {
-	createTableSchema,
-	getTablesQuerySchema,
-	updateTableSchema,
-} from "@/shared/schemas/table";
+import { createTableSchema, updateTableSchema } from "@/shared/schemas/table";
 import { TableService } from "./service";
 
 export const table = new Elysia({ prefix: "/tables" })
@@ -25,14 +21,11 @@ export const table = new Elysia({ prefix: "/tables" })
 	)
 	.get(
 		"/",
-		async ({ query }) => {
-			return await TableService.getAll(query);
+		async () => {
+			return await TableService.getAll();
 		},
 		{
-			query: getTablesQuerySchema,
-			detail: {
-				tags: ["Tables"],
-			},
+			detail: { tags: ["Tables"] },
 		},
 	)
 	.get(

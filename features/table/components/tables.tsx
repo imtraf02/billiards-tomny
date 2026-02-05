@@ -13,50 +13,55 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { OrderDrawer } from "@/features/order/components/order-drawer";
-import type { Table, TableStatus, TableType } from "@/generated/prisma/browser";
+import type { TableStatus, TableType } from "@/generated/prisma/browser";
 import { api } from "@/lib/eden";
+import type { TableWithBookings } from "../types";
 import { TableCard } from "./table-card";
 import { TableFormDrawer } from "./table-form-drawer";
 import { TableSessionDrawer } from "./table-session-drawer";
 
 export function Tables() {
+	// State management
 	const [searchTerm, setSearchTerm] = useState("");
 	const [typeFilter, setTypeFilter] = useState<string>("ALL");
 	const [statusFilter, setStatusFilter] = useState<string>("ALL");
 	const [isFormOpen, setIsFormOpen] = useState(false);
 	const [isSessionOpen, setIsSessionOpen] = useState(false);
 	const [isOrderOpen, setIsOrderOpen] = useState(false);
-	const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+	const [selectedTable, setSelectedTable] = useState<TableWithBookings | null>(
+		null,
+	);
 	const [activeBookingId, setActiveBookingId] = useState<string>("");
 
 	const queryClient = useQueryClient();
 
 	const { data: tables, isLoading } = useQuery({
-		queryKey: [
-			"tables",
-			{
-				search: searchTerm || undefined,
-				type: typeFilter !== "ALL" ? (typeFilter as TableType) : undefined,
-				status:
-					statusFilter !== "ALL" ? (statusFilter as TableStatus) : undefined,
-			},
-		],
+		queryKey: ["tables"],
 		queryFn: async () => {
-			const res = await api.tables.get({
-				query: {
-					search: searchTerm || undefined,
-					type: typeFilter !== "ALL" ? (typeFilter as TableType) : undefined,
-					status:
-						statusFilter !== "ALL" ? (statusFilter as TableStatus) : undefined,
-				},
-			});
-			if (res.status === 200) {
-				return res.data;
-			}
-			return [];
+			const res = await api.tables.get();
+			return res.status === 200 ? res.data : [];
 		},
+		staleTime: 30000, // Cache for 30 seconds
 	});
+
+	const filteredTables = useMemo(() => {
+		return (
+			tables?.filter((table) => {
+				const matchesSearch =
+					!searchTerm ||
+					table.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+				const matchesType = typeFilter === "ALL" || table.type === typeFilter;
+
+				const matchesStatus =
+					statusFilter === "ALL" || table.status === statusFilter;
+
+				return matchesSearch && matchesType && matchesStatus;
+			}) || []
+		);
+	}, [tables, searchTerm, typeFilter, statusFilter]);
 
 	const { mutate: deleteTable } = useMutation({
 		mutationFn: async (id: string) => {
@@ -68,10 +73,12 @@ export function Tables() {
 			queryClient.invalidateQueries({ queryKey: ["tables"] });
 			toast.success("Xóa bàn thành công");
 		},
+		onError: () => {
+			toast.error("Có lỗi xảy ra khi xóa bàn");
+		},
 	});
 
-	// Sử dụng useCallback cho các event handler
-	const handleEdit = useCallback((table: Table) => {
+	const handleEdit = useCallback((table: TableWithBookings) => {
 		setSelectedTable(table);
 		setIsFormOpen(true);
 	}, []);
@@ -90,7 +97,7 @@ export function Tables() {
 		setIsFormOpen(true);
 	}, []);
 
-	const handleViewSession = useCallback((table: Table) => {
+	const handleViewSession = useCallback((table: TableWithBookings) => {
 		setSelectedTable(table);
 		setIsSessionOpen(true);
 	}, []);
@@ -100,15 +107,44 @@ export function Tables() {
 		setIsOrderOpen(true);
 	}, []);
 
-	// Memoize filtered tables
-	const filteredTables = useMemo(() => {
-		if (!tables) return [];
-		return tables;
-	}, [tables]);
+	const handleSearchChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			setSearchTerm(e.target.value);
+		},
+		[],
+	);
+
+	const handleClearFilters = useCallback(() => {
+		setSearchTerm("");
+		setTypeFilter("ALL");
+		setStatusFilter("ALL");
+	}, []);
+
+	const activeBooking = useMemo(() => {
+		if (!selectedTable?.bookingTables?.length) return null;
+		return selectedTable.bookingTables[selectedTable.bookingTables.length - 1]
+			.booking;
+	}, [selectedTable]);
+
+	const renderSkeleton = () => (
+		<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+			{Array.from({ length: 8 }).map((_, i) => (
+				<Skeleton key={i} className="h-52" />
+			))}
+		</div>
+	);
+
+	const renderEmptyState = () => (
+		<div className="flex h-52 flex-col items-center justify-center rounded-lg border border-dashed text-center">
+			<p className="text-muted-foreground">Không tìm thấy bàn nào.</p>
+			<Button variant="link" onClick={handleClearFilters}>
+				Xóa bộ lọc
+			</Button>
+		</div>
+	);
 
 	return (
 		<div className="space-y-4">
-			{/* Filters ... (Keep as is) */}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
 					<div className="relative w-full sm:w-64">
@@ -117,7 +153,7 @@ export function Tables() {
 							placeholder="Tìm tên bàn..."
 							className="pl-9"
 							value={searchTerm}
-							onChange={(e) => setSearchTerm(e.target.value)}
+							onChange={handleSearchChange}
 						/>
 					</div>
 					<Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -150,19 +186,13 @@ export function Tables() {
 				</Button>
 			</div>
 
+			{/* Tables Grid */}
 			{isLoading ? (
-				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-					{[...Array(8)].map((_, i) => (
-						<div key={i} className="h-52 animate-pulse rounded-lg bg-muted" />
-					))}
-				</div>
-			) : filteredTables && filteredTables.length > 0 ? (
+				renderSkeleton()
+			) : filteredTables.length > 0 ? (
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 					{filteredTables.map((table) => {
-						const activeBooking =
-							table.bookingTables && table.bookingTables.length > 0
-								? table.bookingTables[0]
-								: null;
+						const activeBooking = table.bookingTables?.[0]?.booking ?? null;
 						return (
 							<TableCard
 								key={table.id}
@@ -176,21 +206,10 @@ export function Tables() {
 					})}
 				</div>
 			) : (
-				<div className="flex h-52 flex-col items-center justify-center rounded-lg border border-dashed text-center">
-					<p className="text-muted-foreground">Không tìm thấy bàn nào.</p>
-					<Button
-						variant="link"
-						onClick={() => {
-							setSearchTerm("");
-							setTypeFilter("ALL");
-							setStatusFilter("ALL");
-						}}
-					>
-						Xóa bộ lọc
-					</Button>
-				</div>
+				renderEmptyState()
 			)}
 
+			{/* Drawers */}
 			<TableFormDrawer
 				open={isFormOpen}
 				onOpenChange={setIsFormOpen}
@@ -201,11 +220,7 @@ export function Tables() {
 				open={isSessionOpen}
 				onOpenChange={setIsSessionOpen}
 				table={selectedTable}
-				activeBooking={
-					selectedTable && (selectedTable as any).bookingTables?.length > 0
-						? (selectedTable as any).bookingTables[0].booking
-						: null
-				}
+				activeBooking={activeBooking}
 				onOpenOrder={handleOpenOrder}
 			/>
 

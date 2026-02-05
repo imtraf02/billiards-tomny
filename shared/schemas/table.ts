@@ -33,19 +33,10 @@ export const updateTableSchema = z.object({
 		.optional(),
 });
 
-export const getTablesQuerySchema = z.object({
-	type: z.enum(["POOL", "CAROM", "SNOOKER"]).optional(),
-	status: z
-		.enum(["AVAILABLE", "OCCUPIED", "MAINTENANCE", "RESERVED"])
-		.optional(),
-	search: z.string().optional(),
-});
-
 export const updateTableStatusSchema = z.object({
 	status: z.enum(["AVAILABLE", "OCCUPIED", "MAINTENANCE", "RESERVED"]),
 });
 
 export type CreateTableInput = z.infer<typeof createTableSchema>;
 export type UpdateTableInput = z.infer<typeof updateTableSchema>;
-export type GetTablesQuery = z.infer<typeof getTablesQuerySchema>;
 export type UpdateTableStatusInput = z.infer<typeof updateTableStatusSchema>;
