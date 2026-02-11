@@ -28,6 +28,11 @@ export type User = Prisma.UserModel
  */
 export type Table = Prisma.TableModel
 /**
+ * Model TableSession
+ * 
+ */
+export type TableSession = Prisma.TableSessionModel
+/**
  * Model Category
  * 
  */
@@ -38,37 +43,42 @@ export type Category = Prisma.CategoryModel
  */
 export type Product = Prisma.ProductModel
 /**
- * Model Booking
+ * Model InventoryBatch
  * 
  */
-export type Booking = Prisma.BookingModel
+export type InventoryBatch = Prisma.InventoryBatchModel
 /**
- * Model BookingTable
+ * Model BatchSale
  * 
  */
-export type BookingTable = Prisma.BookingTableModel
+export type BatchSale = Prisma.BatchSaleModel
 /**
  * Model Order
  * 
  */
 export type Order = Prisma.OrderModel
 /**
- * Model OrderItem
+ * Model OrderProduct
  * 
  */
-export type OrderItem = Prisma.OrderItemModel
+export type OrderProduct = Prisma.OrderProductModel
 /**
- * Model InventoryLog
+ * Model Bill
  * 
  */
-export type InventoryLog = Prisma.InventoryLogModel
+export type Bill = Prisma.BillModel
 /**
- * Model Transaction
+ * Model BillDiscount
  * 
  */
-export type Transaction = Prisma.TransactionModel
+export type BillDiscount = Prisma.BillDiscountModel
 /**
- * Model MonthlyReport
+ * Model InventoryTransaction
  * 
  */
-export type MonthlyReport = Prisma.MonthlyReportModel
+export type InventoryTransaction = Prisma.InventoryTransactionModel
+/**
+ * Model Expense
+ * 
+ */
+export type Expense = Prisma.ExpenseModel

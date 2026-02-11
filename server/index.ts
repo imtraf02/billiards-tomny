@@ -2,13 +2,12 @@ import { cors } from "@elysiajs/cors";
 import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { auth } from "./modules/auth";
-import { booking } from "./modules/booking";
-import { dashboard } from "./modules/dashboard";
-import { financeRoutes } from "./modules/finance";
+import { inventoryBatch } from "./modules/inventory-batch";
+import { inventoryTransaction } from "./modules/inventory-transaction";
 import { order } from "./modules/order";
 import { product } from "./modules/product";
 import { table } from "./modules/table";
-import { transaction } from "./modules/transaction";
+import { errorHandler } from "./plugins/error-handler";
 
 export const app = new Elysia({ prefix: "/api" })
 	.use(cors())
@@ -35,28 +34,21 @@ export const app = new Elysia({ prefix: "/api" })
 						description: "Quản lý sản phẩm đồ ăn/uống",
 					},
 					{
-						name: "Bookings",
-						description: "Quản lý đặt bàn và tính giờ chơi",
-					},
-					{
 						name: "Orders",
-						description: "Quản lý đơn hàng đồ ăn/uống",
+						description: "Quản lý đơn đặt hàng",
 					},
 					{
-						name: "Dashboard",
-						description: "Thống kê và báo cáo tổng quan",
+						name: "Inventory Transactions",
+						description: "Quản lý giao dịch kho hàng",
 					},
 				],
 			},
 		}),
 	)
+	.use(errorHandler)
 	.use(auth)
 	.use(table)
 	.use(product)
-	.use(booking)
 	.use(order)
-	.use(transaction)
-	.use(financeRoutes)
-	.use(dashboard);
-
-// export type App = typeof app;
+	.use(inventoryBatch)
+	.use(inventoryTransaction);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { api } from "@/lib/eden";
 import type { LoginInput } from "@/shared/schemas/auth";
 import { useAuthStore } from "../auth-store";
@@ -35,13 +36,19 @@ export const useAuth = () => {
 				password: data.password,
 			});
 		},
-		onSuccess: ({ data }) => {
+		onSuccess: ({ data, error }) => {
 			if (data?.token) {
 				setToken(data.token);
 				queryClient.invalidateQueries({
 					queryKey: ["me"],
 				});
+				toast.success(data.message);
+			} else if (error?.value) {
+				toast.error(error.value.message);
 			}
+		},
+		onError: (error) => {
+			toast(error.message);
 		},
 	});
 

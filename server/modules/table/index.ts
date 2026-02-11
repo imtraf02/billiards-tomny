@@ -6,32 +6,21 @@ import { TableService } from "./service";
 
 export const table = new Elysia({ prefix: "/tables" })
 	.use(authorization)
-	.post(
-		"/",
-		async ({ body }) => {
-			return await TableService.create(body);
-		},
-		{
-			body: createTableSchema,
-			authorized: [Role.ADMIN, Role.STAFF],
-			detail: {
-				tags: ["Tables"],
-			},
-		},
-	)
 	.get(
 		"/",
 		async () => {
-			return await TableService.getAll();
+			return await TableService.getAllTables();
 		},
 		{
-			detail: { tags: ["Tables"] },
+			detail: {
+				tags: ["Tables"],
+			},
 		},
 	)
 	.get(
 		"/:id",
 		async ({ params: { id } }) => {
-			return await TableService.getById(id);
+			return await TableService.getTableById(id);
 		},
 		{
 			detail: {
@@ -39,14 +28,27 @@ export const table = new Elysia({ prefix: "/tables" })
 			},
 		},
 	)
-	.patch(
+	.post(
+		"/",
+		async ({ body }) => {
+			return await TableService.createTable(body);
+		},
+		{
+			body: createTableSchema,
+			authorized: [Role.ADMIN],
+			detail: {
+				tags: ["Tables"],
+			},
+		},
+	)
+	.put(
 		"/:id",
 		async ({ params: { id }, body }) => {
-			return await TableService.update(id, body);
+			return await TableService.updateTable(id, body);
 		},
 		{
 			body: updateTableSchema,
-			authorized: [Role.ADMIN, Role.STAFF],
+			authorized: [Role.ADMIN],
 			detail: {
 				tags: ["Tables"],
 			},
@@ -55,7 +57,19 @@ export const table = new Elysia({ prefix: "/tables" })
 	.delete(
 		"/:id",
 		async ({ params: { id } }) => {
-			return await TableService.delete(id);
+			return await TableService.deleteTable(id);
+		},
+		{
+			authorized: [Role.ADMIN],
+			detail: {
+				tags: ["Tables"],
+			},
+		},
+	)
+	.post(
+		"/:id/start-session",
+		async ({ params: { id } }) => {
+			return await TableService.startSession(id);
 		},
 		{
 			authorized: [Role.ADMIN, Role.STAFF],

@@ -1,32 +1,25 @@
-import { format } from "date-fns";
 import type { Prisma } from "@/generated/prisma/client";
 import prisma from "@/lib/db";
+import { AppError } from "@/server/utils/errors";
 import type {
 	CreateCategoryInput,
-	CreateInventoryLogInput,
 	CreateProductInput,
-	GetInventoryAnalysisQuery,
-	GetInventoryLogsQuery,
-	InventoryAnalysisResponse,
-	InventoryAnalysisTrend,
-	InventoryProductAnalysis,
+	ImportProductInput,
+	InternalUseInput,
+	SpoilageInput,
 	UpdateCategoryInput,
 	UpdateProductInput,
 } from "@/shared/schemas/product";
 
 export abstract class ProductService {
-	// Category Methods
+	// ==================== Category Methods ====================
 	static async createCategory(data: CreateCategoryInput) {
-		return await prisma.category.create({
-			data,
-		});
+		return await prisma.category.create({ data });
 	}
 
 	static async getAllCategories() {
 		return await prisma.category.findMany({
-			orderBy: {
-				name: "asc",
-			},
+			orderBy: { name: "asc" },
 			include: {
 				_count: {
 					select: { products: true },
@@ -48,39 +41,23 @@ export abstract class ProductService {
 		});
 	}
 
-	// Product Methods
-	static async createProduct(data: CreateProductInput, userId: string) {
-		return await prisma.$transaction(async (tx) => {
-			const product = await tx.product.create({
-				data,
-			});
-
-			// If initial stock is specified, create an inventory log
-			if (data.currentStock > 0) {
-				await tx.inventoryLog.create({
-					data: {
-						productId: product.id,
-						userId,
-						type: "IN",
-						quantity: data.currentStock,
-						costSnapshot: data.cost,
-						priceSnapshot: 0,
-						reason: "initial",
-						note: "Khởi tạo tồn kho ban đầu",
-						stockBefore: 0,
-						stockAfter: data.currentStock,
-					},
-				});
-			}
-
-			return product;
+	// ==================== Product Methods ====================
+	static async createProduct(data: CreateProductInput) {
+		return await prisma.product.create({
+			data,
 		});
 	}
 
 	static async getAllProducts() {
 		return await prisma.product.findMany({
 			orderBy: { name: "asc" },
-			include: { category: true },
+			include: {
+				category: true,
+				batches: {
+					where: { quantity: { gt: 0 } }, // Chỉ lấy lô còn hàng
+					orderBy: { importedAt: "asc" },
+				},
+			},
 		});
 	}
 
@@ -89,58 +66,55 @@ export abstract class ProductService {
 			where: { id },
 			include: {
 				category: true,
+				batches: {
+					where: { quantity: { gt: 0 } }, // Chỉ lấy lô còn hàng
+					orderBy: { importedAt: "asc" },
+				},
 			},
 		});
 	}
 
-	static async updateProduct(
-		id: string,
-		data: UpdateProductInput,
-		userId: string,
-	) {
-		return await prisma.$transaction(async (tx) => {
-			// Get current state to compare stock change
-			const currentProduct = await tx.product.findUnique({
-				where: { id },
-				select: { currentStock: true, cost: true },
+	static async updateProduct(id: string, data: UpdateProductInput) {
+		const product = await prisma.product.findUnique({
+			where: { id },
+		});
+
+		if (!product) {
+			throw new AppError("Sản phẩm không tồn tại", 404);
+		}
+
+		if (data.name !== product.name) {
+			const existingLog = await prisma.inventoryTransaction.findFirst({
+				where: {
+					productId: product.id,
+				},
 			});
 
-			if (!currentProduct) {
-				throw new Error("Sản phẩm không tồn tại");
+			if (existingLog) {
+				throw new AppError("Sản phẩm đã tồn tại trong lịch sử nhập hàng", 400);
 			}
 
-			const product = await tx.product.update({
-				where: { id },
-				data,
+			const existingProduct = await prisma.product.findFirst({
+				where: {
+					name: data.name,
+				},
 			});
 
-			// Only log if currentStock has changed or was explicitly provided in data
-			if (
-				data.currentStock !== undefined &&
-				data.currentStock !== currentProduct.currentStock
-			) {
-				const stockBefore = currentProduct.currentStock;
-				const stockAfter = data.currentStock;
-				const quantity = Math.abs(stockAfter - stockBefore);
-				const type = stockAfter > stockBefore ? "IN" : "OUT";
-
-				await tx.inventoryLog.create({
-					data: {
-						productId: id,
-						userId,
-						type,
-						quantity,
-						costSnapshot: data.cost ?? currentProduct.cost, // use updated cost if available, else current cost
-						priceSnapshot: 0,
-						reason: "adjustment",
-						note: "Điều chỉnh tồn kho khi cập nhật sản phẩm",
-						stockBefore,
-						stockAfter,
-					},
-				});
+			if (existingProduct) {
+				throw new AppError("Sản phẩm đã tồn tại", 409);
 			}
+		}
 
-			return product;
+		return await prisma.product.update({
+			where: { id },
+			data,
+			include: {
+				category: true,
+				batches: {
+					where: { quantity: { gt: 0 } },
+					orderBy: { importedAt: "asc" },
+				},
+			},
 		});
 	}
 
@@ -150,164 +124,191 @@ export abstract class ProductService {
 		});
 	}
 
-	// Inventory Methods
-	static async createInventoryLog(
-		data: CreateInventoryLogInput,
+	// ==================== Inventory Methods ====================
+
+	/**
+	 * Nhập hàng (tạo lô mới)
+	 */
+	static async importProduct(
+		{ productId, costPerUnit, quantity, note }: ImportProductInput,
 		userId: string,
 	) {
 		return await prisma.$transaction(async (tx) => {
-			// Get current product
-			const product = await tx.product.findUnique({
-				where: { id: data.productId },
-			});
-
-			if (!product) {
-				throw new Error("Sản phẩm không tồn tại");
-			}
-
-			const stockBefore = product.currentStock;
-			const currentCost = product.cost || 0;
-			const quantityChange =
-				data.type === "IN" ? data.quantity : -data.quantity;
-			const stockAfter = stockBefore + quantityChange;
-
-			if (stockAfter < 0) {
-				throw new Error("Số lượng xuất vượt quá tồn kho hiện tại");
-			}
-
-			// Calculate new cost using Weighted Average for IN transactions
-			let newCost = currentCost;
-			if (
-				data.type === "IN" &&
-				data.costSnapshot !== undefined &&
-				data.costSnapshot >= 0
-			) {
-				if (stockBefore > 0) {
-					const totalValue =
-						stockBefore * currentCost + data.quantity * data.costSnapshot;
-					newCost = Math.round(totalValue / stockAfter);
-				} else {
-					// If stock was 0 or negative, reset cost to new import price
-					newCost = data.costSnapshot;
-				}
-			}
-
-			// Update product stock and cost
-			await tx.product.update({
-				where: { id: data.productId },
+			// Tạo lô mới
+			const batch = await tx.inventoryBatch.create({
 				data: {
-					currentStock: stockAfter,
-					// Update cost if importing with unit cost
-					...(data.type === "IN" && data.costSnapshot !== undefined
-						? { cost: data.costSnapshot }
-						: { cost: newCost }),
-				},
-			});
-
-			// Create inventory log
-			return await tx.inventoryLog.create({
-				data: {
-					productId: data.productId,
+					productId,
+					quantity,
+					costPerUnit,
 					userId,
-					type: data.type,
-					quantity: data.quantity,
-					// For IN: use input costSnapshot (Transaction Price)
-					// For OUT: use currentCost (Cost Basis / COGS)
-					costSnapshot:
-						data.type === "IN" ? (data.costSnapshot ?? 0) : currentCost,
-					priceSnapshot: data.priceSnapshot ?? 0,
-					reason: data.reason,
-					note: data.note,
-					stockBefore,
-					stockAfter,
-				},
-				include: {
-					product: true,
-					user: {
-						select: {
-							id: true,
-							name: true,
-						},
-					},
 				},
 			});
+
+			// Ghi log
+			await tx.inventoryTransaction.create({
+				data: {
+					productId,
+					type: "IMPORT",
+					quantity,
+					cost: costPerUnit,
+					note: note || `Nhập ${quantity} với giá ${costPerUnit}đ/sp`,
+					userId,
+				},
+			});
+
+			return batch;
 		});
 	}
 
-	static async getInventoryLogs(query: GetInventoryLogsQuery) {
-		const where: Prisma.InventoryLogWhereInput = {};
+	/**
+	 * Sử dụng nội bộ (nhân viên uống, test, ...)
+	 */
+	static async useProductInternal(
+		{ productId, quantity, reason }: InternalUseInput,
+		userId: string,
+	) {
+		return await prisma.$transaction(async (tx) => {
+			const { totalCost, averageCost } = await ProductService._reduceStockFIFO(
+				tx,
+				productId,
+				quantity,
+			);
 
-		if (query.productId) {
-			where.productId = query.productId;
-		}
-
-		if (query.type) {
-			where.type = query.type;
-		}
-
-		if (query.startDate || query.endDate) {
-			where.createdAt = {
-				gte: query.startDate,
-				lte: query.endDate,
-			};
-		}
-
-		const skip = (query.page - 1) * query.limit;
-
-		const [logs, total] = await Promise.all([
-			prisma.inventoryLog.findMany({
-				where,
-				orderBy: {
-					createdAt: "desc",
+			// Ghi log
+			await tx.inventoryTransaction.create({
+				data: {
+					productId,
+					type: "INTERNAL",
+					quantity: -quantity,
+					cost: averageCost,
+					note: reason,
+					userId,
 				},
-				include: {
-					product: {
-						select: {
-							id: true,
-							name: true,
-							unit: true,
-							price: true,
-							cost: true,
-						},
-					},
-					user: {
-						select: {
-							id: true,
-							name: true,
-						},
-					},
-				},
-				skip,
-				take: query.limit,
-			}),
-			prisma.inventoryLog.count({ where }),
-		]);
+			});
 
-		return {
-			data: logs,
-			meta: {
-				total,
-				page: query.page,
-				limit: query.limit,
-				totalPages: Math.ceil(total / query.limit),
-			},
-		};
+			return { quantity, totalCost, averageCost };
+		});
 	}
 
-	static async getProductInventoryLogs(productId: string) {
-		return await prisma.inventoryLog.findMany({
-			where: { productId },
-			orderBy: {
-				createdAt: "desc",
+	/**
+	 * Đánh dấu hư hỏng
+	 */
+	static async markProductSpoiled(
+		{ productId, quantity, reason }: SpoilageInput,
+		userId: string,
+	) {
+		return await prisma.$transaction(async (tx) => {
+			// Xuất FIFO
+			const { totalCost, averageCost } = await ProductService._reduceStockFIFO(
+				tx,
+				productId,
+				quantity,
+			);
+
+			// Ghi log
+			await tx.inventoryTransaction.create({
+				data: {
+					productId,
+					type: "SPOILAGE",
+					quantity: -quantity,
+					cost: averageCost,
+					note: reason,
+					userId,
+				},
+			});
+
+			return { quantity, totalCost, averageCost };
+		});
+	}
+
+	/**
+	 * Lấy giá vốn trung bình hiện tại (WAC)
+	 */
+	static async getWeightedAverageCost(productId: string) {
+		const batches = await prisma.inventoryBatch.findMany({
+			where: {
+				productId,
+				quantity: { gt: 0 },
 			},
+		});
+
+		if (batches.length === 0) return 0;
+
+		const totalValue = batches.reduce(
+			(sum, b) => sum + b.quantity * b.costPerUnit,
+			0,
+		);
+		const totalQuantity = batches.reduce((sum, b) => sum + b.quantity, 0);
+
+		return Math.round(totalValue / totalQuantity);
+	}
+
+	/**
+	 * Lấy danh sách lô hàng còn tồn
+	 */
+	static async getProductBatches(productId: string) {
+		return await prisma.inventoryBatch.findMany({
+			where: {
+				productId,
+				quantity: { gt: 0 },
+			},
+			orderBy: { importedAt: "asc" },
 			include: {
-				user: {
-					select: {
-						id: true,
-						name: true,
-					},
+				createdBy: {
+					select: { id: true, name: true },
 				},
 			},
 		});
+	}
+
+	// ==================== Private Helper Methods ====================
+
+	/**
+	 * Xuất kho theo FIFO (dùng nội bộ)
+	 */
+	private static async _reduceStockFIFO(
+		tx: Prisma.TransactionClient,
+		productId: string,
+		quantityToReduce: number,
+	) {
+		// Lấy lô cũ nhất
+		const batches = await tx.inventoryBatch.findMany({
+			where: {
+				productId,
+				quantity: { gt: 0 },
+			},
+			orderBy: { importedAt: "asc" },
+		});
+
+		if (batches.length === 0) {
+			throw new AppError("Không tìm thấy lô hàng", 404);
+		}
+
+		let remaining = quantityToReduce;
+		let totalCost = 0;
+
+		// Xuất từng lô
+		for (const batch of batches) {
+			if (remaining <= 0) break;
+
+			const take = Math.min(remaining, batch.quantity);
+			totalCost += take * batch.costPerUnit;
+
+			// Trừ lô
+			await tx.inventoryBatch.update({
+				where: { id: batch.id },
+				data: { quantity: { decrement: take } },
+			});
+
+			remaining -= take;
+		}
+
+		if (remaining > 0) {
+			throw new AppError("Không đủ hàng trong các lô", 400);
+		}
+
+		const averageCost = Math.round(totalCost / quantityToReduce);
+
+		return { totalCost, averageCost };
 	}
 }

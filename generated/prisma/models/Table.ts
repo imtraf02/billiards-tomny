@@ -40,8 +40,6 @@ export type TableMinAggregateOutputType = {
   type: $Enums.TableType | null
   hourlyRate: number | null
   status: $Enums.TableStatus | null
-  createdAt: Date | null
-  updatedAt: Date | null
 }
 
 export type TableMaxAggregateOutputType = {
@@ -50,8 +48,6 @@ export type TableMaxAggregateOutputType = {
   type: $Enums.TableType | null
   hourlyRate: number | null
   status: $Enums.TableStatus | null
-  createdAt: Date | null
-  updatedAt: Date | null
 }
 
 export type TableCountAggregateOutputType = {
@@ -60,8 +56,6 @@ export type TableCountAggregateOutputType = {
   type: number
   hourlyRate: number
   status: number
-  createdAt: number
-  updatedAt: number
   _all: number
 }
 
@@ -80,8 +74,6 @@ export type TableMinAggregateInputType = {
   type?: true
   hourlyRate?: true
   status?: true
-  createdAt?: true
-  updatedAt?: true
 }
 
 export type TableMaxAggregateInputType = {
@@ -90,8 +82,6 @@ export type TableMaxAggregateInputType = {
   type?: true
   hourlyRate?: true
   status?: true
-  createdAt?: true
-  updatedAt?: true
 }
 
 export type TableCountAggregateInputType = {
@@ -100,8 +90,6 @@ export type TableCountAggregateInputType = {
   type?: true
   hourlyRate?: true
   status?: true
-  createdAt?: true
-  updatedAt?: true
   _all?: true
 }
 
@@ -197,8 +185,6 @@ export type TableGroupByOutputType = {
   type: $Enums.TableType
   hourlyRate: number
   status: $Enums.TableStatus
-  createdAt: Date
-  updatedAt: Date
   _count: TableCountAggregateOutputType | null
   _avg: TableAvgAggregateOutputType | null
   _sum: TableSumAggregateOutputType | null
@@ -230,9 +216,7 @@ export type TableWhereInput = {
   type?: Prisma.EnumTableTypeFilter<"Table"> | $Enums.TableType
   hourlyRate?: Prisma.IntFilter<"Table"> | number
   status?: Prisma.EnumTableStatusFilter<"Table"> | $Enums.TableStatus
-  createdAt?: Prisma.DateTimeFilter<"Table"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"Table"> | Date | string
-  bookingTables?: Prisma.BookingTableListRelationFilter
+  sessions?: Prisma.TableSessionListRelationFilter
 }
 
 export type TableOrderByWithRelationInput = {
@@ -241,9 +225,7 @@ export type TableOrderByWithRelationInput = {
   type?: Prisma.SortOrder
   hourlyRate?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
-  bookingTables?: Prisma.BookingTableOrderByRelationAggregateInput
+  sessions?: Prisma.TableSessionOrderByRelationAggregateInput
 }
 
 export type TableWhereUniqueInput = Prisma.AtLeast<{
@@ -255,9 +237,7 @@ export type TableWhereUniqueInput = Prisma.AtLeast<{
   type?: Prisma.EnumTableTypeFilter<"Table"> | $Enums.TableType
   hourlyRate?: Prisma.IntFilter<"Table"> | number
   status?: Prisma.EnumTableStatusFilter<"Table"> | $Enums.TableStatus
-  createdAt?: Prisma.DateTimeFilter<"Table"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"Table"> | Date | string
-  bookingTables?: Prisma.BookingTableListRelationFilter
+  sessions?: Prisma.TableSessionListRelationFilter
 }, "id" | "name">
 
 export type TableOrderByWithAggregationInput = {
@@ -266,8 +246,6 @@ export type TableOrderByWithAggregationInput = {
   type?: Prisma.SortOrder
   hourlyRate?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
   _count?: Prisma.TableCountOrderByAggregateInput
   _avg?: Prisma.TableAvgOrderByAggregateInput
   _max?: Prisma.TableMaxOrderByAggregateInput
@@ -284,8 +262,6 @@ export type TableScalarWhereWithAggregatesInput = {
   type?: Prisma.EnumTableTypeWithAggregatesFilter<"Table"> | $Enums.TableType
   hourlyRate?: Prisma.IntWithAggregatesFilter<"Table"> | number
   status?: Prisma.EnumTableStatusWithAggregatesFilter<"Table"> | $Enums.TableStatus
-  createdAt?: Prisma.DateTimeWithAggregatesFilter<"Table"> | Date | string
-  updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Table"> | Date | string
 }
 
 export type TableCreateInput = {
@@ -294,9 +270,7 @@ export type TableCreateInput = {
   type: $Enums.TableType
   hourlyRate: number
   status?: $Enums.TableStatus
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  bookingTables?: Prisma.BookingTableCreateNestedManyWithoutTableInput
+  sessions?: Prisma.TableSessionCreateNestedManyWithoutTableInput
 }
 
 export type TableUncheckedCreateInput = {
@@ -305,9 +279,7 @@ export type TableUncheckedCreateInput = {
   type: $Enums.TableType
   hourlyRate: number
   status?: $Enums.TableStatus
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  bookingTables?: Prisma.BookingTableUncheckedCreateNestedManyWithoutTableInput
+  sessions?: Prisma.TableSessionUncheckedCreateNestedManyWithoutTableInput
 }
 
 export type TableUpdateInput = {
@@ -316,9 +288,7 @@ export type TableUpdateInput = {
   type?: Prisma.EnumTableTypeFieldUpdateOperationsInput | $Enums.TableType
   hourlyRate?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumTableStatusFieldUpdateOperationsInput | $Enums.TableStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  bookingTables?: Prisma.BookingTableUpdateManyWithoutTableNestedInput
+  sessions?: Prisma.TableSessionUpdateManyWithoutTableNestedInput
 }
 
 export type TableUncheckedUpdateInput = {
@@ -327,9 +297,7 @@ export type TableUncheckedUpdateInput = {
   type?: Prisma.EnumTableTypeFieldUpdateOperationsInput | $Enums.TableType
   hourlyRate?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumTableStatusFieldUpdateOperationsInput | $Enums.TableStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  bookingTables?: Prisma.BookingTableUncheckedUpdateManyWithoutTableNestedInput
+  sessions?: Prisma.TableSessionUncheckedUpdateManyWithoutTableNestedInput
 }
 
 export type TableCreateManyInput = {
@@ -338,8 +306,6 @@ export type TableCreateManyInput = {
   type: $Enums.TableType
   hourlyRate: number
   status?: $Enums.TableStatus
-  createdAt?: Date | string
-  updatedAt?: Date | string
 }
 
 export type TableUpdateManyMutationInput = {
@@ -348,8 +314,6 @@ export type TableUpdateManyMutationInput = {
   type?: Prisma.EnumTableTypeFieldUpdateOperationsInput | $Enums.TableType
   hourlyRate?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumTableStatusFieldUpdateOperationsInput | $Enums.TableStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type TableUncheckedUpdateManyInput = {
@@ -358,8 +322,6 @@ export type TableUncheckedUpdateManyInput = {
   type?: Prisma.EnumTableTypeFieldUpdateOperationsInput | $Enums.TableType
   hourlyRate?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumTableStatusFieldUpdateOperationsInput | $Enums.TableStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type TableCountOrderByAggregateInput = {
@@ -368,8 +330,6 @@ export type TableCountOrderByAggregateInput = {
   type?: Prisma.SortOrder
   hourlyRate?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
 }
 
 export type TableAvgOrderByAggregateInput = {
@@ -382,8 +342,6 @@ export type TableMaxOrderByAggregateInput = {
   type?: Prisma.SortOrder
   hourlyRate?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
 }
 
 export type TableMinOrderByAggregateInput = {
@@ -392,8 +350,6 @@ export type TableMinOrderByAggregateInput = {
   type?: Prisma.SortOrder
   hourlyRate?: Prisma.SortOrder
   status?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
 }
 
 export type TableSumOrderByAggregateInput = {
@@ -421,74 +377,66 @@ export type EnumTableStatusFieldUpdateOperationsInput = {
   set?: $Enums.TableStatus
 }
 
-export type TableCreateNestedOneWithoutBookingTablesInput = {
-  create?: Prisma.XOR<Prisma.TableCreateWithoutBookingTablesInput, Prisma.TableUncheckedCreateWithoutBookingTablesInput>
-  connectOrCreate?: Prisma.TableCreateOrConnectWithoutBookingTablesInput
+export type TableCreateNestedOneWithoutSessionsInput = {
+  create?: Prisma.XOR<Prisma.TableCreateWithoutSessionsInput, Prisma.TableUncheckedCreateWithoutSessionsInput>
+  connectOrCreate?: Prisma.TableCreateOrConnectWithoutSessionsInput
   connect?: Prisma.TableWhereUniqueInput
 }
 
-export type TableUpdateOneRequiredWithoutBookingTablesNestedInput = {
-  create?: Prisma.XOR<Prisma.TableCreateWithoutBookingTablesInput, Prisma.TableUncheckedCreateWithoutBookingTablesInput>
-  connectOrCreate?: Prisma.TableCreateOrConnectWithoutBookingTablesInput
-  upsert?: Prisma.TableUpsertWithoutBookingTablesInput
+export type TableUpdateOneRequiredWithoutSessionsNestedInput = {
+  create?: Prisma.XOR<Prisma.TableCreateWithoutSessionsInput, Prisma.TableUncheckedCreateWithoutSessionsInput>
+  connectOrCreate?: Prisma.TableCreateOrConnectWithoutSessionsInput
+  upsert?: Prisma.TableUpsertWithoutSessionsInput
   connect?: Prisma.TableWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.TableUpdateToOneWithWhereWithoutBookingTablesInput, Prisma.TableUpdateWithoutBookingTablesInput>, Prisma.TableUncheckedUpdateWithoutBookingTablesInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TableUpdateToOneWithWhereWithoutSessionsInput, Prisma.TableUpdateWithoutSessionsInput>, Prisma.TableUncheckedUpdateWithoutSessionsInput>
 }
 
-export type TableCreateWithoutBookingTablesInput = {
+export type TableCreateWithoutSessionsInput = {
   id?: string
   name: string
   type: $Enums.TableType
   hourlyRate: number
   status?: $Enums.TableStatus
-  createdAt?: Date | string
-  updatedAt?: Date | string
 }
 
-export type TableUncheckedCreateWithoutBookingTablesInput = {
+export type TableUncheckedCreateWithoutSessionsInput = {
   id?: string
   name: string
   type: $Enums.TableType
   hourlyRate: number
   status?: $Enums.TableStatus
-  createdAt?: Date | string
-  updatedAt?: Date | string
 }
 
-export type TableCreateOrConnectWithoutBookingTablesInput = {
+export type TableCreateOrConnectWithoutSessionsInput = {
   where: Prisma.TableWhereUniqueInput
-  create: Prisma.XOR<Prisma.TableCreateWithoutBookingTablesInput, Prisma.TableUncheckedCreateWithoutBookingTablesInput>
+  create: Prisma.XOR<Prisma.TableCreateWithoutSessionsInput, Prisma.TableUncheckedCreateWithoutSessionsInput>
 }
 
-export type TableUpsertWithoutBookingTablesInput = {
-  update: Prisma.XOR<Prisma.TableUpdateWithoutBookingTablesInput, Prisma.TableUncheckedUpdateWithoutBookingTablesInput>
-  create: Prisma.XOR<Prisma.TableCreateWithoutBookingTablesInput, Prisma.TableUncheckedCreateWithoutBookingTablesInput>
+export type TableUpsertWithoutSessionsInput = {
+  update: Prisma.XOR<Prisma.TableUpdateWithoutSessionsInput, Prisma.TableUncheckedUpdateWithoutSessionsInput>
+  create: Prisma.XOR<Prisma.TableCreateWithoutSessionsInput, Prisma.TableUncheckedCreateWithoutSessionsInput>
   where?: Prisma.TableWhereInput
 }
 
-export type TableUpdateToOneWithWhereWithoutBookingTablesInput = {
+export type TableUpdateToOneWithWhereWithoutSessionsInput = {
   where?: Prisma.TableWhereInput
-  data: Prisma.XOR<Prisma.TableUpdateWithoutBookingTablesInput, Prisma.TableUncheckedUpdateWithoutBookingTablesInput>
+  data: Prisma.XOR<Prisma.TableUpdateWithoutSessionsInput, Prisma.TableUncheckedUpdateWithoutSessionsInput>
 }
 
-export type TableUpdateWithoutBookingTablesInput = {
+export type TableUpdateWithoutSessionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTableTypeFieldUpdateOperationsInput | $Enums.TableType
   hourlyRate?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumTableStatusFieldUpdateOperationsInput | $Enums.TableStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type TableUncheckedUpdateWithoutBookingTablesInput = {
+export type TableUncheckedUpdateWithoutSessionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTableTypeFieldUpdateOperationsInput | $Enums.TableType
   hourlyRate?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumTableStatusFieldUpdateOperationsInput | $Enums.TableStatus
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -497,11 +445,11 @@ export type TableUncheckedUpdateWithoutBookingTablesInput = {
  */
 
 export type TableCountOutputType = {
-  bookingTables: number
+  sessions: number
 }
 
 export type TableCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  bookingTables?: boolean | TableCountOutputTypeCountBookingTablesArgs
+  sessions?: boolean | TableCountOutputTypeCountSessionsArgs
 }
 
 /**
@@ -517,8 +465,8 @@ export type TableCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extens
 /**
  * TableCountOutputType without action
  */
-export type TableCountOutputTypeCountBookingTablesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.BookingTableWhereInput
+export type TableCountOutputTypeCountSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TableSessionWhereInput
 }
 
 
@@ -528,9 +476,7 @@ export type TableSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   type?: boolean
   hourlyRate?: boolean
   status?: boolean
-  createdAt?: boolean
-  updatedAt?: boolean
-  bookingTables?: boolean | Prisma.Table$bookingTablesArgs<ExtArgs>
+  sessions?: boolean | Prisma.Table$sessionsArgs<ExtArgs>
   _count?: boolean | Prisma.TableCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["table"]>
 
@@ -540,8 +486,6 @@ export type TableSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   type?: boolean
   hourlyRate?: boolean
   status?: boolean
-  createdAt?: boolean
-  updatedAt?: boolean
 }, ExtArgs["result"]["table"]>
 
 export type TableSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -550,8 +494,6 @@ export type TableSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   type?: boolean
   hourlyRate?: boolean
   status?: boolean
-  createdAt?: boolean
-  updatedAt?: boolean
 }, ExtArgs["result"]["table"]>
 
 export type TableSelectScalar = {
@@ -560,13 +502,11 @@ export type TableSelectScalar = {
   type?: boolean
   hourlyRate?: boolean
   status?: boolean
-  createdAt?: boolean
-  updatedAt?: boolean
 }
 
-export type TableOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "type" | "hourlyRate" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["table"]>
+export type TableOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "type" | "hourlyRate" | "status", ExtArgs["result"]["table"]>
 export type TableInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  bookingTables?: boolean | Prisma.Table$bookingTablesArgs<ExtArgs>
+  sessions?: boolean | Prisma.Table$sessionsArgs<ExtArgs>
   _count?: boolean | Prisma.TableCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TableIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -575,7 +515,7 @@ export type TableIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
 export type $TablePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Table"
   objects: {
-    bookingTables: Prisma.$BookingTablePayload<ExtArgs>[]
+    sessions: Prisma.$TableSessionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -583,8 +523,6 @@ export type $TablePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     type: $Enums.TableType
     hourlyRate: number
     status: $Enums.TableStatus
-    createdAt: Date
-    updatedAt: Date
   }, ExtArgs["result"]["table"]>
   composites: {}
 }
@@ -979,7 +917,7 @@ readonly fields: TableFieldRefs;
  */
 export interface Prisma__TableClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  bookingTables<T extends Prisma.Table$bookingTablesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Table$bookingTablesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BookingTablePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sessions<T extends Prisma.Table$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Table$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TableSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1014,8 +952,6 @@ export interface TableFieldRefs {
   readonly type: Prisma.FieldRef<"Table", 'TableType'>
   readonly hourlyRate: Prisma.FieldRef<"Table", 'Int'>
   readonly status: Prisma.FieldRef<"Table", 'TableStatus'>
-  readonly createdAt: Prisma.FieldRef<"Table", 'DateTime'>
-  readonly updatedAt: Prisma.FieldRef<"Table", 'DateTime'>
 }
     
 
@@ -1404,27 +1340,27 @@ export type TableDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
 }
 
 /**
- * Table.bookingTables
+ * Table.sessions
  */
-export type Table$bookingTablesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Table$sessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the BookingTable
+   * Select specific fields to fetch from the TableSession
    */
-  select?: Prisma.BookingTableSelect<ExtArgs> | null
+  select?: Prisma.TableSessionSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the BookingTable
+   * Omit specific fields from the TableSession
    */
-  omit?: Prisma.BookingTableOmit<ExtArgs> | null
+  omit?: Prisma.TableSessionOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.BookingTableInclude<ExtArgs> | null
-  where?: Prisma.BookingTableWhereInput
-  orderBy?: Prisma.BookingTableOrderByWithRelationInput | Prisma.BookingTableOrderByWithRelationInput[]
-  cursor?: Prisma.BookingTableWhereUniqueInput
+  include?: Prisma.TableSessionInclude<ExtArgs> | null
+  where?: Prisma.TableSessionWhereInput
+  orderBy?: Prisma.TableSessionOrderByWithRelationInput | Prisma.TableSessionOrderByWithRelationInput[]
+  cursor?: Prisma.TableSessionWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.BookingTableScalarFieldEnum | Prisma.BookingTableScalarFieldEnum[]
+  distinct?: Prisma.TableSessionScalarFieldEnum | Prisma.TableSessionScalarFieldEnum[]
 }
 
 /**

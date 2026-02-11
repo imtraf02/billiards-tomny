@@ -4,7 +4,9 @@ import { Header } from "@/components/layout/header";
 import { Main } from "@/components/layout/main";
 import { ModeSwitcher } from "@/components/mode-switcher";
 import { Search } from "@/components/search";
-import { Tables } from "@/features/table/components/tables";
+import { Tables } from "@/features/tables/components/tables";
+import { TablesDialogs } from "@/features/tables/components/tables-dialogs";
+import { TablesProvider } from "@/features/tables/components/tables-provider";
 
 export default function TablesPage() {
 	return (
@@ -16,13 +18,10 @@ export default function TablesPage() {
 				</div>
 			</Header>
 			<Main>
-				<div className="mb-6 flex flex-col gap-2">
-					<h1 className="text-2xl font-bold tracking-tight">Quản lý bàn</h1>
-					<p className="text-muted-foreground">
-						Xem trạng thái bàn, bắt đầu chơi và quản lý danh sách bàn billiards.
-					</p>
-				</div>
-				<Tables />
+				<TablesProvider>
+					<Tables />
+					<TablesDialogs />
+				</TablesProvider>
 			</Main>
 		</>
 	);

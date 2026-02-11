@@ -11,8 +11,7 @@
 
 export const Role = {
   ADMIN: 'ADMIN',
-  STAFF: 'STAFF',
-  CUSTOMER: 'CUSTOMER'
+  STAFF: 'STAFF'
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
@@ -37,45 +36,40 @@ export const TableStatus = {
 export type TableStatus = (typeof TableStatus)[keyof typeof TableStatus]
 
 
-export const BookingStatus = {
-  PENDING: 'PENDING',
-  CONFIRMED: 'CONFIRMED',
-  CANCELLED: 'CANCELLED',
-  COMPLETED: 'COMPLETED'
+export const OrderType = {
+  SESSION: 'SESSION',
+  WALK_IN: 'WALK_IN',
+  TAKE_AWAY: 'TAKE_AWAY'
 } as const
 
-export type BookingStatus = (typeof BookingStatus)[keyof typeof BookingStatus]
+export type OrderType = (typeof OrderType)[keyof typeof OrderType]
 
 
 export const OrderStatus = {
   PENDING: 'PENDING',
   PREPARING: 'PREPARING',
-  DELIVERED: 'DELIVERED',
-  COMPLETED: 'COMPLETED',
+  SERVED: 'SERVED',
   CANCELLED: 'CANCELLED'
 } as const
 
 export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus]
 
 
-export const TransactionType = {
-  PURCHASE: 'PURCHASE',
+export const InventoryTransactionType = {
+  IMPORT: 'IMPORT',
   SALE: 'SALE',
-  REFUND: 'REFUND',
-  ADJUSTMENT: 'ADJUSTMENT',
-  EXPENSE: 'EXPENSE',
-  REVENUE: 'REVENUE'
+  INTERNAL: 'INTERNAL',
+  SPOILAGE: 'SPOILAGE',
+  ADJUSTMENT: 'ADJUSTMENT'
 } as const
 
-export type TransactionType = (typeof TransactionType)[keyof typeof TransactionType]
+export type InventoryTransactionType = (typeof InventoryTransactionType)[keyof typeof InventoryTransactionType]
 
 
-export const PaymentMethod = {
-  CASH: 'CASH',
-  CARD: 'CARD',
-  TRANSFER: 'TRANSFER',
-  MOMO: 'MOMO',
-  ZALOPAY: 'ZALOPAY'
+export const DiscountType = {
+  TABLE: 'TABLE',
+  PRODUCT: 'PRODUCT',
+  GENERAL: 'GENERAL'
 } as const
 
-export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod]
+export type DiscountType = (typeof DiscountType)[keyof typeof DiscountType]

@@ -11,7 +11,6 @@ datasource db {
 enum Role {
   ADMIN
   STAFF
-  CUSTOMER
 }
 
 enum TableType {
@@ -27,53 +26,48 @@ enum TableStatus {
   RESERVED
 }
 
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  COMPLETED
+enum OrderType {
+  SESSION
+  WALK_IN
+  TAKE_AWAY
 }
 
 enum OrderStatus {
   PENDING
   PREPARING
-  DELIVERED
-  COMPLETED
+  SERVED
   CANCELLED
 }
 
-enum TransactionType {
-  PURCHASE // Nhập hàng
-  SALE // Bán hàng
-  REFUND // Hoàn trả
-  ADJUSTMENT // Điều chỉnh kho
-  EXPENSE // Chi phí khác (điện, nước, lương...)
-  REVENUE // Thu nhập khác
+enum InventoryTransactionType {
+  IMPORT
+  SALE
+  INTERNAL
+  SPOILAGE
+  ADJUSTMENT
 }
 
-enum PaymentMethod {
-  CASH
-  CARD
-  TRANSFER
-  MOMO
-  ZALOPAY
+enum DiscountType {
+  TABLE
+  PRODUCT
+  GENERAL
 }
 
 // Models
 model User {
   id        String   @id @default(uuid(7))
   name      String
+  email     String   @unique
   phone     String   @unique
-  email     String?  @unique
   password  String
-  role      Role     @default(CUSTOMER)
+  role      Role     @default(STAFF)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  bookings      Booking[]
-  orders        Order[]
-  transactions  Transaction[] // Người thực hiện giao dịch
-  inventoryLogs InventoryLog[] // Người thực hiện nhập/xuất kho
+  orders           Order[]
+  createdInventory InventoryTransaction[]
+  createdExpenses  Expense[]
+  createdBatches   InventoryBatch[]
 }
 
 model Table {
@@ -82,170 +76,196 @@ model Table {
   type       TableType
   hourlyRate Int
   status     TableStatus @default(AVAILABLE)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
 
-  bookingTables BookingTable[]
+  sessions TableSession[]
+
+  @@index([status])
+}
+
+model TableSession {
+  id        String    @id @default(uuid(7))
+  table     Table     @relation(fields: [tableId], references: [id])
+  tableId   String
+  startTime DateTime  @default(now())
+  endTime   DateTime?
+
+  orders Order[]
+
+  billId String?
+  bill   Bill?   @relation(fields: [billId], references: [id])
+
+  @@index([tableId])
+  @@index([billId])
 }
 
 model Category {
-  id        String   @id @default(uuid(7))
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  products Product[]
+  id          String    @id @default(uuid(7))
+  name        String    @unique
+  description String?
+  products    Product[]
 }
 
 model Product {
-  id           String   @id @default(uuid(7))
-  categoryId   String
-  name         String
-  price        Int
-  cost         Int? // Giá vốn để tính lãi
-  description  String?
-  imageUrl     String?
-  isAvailable  Boolean  @default(true)
-  // Thông tin kho
-  currentStock Int      @default(0) // Tồn kho hiện tại
-  minStock     Int      @default(0) // Mức tồn kho tối thiểu (cảnh báo)
-  unit         String   @default("cái") // Đơn vị tính
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String @id @default(uuid(7))
+  name        String @unique
+  unit        String
+  description String
+  price       Int // Giá bán
+  minStock    Int
 
-  category      Category       @relation(fields: [categoryId], references: [id])
-  orderItems    OrderItem[]
-  inventoryLogs InventoryLog[] // Lịch sử nhập/xuất kho
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+
+  orderProducts OrderProduct[]
+  inventory     InventoryTransaction[]
+  batches       InventoryBatch[]
+
+  @@index([categoryId])
 }
 
-model Booking {
-  id          String        @id @default(uuid(7))
-  userId      String?
-  startTime   DateTime
-  endTime     DateTime?
-  status      BookingStatus @default(PENDING)
-  totalAmount Int           @default(0)
-  note        String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+// Quản lý LÔ HÀNG (FIFO)
+model InventoryBatch {
+  id        String   @id @default(uuid(7))
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
 
-  user          User?          @relation(fields: [userId], references: [id])
-  bookingTables BookingTable[]
-  orders        Order[]
-  transaction   Transaction? // Giao dịch thanh toán
+  quantity    Int      // Số lượng còn lại
+  costPerUnit Int      // Giá nhập đơn vị
+  importedAt  DateTime @default(now())
+
+  createdBy User   @relation(fields: [userId], references: [id])
+  userId    String
+
+  batchSales BatchSale[]
+
+  @@index([productId, quantity]) // Composite index cho query FIFO
+  @@index([importedAt])
 }
 
-model BookingTable {
-  id            String    @id @default(uuid(7))
-  bookingId     String
-  tableId       String
-  startTime     DateTime
-  endTime       DateTime?
-  priceSnapshot Int
+// Theo dõi xuất từ lô nào
+model BatchSale {
+  id      String @id @default(uuid(7))
+  batch   InventoryBatch @relation(fields: [batchId], references: [id])
+  batchId String
 
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  table   Table   @relation(fields: [tableId], references: [id])
+  orderProduct   OrderProduct @relation(fields: [orderProductId], references: [id])
+  orderProductId String
 
-  @@index([bookingId])
-  @@index([tableId])
+  quantity    Int // Số lượng xuất
+  costPerUnit Int // Giá vốn (snapshot)
+
+  @@index([batchId])
+  @@index([orderProductId])
 }
 
 model Order {
-  id          String      @id @default(uuid(7))
-  bookingId   String?
-  userId      String?
-  status      OrderStatus @default(PENDING)
-  totalAmount Int         @default(0)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id     String      @id @default(uuid(7))
+  type   OrderType
+  status OrderStatus @default(PENDING)
 
-  booking     Booking?     @relation(fields: [bookingId], references: [id])
-  user        User?        @relation(fields: [userId], references: [id])
-  orderItems  OrderItem[]
-  transaction Transaction? // Giao dịch thanh toán
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  session   TableSession? @relation(fields: [sessionId], references: [id])
+  sessionId String?
+
+  bill   Bill?   @relation(fields: [billId], references: [id])
+  billId String?
+
+  products  OrderProduct[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([billId])
+  @@index([createdAt])
 }
 
-model OrderItem {
-  id            String @id @default(uuid(7))
-  orderId       String
-  productId     String
-  quantity      Int    @default(1)
-  priceSnapshot Int
-  costSnapshot  Int? // Giá vốn tại thời điểm bán
+model OrderProduct {
+  id        String  @id @default(uuid(7))
+  order     Order   @relation(fields: [orderId], references: [id])
+  orderId   String
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  quantity Int
+  price    Int // Giá bán (snapshot)
+  cost     Int // Giá vốn TB (tính từ FIFO)
+
+  batchSales BatchSale[]
 
   @@index([orderId])
   @@index([productId])
 }
 
-// Quản lý kho - Lịch sử nhập/xuất
-model InventoryLog {
-  id            String   @id @default(uuid(7))
-  productId     String
-  userId        String // Người thực hiện
-  type          String // "IN" (nhập) hoặc "OUT" (xuất)
-  quantity      Int // Số lượng (dương = nhập, âm = xuất)
-  costSnapshot  Int? // Giá vốn tại thời điểm giao dịch (cost basis)
-  priceSnapshot Int? // Giá giao dịch (nếu có - vd: giá bán)
-  reason        String? // Lý do: "purchase", "sale", "adjustment", "damaged", etc.
-  note          String?
-  stockBefore   Int // Tồn kho trước khi thay đổi
-  stockAfter    Int // Tồn kho sau khi thay đổi
-  createdAt     DateTime @default(now())
+model Bill {
+  id String @id @default(uuid(7))
 
-  product Product @relation(fields: [productId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
+  grossTableRevenue   Int @default(0) // Doanh thu bàn gốc
+  grossProductRevenue Int @default(0) // Doanh thu sản phẩm gốc
+  productCost         Int @default(0) // Chi phí sản phẩm
+
+  totalDiscount Int @default(0) // Tổng giảm giá
+  netRevenue    Int @default(0) // Doanh thu thực
+  profit        Int @default(0) // Lãi
+  total         Int @default(0) // Tổng tiền
+
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  orders        Order[]
+  tableSessions TableSession[]
+  discounts     BillDiscount[]
+
+  @@index([createdAt])
+  @@index([paidAt])
+}
+
+model BillDiscount {
+  id     String       @id @default(uuid(7))
+  bill   Bill         @relation(fields: [billId], references: [id])
+  billId String
+
+  type   DiscountType
+  amount Int
+  reason String?
+
+  createdAt DateTime @default(now())
+
+  @@index([billId])
+}
+
+model InventoryTransaction {
+  id        String  @id @default(uuid(7))
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+
+  type     InventoryTransactionType
+  quantity Int  // âm = xuất, dương = nhập
+  cost     Int  // Giá vốn (TB nếu FIFO, hoặc giá nhập)
+
+  note      String
+  createdAt DateTime @default(now())
+
+  createdBy User   @relation(fields: [userId], references: [id])
+  userId    String
 
   @@index([productId])
-  @@index([createdAt])
-}
-
-// Quản lý thu chi
-model Transaction {
-  id            String          @id @default(uuid(7))
-  type          TransactionType
-  amount        Int
-  paymentMethod PaymentMethod   @default(CASH)
-  description   String?
-  // Reference đến booking hoặc order (tùy loại giao dịch)
-  bookingId     String?         @unique
-  orderId       String?         @unique
-  userId        String // Người thực hiện giao dịch
-  createdBy     String? // Tên người tạo (nếu khác userId)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-
-  booking Booking? @relation(fields: [bookingId], references: [id])
-  order   Order?   @relation(fields: [orderId], references: [id])
-  user    User     @relation(fields: [userId], references: [id])
-
   @@index([type])
   @@index([createdAt])
-  @@index([userId])
 }
 
-// Báo cáo thống kê tháng (tùy chọn - có thể tính toán từ Transaction)
-model MonthlyReport {
-  id              String   @id @default(uuid(7))
-  year            Int
-  month           Int
-  // Thu
-  totalRevenue    Int      @default(0) // Tổng doanh thu
-  tableRevenue    Int      @default(0) // Doanh thu từ bàn
-  productRevenue  Int      @default(0) // Doanh thu từ sản phẩm
-  // Chi
-  totalExpense    Int      @default(0) // Tổng chi phí
-  purchaseExpense Int      @default(0) // Chi phí nhập hàng
-  otherExpense    Int      @default(0) // Chi phí khác
-  // Lãi/lỗ
-  netProfit       Int      @default(0) // Lãi ròng
-  // Thống kê sản phẩm
-  productsSold    Int      @default(0) // Tổng số sản phẩm đã bán
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+model Expense {
+  id          String   @id @default(uuid(7))
+  type        String
+  amount      Int
+  description String?
+  paidAt      DateTime @default(now())
 
-  @@unique([year, month])
-  @@index([year, month])
+  createdBy User   @relation(fields: [userId], references: [id])
+  userId    String
+
+  @@index([type])
+  @@index([paidAt])
 }

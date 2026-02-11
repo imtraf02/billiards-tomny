@@ -3,11 +3,10 @@ import { Role } from "@/generated/prisma/client";
 import { authorization } from "@/server/plugins/authorization";
 import {
 	createCategorySchema,
-	createInventoryLogSchema,
 	createProductSchema,
-	getInventoryAnalysisQuerySchema,
-	getInventoryLogsQuerySchema,
-	getProductsQuerySchema,
+	importProductSchema,
+	internalUseSchema,
+	spoilageSchema,
 	updateCategorySchema,
 	updateProductSchema,
 } from "@/shared/schemas/product";
@@ -15,7 +14,8 @@ import { ProductService } from "./service";
 
 export const product = new Elysia({ prefix: "/products" })
 	.use(authorization)
-	// Categories
+
+	// ==================== Categories ====================
 	.group("/categories", (app) =>
 		app
 			.post(
@@ -25,7 +25,7 @@ export const product = new Elysia({ prefix: "/products" })
 				},
 				{
 					body: createCategorySchema,
-					authorized: [Role.ADMIN, Role.STAFF],
+					authorized: [Role.ADMIN],
 					detail: {
 						tags: ["Products", "Categories"],
 					},
@@ -49,7 +49,7 @@ export const product = new Elysia({ prefix: "/products" })
 				},
 				{
 					body: updateCategorySchema,
-					authorized: [Role.ADMIN, Role.STAFF],
+					authorized: [Role.ADMIN],
 					detail: {
 						tags: ["Products", "Categories"],
 					},
@@ -61,27 +61,15 @@ export const product = new Elysia({ prefix: "/products" })
 					return await ProductService.deleteCategory(id);
 				},
 				{
-					authorized: [Role.ADMIN, Role.STAFF],
+					authorized: [Role.ADMIN],
 					detail: {
 						tags: ["Products", "Categories"],
 					},
 				},
 			),
 	)
-	// Products
-	.post(
-		"/",
-		async ({ body, user }) => {
-			return await ProductService.createProduct(body, user.id);
-		},
-		{
-			body: createProductSchema,
-			authorized: [Role.ADMIN, Role.STAFF],
-			detail: {
-				tags: ["Products"],
-			},
-		},
-	)
+
+	// ==================== Products ====================
 	.get(
 		"/",
 		async () => {
@@ -104,14 +92,27 @@ export const product = new Elysia({ prefix: "/products" })
 			},
 		},
 	)
-	.patch(
+	.post(
+		"/",
+		async ({ body, user }) => {
+			return await ProductService.createProduct(body);
+		},
+		{
+			body: createProductSchema,
+			authorized: [Role.ADMIN],
+			detail: {
+				tags: ["Products"],
+			},
+		},
+	)
+	.put(
 		"/:id",
-		async ({ params: { id }, body, user }) => {
-			return await ProductService.updateProduct(id, body, user.id);
+		async ({ params: { id }, body }) => {
+			return await ProductService.updateProduct(id, body);
 		},
 		{
 			body: updateProductSchema,
-			authorized: [Role.ADMIN, Role.STAFF],
+			authorized: [Role.ADMIN],
 			detail: {
 				tags: ["Products"],
 			},
@@ -123,54 +124,115 @@ export const product = new Elysia({ prefix: "/products" })
 			return await ProductService.deleteProduct(id);
 		},
 		{
-			authorized: [Role.ADMIN, Role.STAFF],
+			authorized: [Role.ADMIN],
 			detail: {
 				tags: ["Products"],
 			},
 		},
 	)
-	// Inventory
-	.group("/inventory", (app) =>
-		app
-			.post(
-				"/",
-				async ({ body, user }) => {
-					return await ProductService.createInventoryLog(body, user.id);
-				},
-				{
-					body: createInventoryLogSchema,
-					authorized: [Role.ADMIN, Role.STAFF],
-					detail: {
-						tags: ["Products", "Inventory"],
-						summary: "Nhập/Xuất kho",
-					},
-				},
-			)
-			.get(
-				"/",
-				async ({ query }) => {
-					return await ProductService.getInventoryLogs(query);
-				},
-				{
-					query: getInventoryLogsQuerySchema,
-					authorized: [Role.ADMIN, Role.STAFF],
-					detail: {
-						tags: ["Products", "Inventory"],
-						summary: "Lấy danh sách lịch sử kho",
-					},
-				},
-			),
+
+	// ==================== Inventory Management (FIFO) ====================
+
+	/**
+	 * POST /products/import
+	 * Nhập hàng (tạo lô mới)
+	 */
+	.post(
+		"/import",
+		async ({ body, user }) => {
+			return await ProductService.importProduct(body, user.id);
+		},
+		{
+			body: importProductSchema,
+			authorized: [Role.ADMIN, Role.STAFF],
+			detail: {
+				tags: ["Products", "Inventory"],
+				summary: "Nhập hàng (tạo lô mới)",
+				description: "Nhập hàng vào kho và tạo lô hàng mới cho FIFO",
+			},
+		},
 	)
+
+	/**
+	 * POST /products/internal-use
+	 * Sử dụng nội bộ (nhân viên uống, test, đãi khách)
+	 */
+	.post(
+		"/internal-use",
+		async ({ body, user }) => {
+			return await ProductService.useProductInternal(body, user.id);
+		},
+		{
+			body: internalUseSchema,
+			authorized: [Role.ADMIN, Role.STAFF],
+			detail: {
+				tags: ["Products", "Inventory"],
+				summary: "Sử dụng nội bộ",
+				description:
+					"Xuất kho cho mục đích nội bộ (nhân viên uống, test, đãi khách)",
+			},
+		},
+	)
+
+	/**
+	 * POST /products/spoilage
+	 * Đánh dấu hư hỏng
+	 */
+	.post(
+		"/spoilage",
+		async ({ body, user }) => {
+			return await ProductService.markProductSpoiled(body, user.id);
+		},
+		{
+			body: spoilageSchema,
+			authorized: [Role.ADMIN, Role.STAFF],
+			detail: {
+				tags: ["Products", "Inventory"],
+				summary: "Đánh dấu hư hỏng",
+				description: "Xuất kho do sản phẩm hư hỏng (hết hạn, bể, mốc)",
+			},
+		},
+	)
+
+	/**
+	 * GET /products/:id/batches
+	 * Xem danh sách lô hàng còn tồn
+	 */
 	.get(
-		"/:id/inventory",
+		"/:id/batches",
 		async ({ params: { id } }) => {
-			return await ProductService.getProductInventoryLogs(id);
+			return await ProductService.getProductBatches(id);
 		},
 		{
 			authorized: [Role.ADMIN, Role.STAFF],
 			detail: {
 				tags: ["Products", "Inventory"],
-				summary: "Lấy lịch sử kho của 1 sản phẩm",
+				summary: "Xem danh sách lô hàng",
+				description: "Lấy danh sách các lô hàng còn tồn kho của sản phẩm",
+			},
+		},
+	)
+
+	/**
+	 * GET /products/:id/average-cost
+	 * Lấy giá vốn trung bình hiện tại (WAC)
+	 */
+	.get(
+		"/:id/average-cost",
+		async ({ params: { id } }) => {
+			const avgCost = await ProductService.getWeightedAverageCost(id);
+			return {
+				productId: id,
+				averageCost: avgCost,
+			};
+		},
+		{
+			authorized: [Role.ADMIN],
+			detail: {
+				tags: ["Products", "Inventory"],
+				summary: "Giá vốn trung bình",
+				description:
+					"Tính giá vốn trung bình (Weighted Average Cost) của sản phẩm",
 			},
 		},
 	);

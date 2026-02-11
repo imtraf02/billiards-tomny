@@ -290,26 +290,35 @@ export function InvoicePrint({ data, onPrintComplete }: InvoicePrintProps) {
 						</p>
 						<p>
 							<span className="info-label">Giờ vào:</span>
-							{format(new Date(data.booking.startTime), "HH:mm", { locale: vi })}
+							{format(new Date(data.booking.startTime), "HH:mm", {
+								locale: vi,
+							})}
 						</p>
 						{data.booking.endTime && (
 							<p>
 								<span className="info-label">Giờ ra:</span>
-								{format(new Date(data.booking.endTime), "HH:mm", { locale: vi })}
+								{format(new Date(data.booking.endTime), "HH:mm", {
+									locale: vi,
+								})}
 							</p>
 						)}
 						{data.booking.transaction && (
 							<>
 								<p>
 									<span className="info-label">Giờ thanh toán:</span>
-									{format(new Date(data.booking.transaction.createdAt), "HH:mm", {
-										locale: vi,
-									})}
+									{format(
+										new Date(data.booking.transaction.createdAt),
+										"HH:mm",
+										{
+											locale: vi,
+										},
+									)}
 								</p>
 								<p>
 									<span className="info-label">Thanh toán:</span>
-									{paymentMethodLabels[data.booking.transaction.paymentMethod] ||
-										data.booking.transaction.paymentMethod}
+									{paymentMethodLabels[
+										data.booking.transaction.paymentMethod
+									] || data.booking.transaction.paymentMethod}
 								</p>
 							</>
 						)}
@@ -402,15 +411,26 @@ export function InvoicePrint({ data, onPrintComplete }: InvoicePrintProps) {
 					)}
 
 				{data.booking.note && (
-					<div style={{ marginTop: "20px", fontSize: "13px", fontStyle: "italic", color: "#666" }}>
-						<p><strong>Ghi chú:</strong> "{data.booking.note}"</p>
+					<div
+						style={{
+							marginTop: "20px",
+							fontSize: "13px",
+							fontStyle: "italic",
+							color: "#666",
+						}}
+					>
+						<p>
+							<strong>Ghi chú:</strong> "{data.booking.note}"
+						</p>
 					</div>
 				)}
 
 				<div className="summary">
 					<div className="summary-row">
 						<span>Tiền giờ chơi:</span>
-						<span>{new Intl.NumberFormat("vi-VN").format(data.timeTotal)} đ</span>
+						<span>
+							{new Intl.NumberFormat("vi-VN").format(data.timeTotal)} đ
+						</span>
 					</div>
 					<div className="summary-row">
 						<span>Tiền dịch vụ:</span>

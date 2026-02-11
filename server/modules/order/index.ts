@@ -1,24 +1,20 @@
 import { Elysia } from "elysia";
+import z from "zod";
 import { Role } from "@/generated/prisma/client";
+import { uuidField } from "@/lib/validators";
 import { authorization } from "@/server/plugins/authorization";
-import {
-	batchUpdateOrderItemsSchema,
-	createOrderSchema,
-	getOrdersQuerySchema,
-	updateOrderItemSchema,
-	updateOrderSchema,
-} from "@/shared/schemas/order";
+import { mutateOrderSchema } from "@/shared/schemas/order";
 import { OrderService } from "./service";
 
-export const order = new Elysia({ prefix: "/orders" })
+export const order = new Elysia({ prefix: "/order" })
 	.use(authorization)
 	.post(
 		"/",
 		async ({ body, user }) => {
-			return await OrderService.create(body, user.id);
+			return await OrderService.mutateOrder(body, user.id);
 		},
 		{
-			body: createOrderSchema,
+			body: mutateOrderSchema,
 			authorized: [Role.ADMIN, Role.STAFF],
 			detail: {
 				tags: ["Orders"],
@@ -26,63 +22,14 @@ export const order = new Elysia({ prefix: "/orders" })
 		},
 	)
 	.get(
-		"/",
+		"/get-by-session",
 		async ({ query }) => {
-			return await OrderService.getAll(query);
+			return await OrderService.getOrderBySession(query.sessionId);
 		},
 		{
-			query: getOrdersQuerySchema,
-			authorized: [Role.ADMIN, Role.STAFF],
-			detail: {
-				tags: ["Orders"],
-			},
-		},
-	)
-	.get(
-		"/:id",
-		async ({ params: { id } }) => {
-			return await OrderService.getById(id);
-		},
-		{
-			authorized: [Role.ADMIN, Role.STAFF],
-			detail: {
-				tags: ["Orders"],
-			},
-		},
-	)
-	.patch(
-		"/:id",
-		async ({ params: { id }, body, user }) => {
-			return await OrderService.update(id, body, user.id);
-		},
-		{
-			body: updateOrderSchema,
-			authorized: [Role.ADMIN, Role.STAFF],
-			detail: {
-				tags: ["Orders"],
-			},
-		},
-	)
-	.patch(
-		"/items/:id",
-		async ({ params: { id }, body, user }) => {
-			return await OrderService.updateItem(id, body, user.id);
-		},
-		{
-			body: updateOrderItemSchema,
-			authorized: [Role.ADMIN, Role.STAFF],
-			detail: {
-				tags: ["Orders"],
-			},
-		},
-	)
-	.patch(
-		"/:id/items",
-		async ({ params: { id }, body, user }) => {
-			return await OrderService.batchUpdateItems(id, body, user.id);
-		},
-		{
-			body: batchUpdateOrderItemsSchema,
+			query: z.object({
+				sessionId: uuidField("Phiên chơi"),
+			}),
 			authorized: [Role.ADMIN, Role.STAFF],
 			detail: {
 				tags: ["Orders"],

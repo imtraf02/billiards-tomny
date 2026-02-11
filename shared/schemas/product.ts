@@ -1,129 +1,73 @@
 import { z } from "zod";
+import { InventoryTransactionType } from "@/generated/prisma/enums";
+import { nameField, uuidField } from "@/lib/validators";
 
 // Category Schemas
-export const createCategorySchema = z.object({
-	name: z
-		.string()
-		.min(1, { error: "Tên danh mục là bắt buộc" })
-		.max(50, { error: "Tên danh mục quá dài" }),
+const categoryBaseSchema = z.object({
+	name: nameField("danh mục", 50),
+	description: z.string(),
 });
 
-export const updateCategorySchema = z.object({
-	name: z
-		.string()
-		.min(1, { error: "Tên danh mục là bắt buộc" })
-		.max(50, { error: "Tên danh mục quá dài" }),
-});
+export const createCategorySchema = categoryBaseSchema;
+export const updateCategorySchema = categoryBaseSchema;
 
 // Product Schemas
-export const createProductSchema = z.object({
-	categoryId: z.string().min(1, { message: "Danh mục là bắt buộc" }),
-	name: z
+const productBaseSchema = z.object({
+	categoryId: uuidField("Danh mục"),
+	name: nameField("sản phẩm", 100),
+	price: z.int().min(0, { error: "Giá phải là số nguyên dương" }),
+	description: z.string(),
+	minStock: z
+		.int()
+		.min(0, { error: "Số lượng tối thiểu phải là số nguyên dương" }),
+	unit: z
 		.string()
-		.min(1, { message: "Tên sản phẩm là bắt buộc" })
-		.max(100, { error: "Tên sản phẩm quá dài" }),
-	price: z.int().min(0),
-	cost: z.int().min(0),
-	description: z.string(),
-	imageUrl: z.url({ message: "URL ảnh không hợp lệ" }),
-	isAvailable: z.boolean(),
-	currentStock: z.int().min(0),
-	minStock: z.int().min(0),
-	unit: z.string(),
+		.min(1, { message: "Đơn vị là bắt buộc, vd: chai, lon, kg, lít, ..." }),
 });
 
-export const updateProductSchema = z.object({
-	categoryId: z.string(),
-	name: z.string().max(100),
-	price: z.int().min(0),
-	cost: z.int().min(0),
-	description: z.string(),
-	imageUrl: z.url({ message: "URL ảnh không hợp lệ" }),
-	isAvailable: z.boolean(),
-	currentStock: z.int().min(0),
-	minStock: z.int().min(0),
-	unit: z.string(),
-});
+export const createProductSchema = productBaseSchema;
+export const updateProductSchema = productBaseSchema;
 
-export const getProductsQuerySchema = z.object({
-	categoryId: z.string().optional(),
-	search: z.string().optional(),
-	isAvailable: z
-		.enum(["true", "false"])
-		.transform((val) => val === "true")
-		.optional(),
-});
-
-export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
-export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
-
-export type CreateProductInput = z.infer<typeof createProductSchema>;
-export type UpdateProductInput = z.infer<typeof updateProductSchema>;
-export type GetProductsQuery = z.infer<typeof getProductsQuerySchema>;
-
-// Inventory Schemas
-export const createInventoryLogSchema = z.object({
-	productId: z.string().min(1, { message: "Sản phẩm là bắt buộc" }),
-	type: z.enum(["IN", "OUT"]),
-	quantity: z.int().min(1, { message: "Số lượng phải lớn hơn 0" }),
-	costSnapshot: z.int().min(0),
-	priceSnapshot: z.int().min(0),
-	reason: z.string(),
+// Inventory Transaction Schemas
+export const importProductSchema = z.object({
+	productId: uuidField("Sản phẩm"),
+	quantity: z.int().min(1, { error: "Số lượng nhập phải là số nguyên dương" }),
+	costPerUnit: z.int().min(0, { error: "Giá nhập phải là số nguyên dương" }),
 	note: z.string(),
 });
 
-export const getInventoryLogsQuerySchema = z.object({
-	productId: z.string().optional(),
-	type: z.enum(["IN", "OUT"]).optional(),
-	startDate: z.iso.datetime().optional(),
-	endDate: z.iso.datetime().optional(),
-	page: z.coerce.number().int().min(1).default(1),
-	limit: z.coerce.number().int().min(1).max(100).default(50),
+export const internalUseSchema = z.object({
+	productId: uuidField("Sản phẩm"),
+	quantity: z
+		.int()
+		.min(1, { error: "Số lượng sử dụng phải là số nguyên dương" }),
+	reason: z.string(),
 });
 
-export type CreateInventoryLogInput = z.infer<typeof createInventoryLogSchema>;
-export type GetInventoryLogsQuery = z.infer<typeof getInventoryLogsQuerySchema>;
-
-export const getInventoryAnalysisQuerySchema = z.object({
-	productId: z.string().optional(),
-	startDate: z.string().datetime().optional(),
-	endDate: z.string().datetime().optional(),
+export const spoilageSchema = z.object({
+	productId: uuidField("Sản phẩm"),
+	quantity: z
+		.int()
+		.min(1, { error: "Số lượng hư hỏng phải là số nguyên dương" }),
+	reason: z.string(),
 });
 
-export type GetInventoryAnalysisQuery = z.infer<
-	typeof getInventoryAnalysisQuerySchema
+export const createInventoryTransactionSchema = z.object({
+	productId: uuidField("Sản phẩm"),
+	type: z.enum(InventoryTransactionType),
+	quantity: z.int().min(1, { error: "Số lượng nhập phải là số nguyên dương" }),
+	cost: z.int().min(0, { error: "Giá nhập phải là số nguyên dương" }),
+	note: z.string(),
+});
+
+// Types
+export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
+export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
+export type CreateProductInput = z.infer<typeof createProductSchema>;
+export type UpdateProductInput = z.infer<typeof updateProductSchema>;
+export type ImportProductInput = z.infer<typeof importProductSchema>;
+export type InternalUseInput = z.infer<typeof internalUseSchema>;
+export type SpoilageInput = z.infer<typeof spoilageSchema>;
+export type CreateInventoryTransactionInput = z.infer<
+	typeof createInventoryTransactionSchema
 >;
-
-export interface InventoryAnalysisTrend {
-	date: string;
-	income: number;
-	expenditure: number;
-	cogs: number;
-	profit: number;
-}
-
-export interface InventoryProductAnalysis {
-	productId: string;
-	productName: string;
-	currentStock: number;
-	unit: string;
-	income: number;
-	expenditure: number;
-	cogs: number;
-	profit: number;
-	soldQuantity: number;
-	importedQuantity: number;
-}
-
-export interface InventoryAnalysisResponse {
-	summary: {
-		totalIncome: number;
-		totalExpenditure: number;
-		totalCOGS: number;
-		netProfit: number;
-		totalInQuantity: number;
-		totalOutQuantity: number;
-	};
-	trends: InventoryAnalysisTrend[];
-	products: InventoryProductAnalysis[];
-}

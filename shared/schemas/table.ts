@@ -1,42 +1,30 @@
 import { z } from "zod";
+import { TableStatus, TableType } from "@/generated/prisma/enums";
 
 export const createTableSchema = z.object({
 	name: z
 		.string()
 		.min(1, { error: "Tên bàn là bắt buộc" })
 		.max(50, { error: "Tên bàn quá dài" }),
-	type: z.enum(["POOL", "CAROM", "SNOOKER"], {
-		error: "Loại bàn không hợp lệ",
-	}),
-	hourlyRate: z.coerce
-		.number()
-		.int()
-		.positive({ error: "Giá theo giờ phải lớn hơn 0" }),
-	status: z
-		.enum(["AVAILABLE", "OCCUPIED", "MAINTENANCE", "RESERVED"])
-		.default("AVAILABLE"),
+	type: z.enum(TableType),
+	hourlyRate: z.int().min(0, { error: "Giá theo giờ phải >= 0" }),
+	status: z.enum(TableStatus),
 });
 
 export const updateTableSchema = z.object({
 	name: z
 		.string()
 		.min(1, { error: "Tên bàn là bắt buộc" })
-		.max(50, { error: "Tên bàn quá dài" })
-		.optional(),
-	type: z.enum(["POOL", "CAROM", "SNOOKER"]).optional(),
-	hourlyRate: z.coerce
-		.number()
-		.positive({ error: "Giá theo giờ phải lớn hơn 0" })
-		.optional(),
-	status: z
-		.enum(["AVAILABLE", "OCCUPIED", "MAINTENANCE", "RESERVED"])
-		.optional(),
-});
-
-export const updateTableStatusSchema = z.object({
-	status: z.enum(["AVAILABLE", "OCCUPIED", "MAINTENANCE", "RESERVED"]),
+		.max(50, { error: "Tên bàn quá dài" }),
+	type: z.enum([TableType.POOL, TableType.CAROM, TableType.SNOOKER]),
+	hourlyRate: z.number().int().min(0, { error: "Giá theo giờ phải >= 0" }),
+	status: z.enum([
+		TableStatus.AVAILABLE,
+		TableStatus.OCCUPIED,
+		TableStatus.MAINTENANCE,
+		TableStatus.RESERVED,
+	]),
 });
 
 export type CreateTableInput = z.infer<typeof createTableSchema>;
 export type UpdateTableInput = z.infer<typeof updateTableSchema>;
-export type UpdateTableStatusInput = z.infer<typeof updateTableStatusSchema>;
